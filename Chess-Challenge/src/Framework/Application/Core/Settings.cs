@@ -4,9 +4,13 @@ namespace ChessChallenge.Application
 {
     public static class Settings
     {
+        public const string Version = "1.1";
+
         public const int GameDurationMilliseconds = 60 * 1000;
-        public const int MaxTokenCount = 1024;
+        public const float MinMoveDelay = 0;
         public static readonly bool RunBotsOnSeparateThread = true;
+
+        public const int MaxTokenCount = 1024;
 
         public const LogType MessagesToLog = LogType.All;
 

@@ -7,7 +7,7 @@ namespace ChessChallenge.Application
     public static class TokenCounter
     {
 
-        static HashSet<SyntaxKind> tokensToIgnore = new(new SyntaxKind[]
+        static readonly HashSet<SyntaxKind> tokensToIgnore = new(new SyntaxKind[]
         {
             SyntaxKind.PrivateKeyword,
             SyntaxKind.PublicKeyword,
