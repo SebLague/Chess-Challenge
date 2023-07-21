@@ -35,7 +35,7 @@ namespace ChessChallenge.Application {
                         if (input_line.Contains("moves")) {
                             end_idx = input_line.IndexOf("moves");
                         }
-                        fen_board.LoadPosition(input_line.);
+                        fen_board.LoadPosition(input_line);
                     }
                 }
 
