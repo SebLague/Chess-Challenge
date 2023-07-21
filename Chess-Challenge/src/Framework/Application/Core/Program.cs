@@ -1,113 +1,50 @@
-﻿using Raylib_cs;
-using System.IO;
-using System.Numerics;
-using System.Runtime.InteropServices;
+﻿using System;
+using ChessChallenge.API;
 
-namespace ChessChallenge.Application
-{
-    static class Program
-    {
-        const bool hideRaylibLogs = true;
-        static Camera2D cam;
-
-        public static void Main()
-        {
-            Vector2 loadedWindowSize = GetSavedWindowSize();
-            int screenWidth = (int)loadedWindowSize.X;
-            int screenHeight = (int)loadedWindowSize.Y;
-
-            if (hideRaylibLogs)
-            {
-                unsafe
-                {
-                    Raylib.SetTraceLogCallback(&LogCustom);
+namespace ChessChallenge.Application {
+    static class Program {
+        public static void Main() {
+            String initial_pos = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+            MyBot bot = new MyBot();
+            Chess.Board fen_board = new Chess.Board();
+            fen_board.LoadPosition(initial_pos);
+            Board bot_board = new Board(fen_board);
+            
+            Timer timer = new Timer(1000);
+            bot.Think(bot_board, timer);
+            
+            String input_line = Console.ReadLine();
+            while (input_line != "") {
+                if (input_line == "uci") {
+                    Console.WriteLine("uciok");
+                } else if (input_line == "quit") {
+                    break;
                 }
-            }
 
-            Raylib.InitWindow(screenWidth, screenHeight, "Chess Coding Challenge");
-            Raylib.SetTargetFPS(60);
-
-            UpdateCamera();
-
-            ChallengeController controller = new();
-
-            while (!Raylib.WindowShouldClose())
-            {
-                Raylib.BeginDrawing();
-                Raylib.ClearBackground(new Color(22, 22, 22, 255));
-                Raylib.BeginMode2D(cam);
-
-                controller.Update();
-                controller.Draw();
-
-                Raylib.EndMode2D();
-
-                controller.DrawOverlay();
-
-                Raylib.EndDrawing();
-            }
-
-            Raylib.CloseWindow();
-
-            controller.Release();
-            UIHelper.Release();
-        }
-
-        public static void SetWindowSize(Vector2 size)
-        {
-            Raylib.SetWindowSize((int)size.X, (int)size.Y);
-            UpdateCamera();
-            SaveWindowSize();
-        }
-
-        public static Vector2 ScreenToWorldPos(Vector2 screenPos) => Raylib.GetScreenToWorld2D(screenPos, cam);
-
-        static void UpdateCamera()
-        {
-            cam = new Camera2D();
-            int screenWidth = Raylib.GetScreenWidth();
-            int screenHeight = Raylib.GetScreenHeight();
-            cam.target = new Vector2(0, 15);
-            cam.offset = new Vector2(screenWidth / 2f, screenHeight / 2f);
-            cam.zoom = screenWidth / 1280f * 0.7f;
-        }
-
-
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-        private static unsafe void LogCustom(int logLevel, sbyte* text, sbyte* args)
-        {
-        }
-
-        static Vector2 GetSavedWindowSize()
-        {
-            if (File.Exists(FileHelper.PrefsFilePath))
-            {
-                string prefs = File.ReadAllText(FileHelper.PrefsFilePath);
-                if (!string.IsNullOrEmpty(prefs))
-                {
-                    if (prefs[0] == '0')
-                    {
-                        return Settings.ScreenSizeSmall;
-                    }
-                    else if (prefs[0] == '1')
-                    {
-                        return Settings.ScreenSizeBig;
+                if (input_line == "position") {
+                    String[] parts = input_line.Split(" ");
+                    if (parts[1] == "startpos") {
+                        // I'm not sure why he chose to have two board, but he does so you load fen
+                        // into fen_board 
+                        // and then feed that into bot_board
+                        fen_board.LoadPosition(initial_pos);
+                        bot_board = new Board(fen_board);
+                    } else {
+                        int start_idx = 0; // this is where the fen string starts, its wrong atm
+                        int end_idx = input_line.Length - 1;
+                        if (input_line.Contains("moves")) {
+                            end_idx = input_line.IndexOf("moves");
+                        }
+                        fen_board.LoadPosition(input_line.);
                     }
                 }
+
+                if (input_line == "go") {
+                    bot.Think(bot_board, timer);
+                }
+
+                input_line = Console.ReadLine();
             }
-            return Settings.ScreenSizeSmall;
         }
-
-        static void SaveWindowSize()
-        {
-            Directory.CreateDirectory(FileHelper.AppDataPath);
-            bool isBigWindow = Raylib.GetScreenWidth() > Settings.ScreenSizeSmall.X;
-            File.WriteAllText(FileHelper.PrefsFilePath, isBigWindow ? "1" : "0");
-        }
-
-      
-
     }
-
-
 }
