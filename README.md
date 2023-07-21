@@ -36,8 +36,8 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
     * System.Collections.Generic
 * As implied by the allowed namespaces, you may not read data from a file or access the internet, nor may you create any new threads or tasks to run code in parallel/in the background.
 * You may not use the unsafe keyword.
-* You may not store data inside the name of a variable/function/class etc (to be extracted with nameof(), GetType().ToString(), and so on).
-   * Very clever idea though, thank you to [#12](https://github.com/SebLague/Chess-Challenge/issues/12).
+* You may not store data inside the name of a variable/function/class etc (to be extracted with nameof(), GetType().ToString(), Environment.StackTracks and so on).
+   * Very clever ideas though, thank you to [#12](https://github.com/SebLague/Chess-Challenge/issues/12) and [#24](https://github.com/SebLague/Chess-Challenge/issues/24).
 * If your bot makes an illegal move or runs out of time, it will lose the game.
    * Games are played with 1 minute per side by default (this can be changed in the settings class). The final tournament time control is TBD, so your bot should not assume a particular time control, and instead respect the amount of time left on the timer (given in the Think function).
 * All of your code/data must be contained within the _MyBot.cs_ file.
