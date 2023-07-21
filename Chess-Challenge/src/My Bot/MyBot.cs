@@ -39,11 +39,18 @@ namespace ChessChallenge.Example
                         .Where(m => !checkmates.Contains(m) && !promotions.Contains(m) && CalculateMoveValue(board, m) > 0)
                         .OrderByDescending(m => CalculateMoveValue(board, m));
 
-            if(rankedMoves.Count() > 0) 
+            if (rankedMoves.Count() > 0)
             {
                 moveToPlay = rankedMoves.First();
             }
-
+            else
+            {
+                //move pawn up you ass
+                Move[] pawnMoves = allMoves.Where(m => m.MovePieceType == PieceType.Pawn && !MoveCreatesTarget(board, m)).ToArray();
+                if(pawnMoves.Length > 0)
+                    moveToPlay= pawnMoves[rng.Next(pawnMoves.Length)];
+            }
+            
             return  moveToPlay;
         }
 
