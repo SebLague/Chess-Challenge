@@ -47,5 +47,23 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
 ## FAQ
-Nothing yet
-  
+
+#### Build and run on Linux
+
+- Install .NET 6.0 package
+The official documentation to install [can be found here](https://learn.microsoft.com/en-us/dotnet/core/install/linux#packages) for your OS.
+
+Example for people who use apt (Debian/Ubuntu and derivatives):
+
+```bash
+sudo apt install dotnet-sdk-6.0
+```
+This should also install the proper runtime.
+
+At the root of the repo you can then run
+
+```bash
+dotnet build
+cd Chess-Challenge/bin/Debug/net6.0/
+dotnet Chess-Challenge.dll
+```
