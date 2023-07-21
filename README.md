@@ -6,7 +6,7 @@ I will then create a video exploring the implementations of the best and most un
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
 ## Submission Due Date
-October 1st 2023
+October 1st 2023.<br>
 You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 
 ## How to Participate
