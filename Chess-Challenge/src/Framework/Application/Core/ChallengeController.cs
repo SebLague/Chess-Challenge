@@ -50,12 +50,12 @@ namespace ChessChallenge.Application
         // Other
         readonly BoardUI boardUI;
         readonly MoveGenerator moveGenerator;
-        readonly int tokenCount;
+        static int tokenCount;
         readonly StringBuilder pgns;
 
         public ChallengeController()
         {
-            tokenCount = GetTokenCount();
+            UpdateTokenCount();
             Warmer.Warm();
 
             moveGenerator = new();
@@ -211,13 +211,13 @@ namespace ChessChallenge.Application
             };
         }
 
-        static int GetTokenCount()
+        public static void UpdateTokenCount()
         {
-            string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
-
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "../../../", "src", "My Bot", "MyBot.cs");
+            
             using StreamReader reader = new(path);
             string txt = reader.ReadToEnd();
-            return TokenCounter.CountTokens(txt);
+            tokenCount = TokenCounter.CountTokens(txt);
         }
 
         void OnMoveChosen(Move chosenMove)
