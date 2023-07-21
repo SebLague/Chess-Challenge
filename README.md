@@ -31,9 +31,10 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 * Only the following namespaces are allowed:
     * ChessChallenge.API
     * System
-    * System.Linq
     * System.Numerics
     * System.Collections.Generic
+    * System.Linq
+      * You may not use the AsParallel() function
 * As implied by the allowed namespaces, you may not read data from a file or access the internet, nor may you create any new threads or tasks to run code in parallel/in the background.
 * You may not use the unsafe keyword.
 * You may not store data inside the name of a variable/function/class etc (to be extracted with nameof(), GetType().ToString(), Environment.StackTracks and so on).
