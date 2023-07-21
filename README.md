@@ -25,7 +25,10 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
     * The bot can play a match against a simple example bot (MyBot vs EvilBot).<br>You could also replace the EvilBot code with your own code, to test two different versions of your bot against one another.
 * Once you're happy with your chess bot, head over to the [Submission Page](https://forms.gle/6jjj8jxNQ5Ln53ie6) to enter it into the competition.
   * You will be able to edit your entry up until the competition closes.
-
+* if you wish to run using dotnet cli, follow these steps:
+  * dotnet restore
+  * cd Chess-Challenge
+  * dotnet run
 ## Rules
 * You may participate alone, or in a group of any size.
 * Only the following namespaces are allowed:
