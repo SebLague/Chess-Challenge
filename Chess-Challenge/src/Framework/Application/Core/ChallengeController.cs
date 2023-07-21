@@ -217,7 +217,7 @@ namespace ChessChallenge.Application
             var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), location));
             if (!File.Exists(path))
             {
-                Console.WriteLine("Could not find MyBot.cs");
+                Log("Could not find MyBot.cs", true);
             }
             var txt = File.ReadAllText(path); 
             tokenCount = TokenCounter.CountTokens(txt);
