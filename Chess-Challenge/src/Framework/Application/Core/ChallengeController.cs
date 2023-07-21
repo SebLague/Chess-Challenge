@@ -33,6 +33,7 @@ namespace ChessChallenge.Application
         Move moveToPlay;
         float playMoveTime;
         public bool HumanWasWhiteLastGame { get; private set; }
+        public bool EnableMoveDelay = true;
 
         // Bot match state
         readonly string[] botMatchStartFens;
@@ -229,7 +230,7 @@ namespace ChessChallenge.Application
                     moveToPlay = chosenMove;
                     isWaitingToPlayMove = true;
                     const float minDelay = 0.1f;
-                    playMoveTime = lastMoveMadeTime + minDelay;
+                    playMoveTime = lastMoveMadeTime + (EnableMoveDelay ? minDelay : 0);
                 }
                 else
                 {
