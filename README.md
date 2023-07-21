@@ -47,5 +47,8 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
 ## FAQ
-Nothing yet
+
+####  Unable to resolve [package name]
+
+nuget.org is not included as a package source by default, you will have to add it. Run `dotnet nuget add source https://api.nuget.org/v3/index.json -n "nuget.org"` then run `dotnet restore`. See [#2](https://github.com/SebLague/Chess-Challenge/issues/2) for more details.
   
