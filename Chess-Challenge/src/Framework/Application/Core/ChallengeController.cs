@@ -211,12 +211,15 @@ namespace ChessChallenge.Application
             };
         }
 
-        public static void UpdateTokenCount()
+        public static void UpdateTokenCount(bool isHotReloadUpdate = false)
         {
-            string path = Path.Combine(Directory.GetCurrentDirectory(), "../../../", "src", "My Bot", "MyBot.cs");
-            
-            using StreamReader reader = new(path);
-            string txt = reader.ReadToEnd();
+            var location = isHotReloadUpdate ? "../../../src/My Bot/MyBot.cs" : "src/My Bot/MyBot.cs";
+            var path = Path.GetFullPath(Path.Combine(Directory.GetCurrentDirectory(), location));
+            if (!File.Exists(path))
+            {
+                Console.WriteLine("Could not find MyBot.cs");
+            }
+            var txt = File.ReadAllText(path); 
             tokenCount = TokenCounter.CountTokens(txt);
         }
 

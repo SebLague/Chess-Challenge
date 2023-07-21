@@ -9,6 +9,6 @@ public static class HotReloadmanager
 {
     public static void UpdateApplication(Type[]? updatedTypes)
     {
-        ChallengeController.UpdateTokenCount();
+        ChallengeController.UpdateTokenCount(true);
     }
 }
