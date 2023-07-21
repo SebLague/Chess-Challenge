@@ -10,7 +10,7 @@ October 1st 2023.<br>
 You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 
 ## How to Participate
-* Install an an IDE such as [Visual Studio](https://visualstudio.microsoft.com/downloads/).
+* Install an IDE such as [Visual Studio](https://visualstudio.microsoft.com/downloads/).
 * Install [.NET 6.0](https://dotnet.microsoft.com/en-us/download)
 * Download this repository and open the Chess-Challenge project in your IDE.
 * Try building and running the project.
