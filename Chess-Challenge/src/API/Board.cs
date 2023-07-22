@@ -195,9 +195,11 @@ namespace ChessChallenge.API
 		/// Gets the piece on the given square. If the square is empty, the piece will have a PieceType of None.
 		/// </summary>
 		public Piece GetPiece(Square square)
-		{
-			return pieces[square.Index];
-		}
+        {
+            int p = board.Square[square.Index];
+            bool white = PieceHelper.IsWhite(p);
+            return new Piece((PieceType)PieceHelper.PieceType(p), white, square);
+        }
 
 		/// <summary>
 		/// Gets a list of pieces of the given type and colour

@@ -3,6 +3,7 @@ using ChessChallenge.API;
 using ChessChallenge.Chess;
 using Move = ChessChallenge.API.Move;
 using Board = ChessChallenge.API.Board;
+using System.IO;
 
 namespace ChessChallenge.Application {
     static class Program {
@@ -28,8 +29,15 @@ namespace ChessChallenge.Application {
             Chess.Board fen_board = new Chess.Board();
             fen_board.LoadPosition(initial_pos);
             Board bot_board = new Board(fen_board);
-            Timer timer = new Timer(1000);
-            
+            Timer timer = new Timer(100000000);
+
+            // get token count of MyBot.cs
+            /*string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
+            Console.WriteLine(path);
+            using var stringReader = new StreamReader(path);
+            string text_code = stringReader.ReadToEnd();
+            Console.WriteLine(TokenCounter.CountTokens(text_code));*/
+
             String input_line = Console.ReadLine();
             while (input_line != "") {
                 if (input_line == "uci") {
