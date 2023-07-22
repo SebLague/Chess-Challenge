@@ -20,6 +20,7 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 * Try building and running the project.
   * If a window with a chess board appears — great!
   * If it doesn't work, please take a look at the [issues page](https://github.com/SebLague/Chess-Challenge/issues) to see if anyone is having a similar issue. If not, post about it there with any details such as error messages, operating system etc.
+    * See also the FAQ/troubleshooting section at the bottom of the page.
 * Open the MyBot.cs file _(located in src/MyBot)_ and write some code!
   * You might want to take a look at the [Documentation](https://seblague.github.io/chess-coding-challenge/documentation/) first, and the Rules too!
 * Build and run the program again to test your changes.
@@ -58,4 +59,5 @@ All names (variables, functions, etc.) are counted as a single token, regardless
 
 ## FAQ and Troubleshooting
 * [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
+* [How to run if using a different code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
   
