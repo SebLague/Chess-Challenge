@@ -19,6 +19,7 @@ namespace ChessChallenge.Application
             Human,
             MyBot,
             MyBot_v1,
+            MyBot_v2,
             EvilBot
         }
 
@@ -212,6 +213,7 @@ namespace ChessChallenge.Application
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
                 PlayerType.MyBot_v1 => new ChessPlayer(new MyBotV1(), type, GameDurationMilliseconds),
+                PlayerType.MyBot_v2 => new ChessPlayer(new MyBotV2(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
