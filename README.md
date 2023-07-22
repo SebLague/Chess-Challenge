@@ -6,15 +6,16 @@ I will then create a video exploring the implementations of the best and most un
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
 ## Change Log
-I unfortunately missed a serious bug in the board.GetPiece() function and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed). The latest version is V1.1
+I unfortunately missed a serious bug in the board.GetPiece() function and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed).
 * V1.1 Bug fix for board.GetPiece() function. Added Board.CreateBoardFromFEN() function.
+  * V1.11 (cosmetic changes only) Added coordinate names to board UI. Fixed human player input bug.
 
 ## Submission Due Date
 October 1st 2023.<br>
 You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 
 ## How to Participate
-* Install an an IDE such as [Visual Studio](https://visualstudio.microsoft.com/downloads/).
+* Install an IDE such as [Visual Studio](https://visualstudio.microsoft.com/downloads/).
 * Install [.NET 6.0](https://dotnet.microsoft.com/en-us/download)
 * Download this repository and open the Chess-Challenge project in your IDE.
 * Try building and running the project.
