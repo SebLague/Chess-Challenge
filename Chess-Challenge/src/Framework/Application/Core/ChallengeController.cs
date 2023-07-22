@@ -18,6 +18,7 @@ namespace ChessChallenge.Application
         {
             Human,
             MyBot,
+            MyBot_v1,
             EvilBot
         }
 
@@ -58,6 +59,7 @@ namespace ChessChallenge.Application
         {
             Log($"Launching Chess-Challenge version {Settings.Version}");
             tokenCount = GetTokenCount();
+            Log($"Bot brain capacity: {tokenCount} / {MaxTokenCount} tokens", false, ConsoleColor.Yellow);
             Warmer.Warm();
 
             moveGenerator = new();
@@ -209,6 +211,7 @@ namespace ChessChallenge.Application
             return type switch
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
+                PlayerType.MyBot_v1 => new ChessPlayer(new MyBotV1(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };

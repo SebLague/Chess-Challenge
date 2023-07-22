@@ -8,7 +8,7 @@ namespace ChessChallenge.Application
 
         public const int GameDurationMilliseconds = 60 * 1000;
         public const float MinMoveDelay = 0.01f;
-        public static readonly bool RunBotsOnSeparateThread = false;
+        public static readonly bool RunBotsOnSeparateThread = true;
 
         public const int MaxTokenCount = 1024;
 
