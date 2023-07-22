@@ -32,11 +32,12 @@ namespace ChessChallenge.Application {
             Timer timer = new Timer(100000000);
 
             // get token count of MyBot.cs
-            /*string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
+            string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
             Console.WriteLine(path);
             using var stringReader = new StreamReader(path);
             string text_code = stringReader.ReadToEnd();
-            Console.WriteLine(TokenCounter.CountTokens(text_code));*/
+            Console.WriteLine(TokenCounter.CountTokens(text_code));
+            
 
             String input_line = Console.ReadLine();
             while (input_line != "") {
@@ -67,9 +68,8 @@ namespace ChessChallenge.Application {
                         if (input_line.Contains("moves")) {
                             end_idx = input_line.IndexOf("moves");
                         }
-                        fen_board.LoadPosition(input_line.Substring(start_idx, end_idx - start_idx));
+                        fen_board.LoadPosition(input_line.Substring(start_idx, end_idx - start_idx + 1));
                         bot_board = new Board(fen_board);
-                        //Console.WriteLine(bot_board.GetFenString());
                     }
                     if (input_line.Contains("moves")) {
                         int idx = input_line.IndexOf("moves") + 5;
