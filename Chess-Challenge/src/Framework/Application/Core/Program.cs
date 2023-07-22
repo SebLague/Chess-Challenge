@@ -32,12 +32,12 @@ namespace ChessChallenge.Application {
             Timer timer = new Timer(100000000);
 
             // get token count of MyBot.cs
-            string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
+            /*string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
             Console.WriteLine(path);
             using var stringReader = new StreamReader(path);
             string text_code = stringReader.ReadToEnd();
             Console.WriteLine(TokenCounter.CountTokens(text_code));
-            
+            */
 
             String input_line = Console.ReadLine();
             while (input_line != "") {
