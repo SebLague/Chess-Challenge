@@ -19,8 +19,20 @@ public class MyBot : IChessBot
                 var pieceIndex = (int)piece;
                 var bitboard = board.GetPieceBitboard(piece, isWhite);
 
-                // Material evaluation
-                score += pieceValues[pieceIndex] * BitOperations.PopCount(bitboard);
+                while (bitboard != 0)
+                {
+                    var sq = BitOperations.TrailingZeroCount(bitboard);
+                    bitboard &= bitboard - 1;
+
+                    // Material
+                    score += pieceValues[pieceIndex];
+
+                    // Centrality
+                    var rank = sq >> 3;
+                    var file = sq & 7;
+                    var centrality = -Math.Abs(7 - rank - file) - Math.Abs(rank - file);
+                    score += centrality * (6 - pieceIndex);
+                }
             }
 
             score = -score;
