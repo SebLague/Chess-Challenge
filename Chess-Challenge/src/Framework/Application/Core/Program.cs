@@ -27,7 +27,7 @@ namespace ChessChallenge.Application
             Raylib.InitWindow(screenWidth, screenHeight, "Chess Coding Challenge");
             Raylib.SetTargetFPS(60);
 
-            UpdateCamera();
+            UpdateCamera(screenWidth, screenHeight);
 
             ChallengeController controller = new();
 
@@ -56,17 +56,15 @@ namespace ChessChallenge.Application
         public static void SetWindowSize(Vector2 size)
         {
             Raylib.SetWindowSize((int)size.X, (int)size.Y);
-            UpdateCamera();
+            UpdateCamera((int)size.X, (int)size.Y);
             SaveWindowSize();
         }
 
         public static Vector2 ScreenToWorldPos(Vector2 screenPos) => Raylib.GetScreenToWorld2D(screenPos, cam);
 
-        static void UpdateCamera()
+        static void UpdateCamera(int screenWidth, int screenHeight)
         {
             cam = new Camera2D();
-            int screenWidth = Raylib.GetScreenWidth();
-            int screenHeight = Raylib.GetScreenHeight();
             cam.target = new Vector2(0, 15);
             cam.offset = new Vector2(screenWidth / 2f, screenHeight / 2f);
             cam.zoom = screenWidth / 1280f * 0.7f;

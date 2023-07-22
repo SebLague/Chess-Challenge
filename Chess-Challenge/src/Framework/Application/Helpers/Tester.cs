@@ -113,6 +113,17 @@ namespace ChessChallenge.Application
             Assert(boardAPI.GetKingSquare(false) == new Square(6, 7), "King square wrong");
             Assert(boardAPI.GetPiece(new Square(4, 5)).IsPawn, "Wrong piece");
             Assert(!boardAPI.GetPiece(new Square(4, 5)).IsWhite, "Wrong colour");
+
+            API.Move testMove = new("g5e6", boardAPI);
+            boardAPI.MakeMove(testMove);
+            Assert(boardAPI.GetPiece(new Square("g5")).IsNull, "Wrong piece");
+            Assert(boardAPI.GetPiece(new Square("e6")).IsKnight, "Wrong piece");
+            Assert(boardAPI.GetPiece(new Square("e6")).IsWhite, "Wrong piece col");
+            boardAPI.UndoMove(testMove);
+            Assert(boardAPI.GetPiece(new Square("e6")).IsPawn, "Wrong piece");
+            Assert(!boardAPI.GetPiece(new Square("e6")).IsWhite, "Wrong piece col");
+            Assert(boardAPI.GetPiece(new Square("g5")).IsKnight, "Wrong piece");
+
         }
 
         static void DrawTest()
@@ -151,6 +162,43 @@ namespace ChessChallenge.Application
             Assert(!boardAPI.IsDraw(), "Draw wrong");
             boardAPI.MakeMove(new API.Move("c5d7", boardAPI));
             Assert(boardAPI.IsDraw(), "Draw wrong");
+
+            string[] notInsufficient =
+            {
+                "3k4/4b3/8/8/8/3B4/1K6/8 w - - 0 1",
+                "3k4/3b4/8/8/8/4B3/1K6/8 w - - 0 1",
+                "3k4/3b4/8/8/8/2N5/1K6/8 w - - 0 1",
+                "3k4/3n4/8/8/8/2N5/1K6/8 w - - 0 1",
+                "8/4k3/8/8/8/2NN4/1K6/8 w - - 0 1",
+                "8/4k3/8/8/8/8/PK6/8 w - - 0 1",
+                "8/4k3/8/8/8/8/1K1R4/8 w - - 0 1",
+                "8/4k3/8/8/8/8/1KQ5/8 w - - 0 1"
+            };
+
+            string[] insufficient =
+            {
+                "3k4/8/8/8/8/8/1K6/8 w - - 0 1",
+                "3k4/8/8/8/8/2B5/1K6/8 w - - 0 1",
+                "3k4/8/8/8/8/8/1KN5/8 w - - 0 1",
+                "3k4/2b5/8/8/8/2B5/1K6/8 w - - 0 1",
+                "3k4/3b4/8/8/8/3B4/1K6/8 w - - 0 1"
+            };
+
+            foreach (string drawPos in insufficient)
+            {
+                boardAPI = API.Board.CreateBoardFromFEN(drawPos);
+                Assert(boardAPI.IsDraw(), "Draw wrong, position is insufficient mat");
+                boardAPI = API.Board.CreateBoardFromFEN(FenUtility.FlipFen(drawPos));
+                Assert(boardAPI.IsDraw(), "Draw wrong, position is insufficient mat");
+            }
+
+            foreach (string winnablePos in notInsufficient)
+            {
+                boardAPI = API.Board.CreateBoardFromFEN(winnablePos);
+                Assert(!boardAPI.IsDraw(), "Draw wrong, position is winnable");
+                boardAPI = API.Board.CreateBoardFromFEN(FenUtility.FlipFen(winnablePos));
+                Assert(!boardAPI.IsDraw(), "Draw wrong, position is winnable");
+            }
         }
 
         static void MiscTest()
