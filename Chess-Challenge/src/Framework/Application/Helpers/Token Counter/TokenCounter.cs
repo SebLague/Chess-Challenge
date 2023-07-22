@@ -11,6 +11,8 @@ namespace ChessChallenge.Application
         {
             SyntaxKind.PrivateKeyword,
             SyntaxKind.PublicKeyword,
+            SyntaxKind.ProtectedKeyword,
+            SyntaxKind.InternalKeyword,
             SyntaxKind.SemicolonToken,
             SyntaxKind.CommaToken,
             SyntaxKind.ReadOnlyKeyword,
