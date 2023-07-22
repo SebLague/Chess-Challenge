@@ -71,4 +71,3 @@ All names (variables, functions, etc.) are counted as a single token, regardless
   * You can look at board.IsWhiteToMove when the Think function is called
 * GetPiece() function is giving a null piece after making a move
   * Please make sure you are using the latest version of the project, there was a bug with this function in the original version
-  

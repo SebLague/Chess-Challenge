@@ -248,7 +248,7 @@ namespace ChessChallenge.Chess
 						return move;
 					}
 				}
-				// Is pawn move if starts with any file indicator (e.g. 'e'4. Note that uppercase B is used for bishops) 
+				// Is pawn move if starts with any file indicator (e.g. 'e'4. Note that uppercase B is used for bishops)
 				else if (BoardHelper.fileNames.Contains(algebraicMove[0].ToString()))
 				{
 					if (movePieceType != PieceHelper.Pawn)

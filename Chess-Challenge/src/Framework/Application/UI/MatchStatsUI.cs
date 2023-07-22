@@ -23,7 +23,7 @@ namespace ChessChallenge.Application
                 DrawStats(controller.BotStatsA);
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
-           
+
 
                 void DrawStats(ChallengeController.BotMatchStats stats)
                 {
@@ -32,7 +32,7 @@ namespace ChessChallenge.Application
                     DrawNextText($"Num Timeouts: {stats.NumTimeouts}", regularFontSize, col);
                     DrawNextText($"Num Illegal Moves: {stats.NumIllegalMoves}", regularFontSize, col);
                 }
-           
+
                 void DrawNextText(string text, int fontSize, Color col)
                 {
                     UIHelper.DrawText(text, startPos, fontSize, 1, col);

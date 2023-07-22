@@ -28,4 +28,3 @@ namespace ChessChallenge.Application
         public Color DarkCoordCol = new Color(140, 100, 80, 255);
     }
 }
-

@@ -15,7 +15,7 @@ namespace ChessChallenge.Application
             SyntaxKind.CommaToken,
             SyntaxKind.ReadOnlyKeyword,
             // only count open brace since I want to count the pair as a single token
-            SyntaxKind.CloseBraceToken, 
+            SyntaxKind.CloseBraceToken,
             SyntaxKind.CloseBracketToken,
             SyntaxKind.CloseParenToken
         });

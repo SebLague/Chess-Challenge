@@ -28,13 +28,13 @@
         public const int h8 = 63;
 
 
-        // Rank (0 to 7) of square 
+        // Rank (0 to 7) of square
         public static int RankIndex(int squareIndex)
         {
             return squareIndex >> 3;
         }
 
-        // File (0 to 7) of square 
+        // File (0 to 7) of square
         public static int FileIndex(int squareIndex)
         {
             return squareIndex & 0b000111;

@@ -208,7 +208,7 @@ namespace ChessChallenge.API
 		{
 			return validPieceLists;
 		}
-		
+
 		/// <summary>
 		/// Is the given square attacked by the opponent?
 		/// (opponent being whichever player doesn't currently have the right to move)
