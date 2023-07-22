@@ -162,14 +162,7 @@ namespace ChessChallenge.Application
                 _ => Color.PINK
             };
 
-            if (squareColOverrides.ContainsKey(square))
-            {
-                squareColOverrides[square] = col;
-            }
-            else
-            {
-                squareColOverrides.Add(square, col);
-            }
+            squareColOverrides[square] = col;
         }
 
         public void HighlightLegalMoves(Board board, int square)
