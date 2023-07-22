@@ -14,11 +14,6 @@ namespace ChessChallenge.API
 		readonly PieceList[] allPieceLists;
 		readonly PieceList[] validPieceLists;
 
-		Move[] cachedLegalMoves;
-		bool hasCachedMoves;
-		Move[] cachedLegalCaptureMoves;
-		bool hasCachedCaptureMoves;
-
 		/// <summary>
 		/// Create a new board. Note: this should not be used in the challenge,
 		/// use the board provided in the Think method instead.
@@ -27,8 +22,6 @@ namespace ChessChallenge.API
 		{
 			this.board = board;
 			moveGen = new APIMoveGen();
-			cachedLegalMoves = Array.Empty<Move>();
-			cachedLegalCaptureMoves = Array.Empty<Move>();
 
 			// Init piece lists
 			List<PieceList> validPieceLists = new();
@@ -55,9 +48,7 @@ namespace ChessChallenge.API
 		/// </summary>
 		public void MakeMove(Move move)
 		{
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
-			if (!move.IsNull)
+            if (!move.IsNull)
 			{
 				repetitionHistory.Add(board.ZobristKey);
 				board.MakeMove(new Chess.Move(move.RawValue), inSearch: true);
@@ -69,9 +60,7 @@ namespace ChessChallenge.API
 		/// </summary>
 		public void UndoMove(Move move)
 		{
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
-			if (!move.IsNull)
+            if (!move.IsNull)
 			{
 				board.UndoMove(new Chess.Move(move.RawValue), inSearch: true);
 				repetitionHistory.Remove(board.ZobristKey);
@@ -89,8 +78,6 @@ namespace ChessChallenge.API
 			{
 				return false;
 			}
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
 			board.MakeNullMove();
 			return true;
 		}
@@ -100,53 +87,33 @@ namespace ChessChallenge.API
 		/// </summary>
 		public void UndoSkipTurn()
 		{
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
-			board.UnmakeNullMove();
+            board.UnmakeNullMove();
 		}
 
 		/// <summary>
 		/// Gets an array of the legal moves in the current position.
 		/// Can choose to get only capture moves with the optional 'capturesOnly' parameter.
 		/// </summary>
-		public Move[] GetLegalMoves(bool capturesOnly = false)
+		public int GetLegalMoves(ref Span<Move> moves, bool capturesOnly = false)
 		{
-			if (capturesOnly)
-			{
-				return GetLegalCaptureMoves();
-			}
-
-			if (!hasCachedMoves)
-			{
-				cachedLegalMoves = moveGen.GenerateMoves(board, includeQuietMoves: true);
-				hasCachedMoves = true;
-			}
-
-			return cachedLegalMoves;
+			return moveGen.GenerateMoves(board, ref moves, includeQuietMoves: !capturesOnly);
 		}
 
-
-		Move[] GetLegalCaptureMoves()
-		{
-			if (!hasCachedCaptureMoves)
-			{
-				cachedLegalCaptureMoves = moveGen.GenerateMoves(board, includeQuietMoves: false);
-				hasCachedCaptureMoves = true;
-			}
-			return cachedLegalCaptureMoves;
-		}
-
-		/// <summary>
+        /// <summary>
 		/// Test if the player to move is in check in the current position.
 		/// </summary>
 		public bool IsInCheck() => board.IsInCheck();
 
-		/// <summary>
-		/// Test if the current position is checkmate
-		/// </summary>
-		public bool IsInCheckmate() => IsInCheck() && GetLegalMoves().Length == 0;
+        /// <summary>
+        /// Test if the current position is checkmate
+        /// </summary>
+        public bool IsInCheckmate()
+        {
+            Span<Move> moves = stackalloc Move[APIMoveGen.MaxMoves];
+            return IsInCheck() && GetLegalMoves(ref moves) == 0;
+        }
 
-		/// <summary>
+        /// <summary>
 		/// Test if the current position is a draw due stalemate,
 		/// 3-fold repetition, insufficient material, or 50-move rule.
 		/// </summary>
@@ -154,7 +121,11 @@ namespace ChessChallenge.API
 		{
 			return IsFiftyMoveDraw() || Arbiter.InsufficentMaterial(board) || IsInStalemate() || IsRepetition();
 
-			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
+            bool IsInStalemate()
+            {
+                Span<Move> moves = stackalloc Move[APIMoveGen.MaxMoves];
+                return !IsInCheck() && GetLegalMoves(ref moves) == 0;
+            }
 			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
 			bool IsRepetition() => repetitionHistory.Contains(board.ZobristKey);
 		}
@@ -214,12 +185,10 @@ namespace ChessChallenge.API
 		/// (opponent being whichever player doesn't currently have the right to move)
 		/// </summary>
 		public bool SquareIsAttackedByOpponent(Square square)
-		{
-			if (!hasCachedMoves)
-			{
-				GetLegalMoves();
-			}
-			return BitboardHelper.SquareIsSet(moveGen.opponentAttackMap, square);
+        {
+            Span<Move> moves = stackalloc Move[APIMoveGen.MaxMoves];
+            GetLegalMoves(ref moves);
+            return BitboardHelper.SquareIsSet(moveGen.opponentAttackMap, square);
 		}
 
 

@@ -1,6 +1,7 @@
 ﻿using ChessChallenge.API;
 using ChessChallenge.Chess;
 using System;
+using ChessChallenge.Application.APIHelpers;
 
 namespace ChessChallenge.Application
 {
@@ -162,11 +163,12 @@ namespace ChessChallenge.Application
             Assert(boardAPI.IsWhiteToMove, "Colour to move wrong");
 
             //var moves = boardAPI.GetLegalMoves();
-            var captures = boardAPI.GetLegalMoves(true);
+            Span<API.Move> captures = stackalloc API.Move[APIMoveGen.MaxMoves];
+            int length = boardAPI.GetLegalMoves(ref captures, true);
             Assert(captures.Length == 4, "Captures wrong");
             int numTested = 0;
-            foreach (var c in captures)
-            {
+            for (int i = 0; i < length; i++) {
+                var c = captures[i];
                 if (c.TargetSquare.Index == 57)
                 {
                     Assert(c.StartSquare == new Square(0, 6), "Start square wrong");
@@ -229,14 +231,15 @@ namespace ChessChallenge.Application
 
         static ulong Search(int depth)
         {
-            var moves = boardAPI.GetLegalMoves();
+            Span<API.Move> moves = stackalloc API.Move[APIMoveGen.MaxMoves];
+            int length = boardAPI.GetLegalMoves(ref moves);
 
             if (depth == 1)
             {
-                return (ulong)moves.Length;
+                return (ulong)length;
             }
             ulong numLocalNodes = 0;
-            for (int i = 0; i < moves.Length; i++)
+            for (int i = 0; i < length; i++)
             {
 
                 boardAPI.MakeMove(moves[i]);

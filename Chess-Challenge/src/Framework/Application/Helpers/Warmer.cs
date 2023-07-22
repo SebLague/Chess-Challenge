@@ -1,4 +1,6 @@
-﻿using ChessChallenge.API;
+﻿using System;
+using ChessChallenge.API;
+using ChessChallenge.Application.APIHelpers;
 
 namespace ChessChallenge.Application
 {
@@ -10,7 +12,8 @@ namespace ChessChallenge.Application
             Chess.Board b = new();
             b.LoadStartPosition();
             Board board = new Board(b);
-            Move[] moves = board.GetLegalMoves();
+            Span<Move> moves = stackalloc Move[APIMoveGen.MaxMoves];
+            board.GetLegalMoves(ref moves);
 
             board.MakeMove(moves[0]);
             board.UndoMove(moves[0]);

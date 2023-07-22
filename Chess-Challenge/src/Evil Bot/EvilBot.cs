@@ -12,15 +12,16 @@ namespace ChessChallenge.Example
 
         public Move Think(Board board, Timer timer)
         {
-            Move[] allMoves = board.GetLegalMoves();
+            Span<Move> moves = stackalloc Move[256];
+            int length = board.GetLegalMoves(ref moves);
 
             // Pick a random move to play if nothing better is found
             Random rng = new();
-            Move moveToPlay = allMoves[rng.Next(allMoves.Length)];
+            Move moveToPlay = moves[rng.Next(length)];
             int highestValueCapture = 0;
 
-            foreach (Move move in allMoves)
-            {
+            for (int i = 0; i < length; i++) {
+                Move move = moves[i];
                 // Always play checkmate in one
                 if (MoveIsCheckmate(board, move))
                 {
