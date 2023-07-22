@@ -1,3 +1,10 @@
+# Fast forward 1000 games button implementation
+The fast forward works by repeating the ChallengeController's Update() function until the game limit is reached without drawing the board, and skipping all the delays.
+Make sure to build the project in release mode for a faster skip.
+
+### IT ONLY WORKS WHEN RunBotsOnSeparateThread IS FALSE IN Settings.cs
+When RunBotsOnSeparateThread is true, it only skips the delays.
+
 # Chess Coding Challenge (C#)
 Welcome to the [chess coding challenge](https://youtu.be/iScy18pVR58)! This is a friendly competition in which your goal is to create a small chess bot (in C#) using the framework provided in this repository.
 Once submissions close, these bots will battle it out to discover which bot is best!
