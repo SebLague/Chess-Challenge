@@ -49,6 +49,7 @@ Elo difference: 44.9 +/- 6.8, LOS: 100.0 %, DrawRatio: 79.0 %
 ```
 
 ### 1.3
+Poor man's repetition detection
 
 448 tokens
 
@@ -58,4 +59,23 @@ Score of ChessChallenge vs ChessChallengeDev: 272 - 143 - 585  [0.565] 1000
 ...      ChessChallenge playing Black: 146 - 68 - 285  [0.578] 499
 ...      White vs Black: 194 - 221 - 585  [0.486] 1000
 Elo difference: 45.1 +/- 13.8, LOS: 100.0 %, DrawRatio: 58.5 %
+
+Score of ChessChallenge vs ChessChallengeEvil: 1902 - 0 - 98  [0.976] 2000
+...      ChessChallenge playing White: 932 - 0 - 68  [0.966] 1000
+...      ChessChallenge playing Black: 970 - 0 - 30  [0.985] 1000
+...      White vs Black: 932 - 970 - 98  [0.490] 2000
+Elo difference: 640.0 +/- 34.8, LOS: 100.0 %, DrawRatio: 4.9 %
+```
+
+### 1.4
+Alpha-beta pruning
+
+506 tokens
+
+```
+Score of ChessChallenge vs ChessChallengeDev: 730 - 39 - 231  [0.846] 1000
+...      ChessChallenge playing White: 353 - 14 - 133  [0.839] 500
+...      ChessChallenge playing Black: 377 - 25 - 98  [0.852] 500
+...      White vs Black: 378 - 391 - 231  [0.493] 1000
+Elo difference: 295.3 +/- 22.3, LOS: 100.0 %, DrawRatio: 23.1 %
 ```

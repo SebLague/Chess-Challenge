@@ -2,12 +2,18 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
+using System.Reflection.Metadata;
 using System.Runtime.Intrinsics.X86;
+using System.Threading;
 using ChessChallenge.API;
+using Timer = ChessChallenge.API.Timer;
 
 public class MyBot : IChessBot
 {
     private HashSet<ulong> _repetitions;
+
+    private const int Inf = 2000000;
+    private const int Mate = 1000000;
 
     public MyBot()
     {
@@ -54,7 +60,7 @@ public class MyBot : IChessBot
         return score;
     }
 
-    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, HashSet<ulong> repetitions, out Move bestMove)
+    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, HashSet<ulong> repetitions, out Move bestMove)
     {
         bestMove = Move.NullMove;
 
@@ -70,31 +76,39 @@ public class MyBot : IChessBot
         }
 
         var moves = board.GetLegalMoves();
-        var bestScore = int.MinValue;
+        var bestScore = -Inf;
         var movesEvaluated = 0;
 
         // Loop over each legal move
         foreach (var move in moves)
         {
             // If we are out of time, stop searching
-            if (timer.MillisecondsElapsedThisTurn * 30 > totalTime)
+            if (depth > 2 && timer.MillisecondsElapsedThisTurn * 30 > totalTime)
             {
                 return bestScore;
             }
 
             board.MakeMove(move);
-            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, repetitions, out _);
+            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, repetitions, out _);
             board.UndoMove(move);
+
+            // Count the number of moves we have evaluated for detecting mates and stalemates
+            movesEvaluated++;
 
             // If the move is better than our current best, update our best move
             if (score > bestScore)
             {
                 bestScore = score;
                 bestMove = move;
+                if (score > alpha)
+                {
+                    alpha = score;
+                    if (score >= beta)
+                    {
+                        break;
+                    }
+                }
             }
-
-            // Count the number of moves we have evaluated for detecting mates and stalemates
-            movesEvaluated++;
         }
 
         if (movesEvaluated == 0)
@@ -102,7 +116,7 @@ public class MyBot : IChessBot
             if (board.IsInCheck())
             {
                 // Checkmate
-                return -1000000;
+                return -Mate;
             }
             else
             {
@@ -125,7 +139,7 @@ public class MyBot : IChessBot
         // Iterative deepening
         for (var depth = 1; depth < 128; depth++)
         {
-            var score = Search(board, timer, totalTime, 0, depth, repetitionsCopy, out var move);
+            var score = Search(board, timer, totalTime, 0, depth, -Inf, Inf, repetitionsCopy, out var move);
 
             // If we are out of time, we cannot trust the move that was found during this iteration
             if (timer.MillisecondsElapsedThisTurn * 30 > totalTime)
