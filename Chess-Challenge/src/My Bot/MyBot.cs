@@ -35,8 +35,15 @@ namespace ChessChallenge.Example
                 return promotions[0];
             }
 
+            //Prioritize Checks
+            Move[] checks = allMoves.Where(m => MoveIsCheck(board, m) && !MoveCreatesTarget(board, m)).ToArray();
+            if (checks.Length > 0)
+            {
+                return checks[rng.Next(checks.Length)];
+            }
+
             IOrderedEnumerable<Move> rankedMoves = allMoves
-                        .Where(m => !checkmates.Contains(m) && !promotions.Contains(m) && CalculateMoveValue(board, m) > 0)
+                        .Where(m => !checkmates.Contains(m) && !promotions.Contains(m) && !checks.Contains(m) && CalculateMoveValue(board, m) > 0)
                         .OrderByDescending(m => CalculateMoveValue(board, m));
 
             if (rankedMoves.Count() > 0)
@@ -61,6 +68,14 @@ namespace ChessChallenge.Example
             bool isMate = board.IsInCheckmate();
             board.UndoMove(move);
             return isMate;
+        }
+
+        bool MoveIsCheck(Board board,Move move)
+        {
+            board.MakeMove(move);
+            bool isCheck = board.IsInCheck();
+            board.UndoMove(move);
+            return isCheck;
         }
 
         bool MoveCreatesTarget(Board board, Move move)

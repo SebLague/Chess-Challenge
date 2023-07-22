@@ -1,5 +1,7 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ChessChallenge.Example
 {
@@ -12,31 +14,33 @@ namespace ChessChallenge.Example
 
         public Move Think(Board board, Timer timer)
         {
-            Move[] allMoves = board.GetLegalMoves();
+            List<Move> allMoves = board.GetLegalMoves().ToList();
 
             // Pick a random move to play if nothing better is found
             Random rng = new();
-            Move moveToPlay = allMoves[rng.Next(allMoves.Length)];
-            int highestValueCapture = 0;
+            Move moveToPlay = allMoves[rng.Next(allMoves.Count)];
 
-            foreach (Move move in allMoves)
+            //Priortize Checkmates
+            Move[] checkmates = allMoves.Where(m => MoveIsCheckmate(board, m)).ToArray();
+            if (checkmates.Length > 0)
             {
-                // Always play checkmate in one
-                if (MoveIsCheckmate(board, move))
-                {
-                    moveToPlay = move;
-                    break;
-                }
+                return checkmates[0];
+            }
 
-                // Find highest value capture
-                Piece capturedPiece = board.GetPiece(move.TargetSquare);
-                int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
+            //Upgrade pieces to best piece only
+            Move[] promotions = allMoves.Where(m => m.IsPromotion).OrderByDescending(m => pieceValues[(int)m.PromotionPieceType]).ToArray();
+            if (promotions.Length > 0)
+            {
+                return promotions[0];
+            }
 
-                if (capturedPieceValue > highestValueCapture)
-                {
-                    moveToPlay = move;
-                    highestValueCapture = capturedPieceValue;
-                }
+            IOrderedEnumerable<Move> rankedMoves = allMoves
+                        .Where(m => !checkmates.Contains(m) && !promotions.Contains(m) && CalculateMoveValue(board, m) > 0)
+                        .OrderByDescending(m => CalculateMoveValue(board, m));
+
+            if (rankedMoves.Count() > 0)
+            {
+                moveToPlay = rankedMoves.First();
             }
 
             return moveToPlay;
@@ -49,6 +53,27 @@ namespace ChessChallenge.Example
             bool isMate = board.IsInCheckmate();
             board.UndoMove(move);
             return isMate;
+        }
+
+        bool MoveCreatesTarget(Board board, Move move)
+        {
+            board.MakeMove(move);
+            Move[] enemyMoves = board.GetLegalMoves();
+            bool isTarget = enemyMoves.Any(m => m.TargetSquare == move.TargetSquare);
+            board.UndoMove(move);
+
+            return isTarget;
+        }
+
+
+        int CalculateMoveValue(Board board, Move move)
+        {
+            Piece capturedPiece = board.GetPiece(move.TargetSquare);
+            int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
+
+            int cost = !MoveCreatesTarget(board, move) ? 0 : pieceValues[(int)move.MovePieceType];
+
+            return capturedPieceValue - cost;
         }
     }
 }
