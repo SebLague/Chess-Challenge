@@ -1,7 +1,9 @@
-﻿using Raylib_cs;
+﻿using System;
+using Raylib_cs;
 using System.IO;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using static ChessChallenge.Application.ConsoleHelper;
 
 namespace ChessChallenge.Application
 {
@@ -10,7 +12,7 @@ namespace ChessChallenge.Application
         const bool hideRaylibLogs = true;
         static Camera2D cam;
 
-        public static void Main()
+        public static void Main(string[] args)
         {
             Vector2 loadedWindowSize = GetSavedWindowSize();
             int screenWidth = (int)loadedWindowSize.X;
@@ -30,6 +32,12 @@ namespace ChessChallenge.Application
             UpdateCamera(screenWidth, screenHeight);
 
             ChallengeController controller = new();
+            if (args.Length > 0)
+            {
+                Log($"Trying to run against {args[0]}");
+                ChallengeController.PlayerType botTypeB = (ChallengeController.PlayerType)Enum.Parse(typeof(ChallengeController.PlayerType), args[0]);
+                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, botTypeB);
+            }
 
             while (!Raylib.WindowShouldClose())
             {
