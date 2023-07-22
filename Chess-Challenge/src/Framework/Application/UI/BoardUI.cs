@@ -318,6 +318,23 @@ namespace ChessChallenge.Application
             {
                 DrawPiece(piece, new Vector2((int)pos.X, (int)pos.Y), alpha);
             }
+
+            int textSize = 25;
+            float xpadding = 5f, ypadding = 2f;
+            Color otherColor = coord.IsLightSquare() ? theme.DarkCoordCol : theme.LightCoordCol;
+            if (rank == 0) {
+                string fileLetter = "abcdefgh"[file].ToString();
+                UIHelper.DrawText(fileLetter,
+                    pos + new Vector2(xpadding, squareSize - ypadding),
+                    textSize, 123, otherColor,
+                    UIHelper.AlignH.Left, UIHelper.AlignV.Bottom);
+            }
+            if (file == 7) {
+                UIHelper.DrawText((rank + 1).ToString(),
+                    pos + new Vector2(squareSize - xpadding, ypadding),
+                    textSize, 123, otherColor,
+                    UIHelper.AlignH.Right, UIHelper.AlignV.Top);
+            }
         }
 
         Vector2 GetSquarePos(int file, int rank, bool whitePerspective)
