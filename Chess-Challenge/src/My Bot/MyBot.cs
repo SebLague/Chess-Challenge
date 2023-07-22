@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Numerics;
 using System.Runtime.Intrinsics.X86;
@@ -6,6 +7,13 @@ using ChessChallenge.API;
 
 public class MyBot : IChessBot
 {
+    private HashSet<ulong> _repetitions;
+
+    public MyBot()
+    {
+        _repetitions = new HashSet<ulong>();
+    }
+
     int[] pieceValues = { 0, 100, 300, 300, 500, 900, 0 };
 
     private int Evaluate(Board board)
@@ -46,9 +54,15 @@ public class MyBot : IChessBot
         return score;
     }
 
-    public int Search(Board board, Timer timer, int totalTime, int depth, out Move bestMove)
+    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, HashSet<ulong> repetitions, out Move bestMove)
     {
         bestMove = Move.NullMove;
+
+        if (ply > 0 && repetitions.Contains(board.ZobristKey))
+        {
+            return 0;
+        }
+
         if (depth == 0)
         {
             var score = Evaluate(board);
@@ -69,7 +83,7 @@ public class MyBot : IChessBot
             }
 
             board.MakeMove(move);
-            var score = -Search(board, timer, totalTime, depth - 1, out _);
+            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, repetitions, out _);
             board.UndoMove(move);
 
             // If the move is better than our current best, update our best move
@@ -103,11 +117,15 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         var totalTime = timer.MillisecondsRemaining;
+
+        _repetitions.Add(board.ZobristKey);
+        var repetitionsCopy = _repetitions.ToHashSet();
+
         var bestMove = Move.NullMove;
         // Iterative deepening
         for (var depth = 1; depth < 128; depth++)
         {
-            var score = Search(board, timer, totalTime, depth, out var move);
+            var score = Search(board, timer, totalTime, 0, depth, repetitionsCopy, out var move);
 
             // If we are out of time, we cannot trust the move that was found during this iteration
             if (timer.MillisecondsElapsedThisTurn * 30 > totalTime)

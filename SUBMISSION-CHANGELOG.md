@@ -47,3 +47,15 @@ Score of ChessChallenge vs ChessChallengeDev: 338 - 81 - 1581  [0.564] 2000
 ...      White vs Black: 237 - 182 - 1581  [0.514] 2000
 Elo difference: 44.9 +/- 6.8, LOS: 100.0 %, DrawRatio: 79.0 %
 ```
+
+### 1.3
+
+448 tokens
+
+```
+Score of ChessChallenge vs ChessChallengeDev: 272 - 143 - 585  [0.565] 1000
+...      ChessChallenge playing White: 126 - 75 - 300  [0.551] 501
+...      ChessChallenge playing Black: 146 - 68 - 285  [0.578] 499
+...      White vs Black: 194 - 221 - 585  [0.486] 1000
+Elo difference: 45.1 +/- 13.8, LOS: 100.0 %, DrawRatio: 58.5 %
+```
