@@ -1,5 +1,6 @@
 # Fast forward 1000 games button implementation
 The fast forward works by repeating the ChallengeController's Update() function until the game limit is reached without drawing the board, and skipping all the delays.
+Make sure to build the project in release mode for a faster skip.
 
 ### IT ONLY WORKS WHEN RunBotsOnSeparateThread IS FALSE IN Settings.cs
 When RunBotsOnSeparateThread is true, it only skips the delays.
