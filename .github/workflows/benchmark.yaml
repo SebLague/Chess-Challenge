@@ -1,0 +1,60 @@
+name: Benchmark MyBot
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  benchmark_evil_bot:
+    runs-on: ubuntu-latest
+    outputs:
+      wins: ${{ steps.evil_bot.outputs.wins }}
+      draws: ${{ steps.evil_bot.outputs.draws }}
+      losses: ${{ steps.evil_bot.outputs.losses }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Run EvilBot
+      id: evil_bot
+      run: |
+        cd Chess-Challenge
+        dotnet run EvilBot | tee output.log
+        while ! grep -q "Match finished:" output.log; do sleep 1; done
+        WINS=$(grep -oP 'Match finished: \+\K\d+' output.log)
+        DRAWS=$(grep -oP 'Match finished: \+\d+ =\K\d+' output.log)
+        LOSSES=$(grep -oP 'Match finished: \+\d+ =\d+ -\K\d+' output.log)
+        echo "wins=$WINS" >> $GITHUB_OUTPUT
+        echo "draws=$DRAWS" >> $GITHUB_OUTPUT
+        echo "losses=$LOSSES" >> $GITHUB_OUTPUT
+
+  publish_stats:
+    needs: benchmark_evil_bot
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Print stats
+      run: |
+        echo "EvilBot: +${{ needs.benchmark_evil_bot.outputs.wins }} =${{ needs.benchmark_evil_bot.outputs.draws }} -${{ needs.benchmark_evil_bot.outputs.losses }}"
+
+    - name: Comment PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v5
+      with:
+        script: |
+          const issueComment = `EvilBot: +${{ needs.benchmark_evil_bot.outputs.wins }} =${{ needs.benchmark_evil_bot.outputs.draws }} -${{ needs.benchmark_evil_bot.outputs.losses }}`
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: issueComment
+          })
