@@ -202,7 +202,7 @@ namespace ChessChallenge.API
 		/// <summary>
 		/// Gets an array of all the piece lists. In order these are:
 		/// Pawns(white), Knights (white), Bishops (white), Rooks (white), Queens (white), King (white),
-		/// Pawns (white), Knights (black), Bishops (black), Rooks (black), Queens (black), King (black)
+		/// Pawns (black), Knights (black), Bishops (black), Rooks (black), Queens (black), King (black)
 		/// </summary>
 		public PieceList[] GetAllPieceLists()
 		{
