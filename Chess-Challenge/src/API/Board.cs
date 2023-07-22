@@ -13,7 +13,6 @@ namespace ChessChallenge.API
 		readonly HashSet<ulong> repetitionHistory;
 		readonly PieceList[] allPieceLists;
 		readonly PieceList[] validPieceLists;
-		readonly Piece[] pieces;
 
 		Move[] cachedLegalMoves;
 		bool hasCachedMoves;
@@ -47,14 +46,6 @@ namespace ChessChallenge.API
 			// Init rep history
 			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
 			repetitionHistory.Remove(board.ZobristKey);
-
-			// Create piece array
-			pieces = new Piece[64];
-			for (int i = 0; i < 64; i++)
-			{
-				int p = board.Square[i];
-				pieces[i] = new Piece((PieceType)PieceHelper.PieceType(p), PieceHelper.IsWhite(p), new Square(i));
-			}
 		}
 
 		/// <summary>
@@ -201,17 +192,17 @@ namespace ChessChallenge.API
             return new Piece((PieceType)PieceHelper.PieceType(p), white, square);
         }
 
-		/// <summary>
-		/// Gets a list of pieces of the given type and colour
-		/// </summary>
-		public PieceList GetPieceList(PieceType pieceType, bool white)
+        /// <summary>
+        /// Gets a list of pieces of the given type and colour
+        /// </summary>
+        public PieceList GetPieceList(PieceType pieceType, bool white)
 		{
 			return allPieceLists[PieceHelper.MakePiece((int)pieceType, white)];
 		}
 		/// <summary>
 		/// Gets an array of all the piece lists. In order these are:
 		/// Pawns(white), Knights (white), Bishops (white), Rooks (white), Queens (white), King (white),
-		/// Pawns (white), Knights (black), Bishops (black), Rooks (black), Queens (black), King (black)
+		/// Pawns (black), Knights (black), Bishops (black), Rooks (black), Queens (black), King (black)
 		/// </summary>
 		public PieceList[] GetAllPieceLists()
 		{
@@ -273,5 +264,16 @@ namespace ChessChallenge.API
 		/// </summary>
 		public ulong ZobristKey => board.ZobristKey;
 
-	}
+        /// <summary>
+        /// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised
+        /// to use the board given in the Think function, and update it using MakeMove and UndoMove instead.
+        /// </summary>
+        public static Board CreateBoardFromFEN(string fen)
+        {
+            Chess.Board boardCore = new Chess.Board();
+            boardCore.LoadPosition(fen);
+            return new Board(boardCore);
+        }
+
+    }
 }

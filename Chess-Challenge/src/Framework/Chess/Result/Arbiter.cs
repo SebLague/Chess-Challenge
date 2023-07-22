@@ -84,19 +84,21 @@
             int numBlackKnights = board.knights[Board.BlackIndex].Count;
             int numWhiteMinors = numWhiteBishops + numWhiteKnights;
             int numBlackMinors = numBlackBishops + numBlackKnights;
+            int numMinors = numWhiteMinors + numBlackMinors;
 
-            // King v King
-            if (numWhiteMinors == 0 && numBlackMinors == 0)
+            // Lone kings or King vs King + single minor: is insuffient
+            if (numMinors <= 1)
             {
                 return true;
             }
 
-            // Single minor piece vs lone king
-            if ((numWhiteMinors == 1 && numBlackMinors == 0) || (numBlackMinors == 1 && numWhiteMinors == 0))
+            // Bishop vs bishop: is insufficient when bishops are same colour complex
+            if (numMinors == 2 && numWhiteBishops == 1 && numBlackBishops == 1)
             {
-                return true;
+                bool whiteBishopIsLightSquare = BoardHelper.LightSquare(board.bishops[Board.WhiteIndex][0]);
+                bool blackBishopIsLightSquare = BoardHelper.LightSquare(board.bishops[Board.BlackIndex][0]);
+                return whiteBishopIsLightSquare == blackBishopIsLightSquare;
             }
-
 
             return false;
 
