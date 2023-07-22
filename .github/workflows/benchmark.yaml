@@ -11,12 +11,12 @@ permissions:
   pull-requests: write
 
 jobs:
-  benchmark_evil_bot:
+  benchmark:
+    strategy:
+      matrix:
+        opponent: [EvilBot]
+        chunk: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
     runs-on: ubuntu-latest
-    outputs:
-      wins: ${{ steps.evil_bot.outputs.wins }}
-      draws: ${{ steps.evil_bot.outputs.draws }}
-      losses: ${{ steps.evil_bot.outputs.losses }}
 
     steps:
     - name: Checkout code
@@ -33,24 +33,59 @@ jobs:
         Xvfb :99 &
         echo "DISPLAY=:99.0" >> $GITHUB_ENV
 
-    - name: Benchmark against EvilBot
-      id: evil_bot
+    - name: Benchmark against ${{ matrix.opponent }}
       run: |
         cd Chess-Challenge
-        dotnet run EvilBot | tee output.log &
+        START_LINE=$(( (${{ matrix.chunk }} - 1) * 20 + 1 ))
+        END_LINE=$(( $START_LINE + 19 ))
+        sed -n "${START_LINE},${END_LINE}p" resources/Fens.txt > temp.txt
+        head -c -1 temp.txt > temp_no_newline.txt
+        mv temp_no_newline.txt resources/Fens.txt
+        dotnet run ${{ matrix.opponent }} > output.log &
         DOTNET_PID=$!
         while ! grep -q "Match finished:" output.log; do sleep 1; done
         kill $DOTNET_PID
         WINS=$(grep -oP 'Match finished: \+\K\d+' output.log)
         DRAWS=$(grep -oP 'Match finished: \+\d+ =\K\d+' output.log)
         LOSSES=$(grep -oP 'Match finished: \+\d+ =\d+ -\K\d+' output.log)
-        echo "wins=$WINS" >> $GITHUB_OUTPUT
-        echo "draws=$DRAWS" >> $GITHUB_OUTPUT
-        echo "losses=$LOSSES" >> $GITHUB_OUTPUT
+        cd ..
+        echo "+$WINS =$DRAWS -$LOSSES" > res_${{ matrix.chunk }}.txt
 
+    - name: Upload result
+      uses: actions/upload-artifact@v3
+      with:
+        name: res_${{ matrix.opponent }}
+        path: res_${{ matrix.chunk }}.txt
+
+  combine_results:
+    needs: benchmark
+    runs-on: ubuntu-latest
+    outputs:
+      wins_EvilBot: ${{ steps.combine.outputs.wins_EvilBot }}
+      draws_EvilBot: ${{ steps.combine.outputs.draws_EvilBot }}
+      losses_EvilBot: ${{ steps.combine.outputs.losses_EvilBot }}
+    steps:
+    - name: Download results
+      uses: actions/download-artifact@v3
+
+    - name: Combine results
+      id: combine
+      run: |
+        wins_EvilBot=0
+        draws_EvilBot=0
+        losses_EvilBot=0
+        for file in res_EvilBot/*; do
+          RESULT=$(cat $file)
+          wins_EvilBot=$((wins_EvilBot + $(echo $RESULT | grep -oP '\+\K\d+')))
+          draws_EvilBot=$((draws_EvilBot + $(echo $RESULT | grep -oP '=\K\d+')))
+          losses_EvilBot=$((losses_EvilBot + $(echo $RESULT | grep -oP '\-\K\d+')))
+        done
+        echo "wins_EvilBot=$wins_EvilBot" >> $GITHUB_OUTPUT
+        echo "draws_EvilBot=$draws_EvilBot" >> $GITHUB_OUTPUT
+        echo "losses_EvilBot=$losses_EvilBot" >> $GITHUB_OUTPUT
 
   generate_comment:
-    needs: benchmark_evil_bot
+    needs: combine_results
     runs-on: ubuntu-latest
     outputs:
       comment: ${{ steps.generate.outputs.comment }}
@@ -70,13 +105,13 @@ jobs:
         COMMENT="Benchmark of commit \`${COMMIT_MESSAGE} (#${SHORT_SHA})\`\n"
         COMMENT+="| Opponent | Wins | Draws | Losses |\n"
         COMMENT+="| --- | --- | --- | --- |\n"
-        COMMENT+="| EvilBot | ${{ needs.benchmark_evil_bot.outputs.wins }} | ${{ needs.benchmark_evil_bot.outputs.draws }} | ${{ needs.benchmark_evil_bot.outputs.losses }} |"
+        COMMENT+="| EvilBot | ${{ needs.combine_results.outputs.wins_EvilBot }} | ${{ needs.combine_results.outputs.draws_EvilBot }} | ${{ needs.combine_results.outputs.losses_EvilBot }} |"
         COMMENT=$(echo "$COMMENT" | sed "s/\`/\\\\\`/g")
         echo "comment=$COMMENT" >> $GITHUB_OUTPUT
 
     - name: Print stats
       run: |
-        echo "::notice title=Benchmark against EvilBot::+${{ needs.benchmark_evil_bot.outputs.wins }} =${{ needs.benchmark_evil_bot.outputs.draws }} -${{ needs.benchmark_evil_bot.outputs.losses }}"
+        echo "::notice title=Benchmark against EvilBot::+${{ needs.combine_results.outputs.wins_EvilBot }} =${{ needs.combine_results.outputs.draws_EvilBot }} -${{ needs.combine_results.outputs.losses_EvilBot }}"
 
 
   publish_stats:
