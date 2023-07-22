@@ -34,6 +34,9 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 
 ## Rules
 * You may participate alone, or in a group of any size.
+* You may submit a maximum of two entries.
+  * Please only submit a second entry if it is significantly different from your first bot (not just a minor tweak).
+  * Note: you will need to log in with a second Google account if you want submit a second entry.
 * Only the following namespaces are allowed:
     * ChessChallenge.API
     * System
