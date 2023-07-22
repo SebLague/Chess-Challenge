@@ -1,0 +1,113 @@
+name: Benchmark MyBot
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  benchmark_evil_bot:
+    runs-on: ubuntu-latest
+    outputs:
+      wins: ${{ steps.evil_bot.outputs.wins }}
+      draws: ${{ steps.evil_bot.outputs.draws }}
+      losses: ${{ steps.evil_bot.outputs.losses }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '6.0.x'
+
+    - name: Setup Xvfb
+      run: |
+        sudo apt-get install -y xvfb
+        Xvfb :99 &
+        echo "DISPLAY=:99.0" >> $GITHUB_ENV
+
+    - name: Benchmark against EvilBot
+      id: evil_bot
+      run: |
+        cd Chess-Challenge
+        dotnet run EvilBot | tee output.log &
+        DOTNET_PID=$!
+        while ! grep -q "Match finished:" output.log; do sleep 1; done
+        kill $DOTNET_PID
+        WINS=$(grep -oP 'Match finished: \+\K\d+' output.log)
+        DRAWS=$(grep -oP 'Match finished: \+\d+ =\K\d+' output.log)
+        LOSSES=$(grep -oP 'Match finished: \+\d+ =\d+ -\K\d+' output.log)
+        echo "wins=$WINS" >> $GITHUB_OUTPUT
+        echo "draws=$DRAWS" >> $GITHUB_OUTPUT
+        echo "losses=$LOSSES" >> $GITHUB_OUTPUT
+
+
+  generate_comment:
+    needs: benchmark_evil_bot
+    runs-on: ubuntu-latest
+    outputs:
+      comment: ${{ steps.generate.outputs.comment }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 5
+
+    - name: Generate comment
+      id: generate
+      run: |
+        LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
+        COMMIT_MESSAGE=$(git log -1 --pretty=format:%s $LAST_COMMIT_SHA)
+        SHORT_SHA=$(echo $LAST_COMMIT_SHA | cut -c 1-7)
+        COMMENT="Benchmark of commit \`${COMMIT_MESSAGE} (#${SHORT_SHA})\`\n"
+        COMMENT+="| Opponent | Wins | Draws | Losses |\n"
+        COMMENT+="| --- | --- | --- | --- |\n"
+        COMMENT+="| EvilBot | ${{ needs.benchmark_evil_bot.outputs.wins }} | ${{ needs.benchmark_evil_bot.outputs.draws }} | ${{ needs.benchmark_evil_bot.outputs.losses }} |"
+        COMMENT=$(echo "$COMMENT" | sed "s/\`/\\\\\`/g")
+        echo "comment=$COMMENT" >> $GITHUB_OUTPUT
+
+    - name: Print stats
+      run: |
+        echo "::notice title=Benchmark against EvilBot::+${{ needs.benchmark_evil_bot.outputs.wins }} =${{ needs.benchmark_evil_bot.outputs.draws }} -${{ needs.benchmark_evil_bot.outputs.losses }}"
+
+
+  publish_stats:
+    needs: generate_comment
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Comment PR
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const issueComment = `${{ needs.generate_comment.outputs.comment }}`
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: issueComment
+          })
+          const pr = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: context.issue.number
+          })
+          const existingDescription = pr.data.body || ''
+          const benchmarkIndex = existingDescription.indexOf('<!-- benchmark -->')
+          const newDescription = benchmarkIndex >= 0 ? existingDescription.slice(0, benchmarkIndex) : existingDescription
+          const prDescription = `${newDescription}\n<!-- benchmark -->\n**Latest benchmark results:**\n\n${issueComment}`
+          github.rest.pulls.update({
+            pull_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: prDescription
+          })

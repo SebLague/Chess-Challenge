@@ -305,7 +305,7 @@ namespace ChessChallenge.Application
                     }
                     else if (autoStartNextBotMatch)
                     {
-                        Log("Match finished", false, ConsoleColor.Blue);
+                        Log($"Match finished: +{BotStatsA.NumWins} ={BotStatsA.NumDraws} -{BotStatsA.NumLosses}", false, ConsoleColor.Blue);
                     }
                 }
             }
