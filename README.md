@@ -56,6 +56,6 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
-## FAQ
-Nothing yet
+## FAQ and Troubleshooting
+* [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
   
