@@ -1,0 +1,28 @@
+---
+name: AutoRelease
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  auto-release:
+    name: Auto Release Job
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Get version from changeset
+        id: get-version
+        run: |
+          python python/get-version.py
+      - name: Create release if PR is merged
+        if: github.event.pull_request.merged == true
+        env:
+          VERSION: ${{ steps.get-version.outputs.version }}
+        run: |
+          gh release create v${VERSION} --generate-notes
