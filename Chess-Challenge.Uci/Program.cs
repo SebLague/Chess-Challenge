@@ -7,9 +7,7 @@ namespace Chess_Challenge.Cli
         static int GetTokenCount()
         {
             string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
-
-            using var reader = new StringReader(path);
-            string txt = reader.ReadToEnd();
+            string txt = File.ReadAllText(path);
             return TokenCounter.CountTokens(txt);
         }
 
