@@ -3,6 +3,7 @@ using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using static ChessChallenge.Application.UIHelper;
 
 namespace ChessChallenge.Application
 {
@@ -276,9 +277,6 @@ namespace ChessChallenge.Application
                 }
                 UIHelper.DrawText(timeText, timePos, fontSize, fontSpacing, textCol, UIHelper.AlignH.Right);
             }
-
-
-            //Raylib.DrawText()
         }
 
         public void ResetSquareColours(bool keepPrevMoveHighlight = false)
@@ -317,6 +315,27 @@ namespace ChessChallenge.Application
             if (!isAnimatingMove || coord.SquareIndex != moveToAnimate.StartSquareIndex)
             {
                 DrawPiece(piece, new Vector2((int)pos.X, (int)pos.Y), alpha);
+            }
+
+            if (Settings.DisplayBoardCoordinates)
+            {
+                int textSize = 25;
+                float xpadding = 5f;
+                float ypadding = 2f;
+                Color coordNameCol = coord.IsLightSquare() ? theme.DarkCoordCol : theme.LightCoordCol;
+
+                if (rank == (whitePerspective ? 0 : 7))
+                {
+                    string fileName = BoardHelper.fileNames[file] + "";
+                    Vector2 drawPos = pos + new Vector2(xpadding, squareSize - ypadding);
+                    DrawText(fileName, drawPos, textSize, 0, coordNameCol, AlignH.Left, AlignV.Bottom);
+                }
+                if (file == (whitePerspective ? 7 : 0))
+                {
+                    string rankName = (rank + 1) + "";
+                    Vector2 drawPos = pos + new Vector2(squareSize - xpadding, ypadding);
+                    DrawText(rankName, drawPos, textSize, 0, coordNameCol, AlignH.Right, AlignV.Top);
+                }
             }
         }
 
