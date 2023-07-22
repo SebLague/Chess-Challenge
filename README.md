@@ -5,6 +5,10 @@ Once submissions close, these bots will battle it out to discover which bot is b
 I will then create a video exploring the implementations of the best and most unique/interesting bots.
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
+## Change Log
+I unfortunately missed a serious bug in the board.GetPiece() function and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed). The latest version is V1.1
+* V1.1 Bug fix for board.GetPiece() function. Added Board.CreateBoardFromFEN() function.
+
 ## Submission Due Date
 October 1st 2023.<br>
 You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
@@ -16,6 +20,7 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 * Try building and running the project.
   * If a window with a chess board appears — great!
   * If it doesn't work, please take a look at the [issues page](https://github.com/SebLague/Chess-Challenge/issues) to see if anyone is having a similar issue. If not, post about it there with any details such as error messages, operating system etc.
+    * See also the FAQ/troubleshooting section at the bottom of the page.
 * Open the MyBot.cs file _(located in src/MyBot)_ and write some code!
   * You might want to take a look at the [Documentation](https://seblague.github.io/chess-coding-challenge/documentation/) first, and the Rules too!
 * Build and run the program again to test your changes.
@@ -31,9 +36,10 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 * Only the following namespaces are allowed:
     * ChessChallenge.API
     * System
-    * System.Linq
     * System.Numerics
     * System.Collections.Generic
+    * System.Linq
+      * You may not use the AsParallel() function
 * As implied by the allowed namespaces, you may not read data from a file or access the internet, nor may you create any new threads or tasks to run code in parallel/in the background.
 * You may not use the unsafe keyword.
 * You may not store data inside the name of a variable/function/class etc (to be extracted with nameof(), GetType().ToString(), Environment.StackTracks and so on).
@@ -51,6 +57,13 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
-## FAQ
-Nothing yet
+## FAQ and Troubleshooting
+* [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
+* [How to run if using a different code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
+* Issues with illegal moves or errors when making/undoing a move
+  * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exitting early from a function for example.
+* How to tell what colour MyBot is playing
+  * You can look at board.IsWhiteToMove when the Think function is called
+* GetPiece() function is giving a null piece after making a move
+  * Please make sure you are using the latest version of the project, there was a bug with this function in the original version
   
