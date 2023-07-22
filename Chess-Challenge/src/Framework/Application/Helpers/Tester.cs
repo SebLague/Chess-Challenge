@@ -165,7 +165,7 @@ namespace ChessChallenge.Application
             //var moves = boardAPI.GetLegalMoves();
             Span<API.Move> captures = stackalloc API.Move[APIMoveGen.MaxMoves];
             int length = boardAPI.GetLegalMoves(ref captures, true);
-            Assert(captures.Length == 4, "Captures wrong");
+            Assert(length == 4, "Captures wrong");
             int numTested = 0;
             for (int i = 0; i < length; i++) {
                 var c = captures[i];
