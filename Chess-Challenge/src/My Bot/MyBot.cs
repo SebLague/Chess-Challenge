@@ -76,6 +76,7 @@ public class MyBot : IChessBot
         }
 
         var moves = board.GetLegalMoves();
+        moves = moves.OrderBy(move => !move.IsCapture).ToArray();
         var bestScore = -Inf;
         var movesEvaluated = 0;
 
