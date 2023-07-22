@@ -68,7 +68,7 @@ namespace ChessChallenge.Chess
 
 
 
-        public Board(Board source = null)
+        public Board(Board? source = null)
         {
             if (source != null)
             {
