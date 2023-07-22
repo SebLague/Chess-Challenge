@@ -59,6 +59,10 @@ namespace ChessChallenge.API
 			return $"Move: '{moveName}'";
 		}
 
+		public string GetSAN(Board board) {
+			return MoveUtility.GetMoveNameSAN(this.move, board.board);
+		}
+
 		/// <summary>
 		/// Tests if two moves are the same.
 		/// This is true if they move to/from the same square, and move/capture/promote the same piece type

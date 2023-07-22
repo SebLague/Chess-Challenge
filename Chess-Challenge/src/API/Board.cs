@@ -7,7 +7,7 @@ namespace ChessChallenge.API
 
 	public sealed class Board
 	{
-		readonly Chess.Board board;
+		readonly internal Chess.Board board;
 		readonly APIMoveGen moveGen;
 
 		readonly HashSet<ulong> repetitionHistory;
