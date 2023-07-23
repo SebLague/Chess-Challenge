@@ -128,3 +128,18 @@ Score of ChessChallenge vs ChessChallengeEvil: 4891 - 0 - 109  [0.989] 5000
 ...      White vs Black: 2432 - 2459 - 109  [0.497] 5000
 Elo difference: 783.1 +/- 32.9, LOS: 100.0 %, DrawRatio: 2.2 %
 ```
+
+### 1.7.1
+Format output to be semi UCI compatible, add more info to it
+
+593 tokens
+
+```
+info depth 1 cp 56 time 31 Move: 'g1f3'
+info depth 2 cp 0 time 32 Move: 'g1f3'
+info depth 3 cp 50 time 34 Move: 'b1c3'
+info depth 4 cp 0 time 62 Move: 'b1c3'
+info depth 5 cp 89 time 187 Move: 'b2b3'
+info depth 6 cp -39 time 1381 Move: 'b1c3'
+info depth 7 cp 117 time 7861 Move: 'e2e3'
+```

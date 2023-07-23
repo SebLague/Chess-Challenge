@@ -174,8 +174,9 @@ public class MyBot : IChessBot
 
             bestMove = move;
 
-            // For debugging purposes, will be removed in the final version
-            Console.WriteLine($"{score} {move}");
+            // For debugging purposes, can be removed if lacking tokens
+            // Move is not printed in the usual pv format, because the API does not support easy conversion to UCI notation
+            Console.WriteLine($"info depth {depth} cp {score} time {timer.MillisecondsElapsedThisTurn} {bestMove}");
         }
 
         return bestMove;
