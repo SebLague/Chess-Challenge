@@ -4,6 +4,7 @@ namespace ChessChallenge.API
 	using ChessChallenge.Chess;
 	using System;
 	using System.Collections.Generic;
+    using System.Linq;
 
 	public sealed class Board
 	{
@@ -174,7 +175,7 @@ namespace ChessChallenge.API
 
 			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
 			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
-			bool IsRepetition() => repetitionHistory.Contains(board.ZobristKey);
+			bool IsRepetition() => board.RepetitionPositionHistory.Count((x => x == board.currentGameState.zobristKey)) == 3;
 		}
 
 		/// <summary>
