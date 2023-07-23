@@ -13,11 +13,12 @@ public class MyBot : IChessBot
         Move[] moves = board.GetLegalMoves();
         Move retMove = moves[0];
 
-        foreach(Move move in moves){
+        foreach (Move move in moves)
+        {
             board.MakeMove(move);
             int newScore = AlphaBetaMax(board, int.MinValue, int.MaxValue, 4);
             board.UndoMove(move);
-            if(newScore > score)
+            if (newScore > score)
             {
                 score = newScore;
                 retMove = move;
@@ -30,37 +31,40 @@ public class MyBot : IChessBot
     {
         int score = 0;
         PieceList[] pieceLists = board.GetAllPieceLists();
-        for(int i = 0; i < 5; i++) {
+        for (int i = 0; i < 5; i++)
+        {
             int val = pieceValues[i + 1];
-            score += (pieceLists[i].Count - pieceLists[i+6].Count) * val;
+            score += (pieceLists[i].Count - pieceLists[i + 6].Count) * val;
         }
-        return score*(board.IsWhiteToMove ? -1 : 1);
+        return score * (board.IsWhiteToMove ? -1 : 1);
     }
 
     int AlphaBetaMax(Board board, int alpha, int beta, int depth_left)
     {
-        if(depth_left == 0) return Evaluate(board);
+        if (depth_left == 0) return Evaluate(board);
         Move[] moves = board.GetLegalMoves();
-        foreach(Move move in moves){
+        foreach (Move move in moves)
+        {
             board.MakeMove(move);
             int score = AlphaBetaMin(board, alpha, beta, depth_left - 1);
             board.UndoMove(move);
-            if(score >= beta) return beta;
-            if(score > alpha) alpha = score;
+            if (score >= beta) return beta;
+            if (score > alpha) alpha = score;
         }
         return alpha;
     }
 
     int AlphaBetaMin(Board board, int alpha, int beta, int depth_left)
     {
-        if(depth_left == 0) return Evaluate(board);
+        if (depth_left == 0) return Evaluate(board);
         Move[] moves = board.GetLegalMoves();
-        foreach(Move move in moves){
+        foreach (Move move in moves)
+        {
             board.MakeMove(move);
             int score = AlphaBetaMax(board, alpha, beta, depth_left - 1);
             board.UndoMove(move);
-            if(score <= alpha) return alpha;
-            if(score < beta) beta = score;
+            if (score <= alpha) return alpha;
+            if (score < beta) beta = score;
         }
         return beta;
     }
