@@ -21,8 +21,7 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 * Download this repository and open the Chess-Challenge project in your IDE.
 * Try building and running the project.
   * If a window with a chess board appears — great!
-  * If it doesn't work, please take a look at the [issues page](https://github.com/SebLague/Chess-Challenge/issues) to see if anyone is having a similar issue. If not, post about it there with any details such as error messages, operating system etc.
-    * See also the FAQ/troubleshooting section at the bottom of the page.
+  * If it doesn't work, take a look at the [FAQ/troubleshooting](#faq-and-troubleshooting) section at the bottom of the page. You can also search the [issues page](https://github.com/SebLague/Chess-Challenge/issues) to see if anyone is having a similar issue. If not, post about it there with any details such as error messages, operating system etc.
 * Open the MyBot.cs file _(located in src/MyBot)_ and write some code!
   * You might want to take a look at the [Documentation](https://seblague.github.io/chess-coding-challenge/documentation/) first, and the Rules too!
 * Build and run the program again to test your changes.
@@ -63,8 +62,13 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
 ## FAQ and Troubleshooting
-* [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
-* [How to run if using a different code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
+* [Unable to build/run the project from my IDE/Code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
+  * After downloading the project and installing .Net 6.0, open a terminal / command prompt window.
+  * Navigate to the folder where Chess-Challenge.csproj is located using the `cd` command.
+    * For example: `cd C:\Users\MyName\Desktop\Chess-Challenge\Chess-Challenge`
+  * Now use the command: `dotnet run`
+  * This should launch the project. If not, open an issue with any error messages and relevant info.
+*  [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
 * Issues with illegal moves or errors when making/undoing a move
   * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exitting early from a function for example.
 * How to tell what colour MyBot is playing
