@@ -18,17 +18,19 @@ namespace ChessChallenge.API
 		bool hasCachedMoves;
 		Move[] cachedLegalCaptureMoves;
 		bool hasCachedCaptureMoves;
+        readonly Move[] movesDest;
 
-		/// <summary>
-		/// Create a new board. Note: this should not be used in the challenge,
-		/// use the board provided in the Think method instead.
-		/// </summary>
-		public Board(Chess.Board board)
+        /// <summary>
+        /// Create a new board. Note: this should not be used in the challenge,
+        /// use the board provided in the Think method instead.
+        /// </summary>
+        public Board(Chess.Board board)
 		{
 			this.board = board;
 			moveGen = new APIMoveGen();
 			cachedLegalMoves = Array.Empty<Move>();
 			cachedLegalCaptureMoves = Array.Empty<Move>();
+			movesDest = new Move[APIMoveGen.MaxMoves];
 
 			// Init piece lists
 			List<PieceList> validPieceLists = new();
@@ -118,11 +120,25 @@ namespace ChessChallenge.API
 
 			if (!hasCachedMoves)
 			{
-				cachedLegalMoves = moveGen.GenerateMoves(board, includeQuietMoves: true);
-				hasCachedMoves = true;
+                Span<Move> moveSpan = movesDest.AsSpan();
+                moveGen.GenerateMoves(ref moveSpan, board, includeQuietMoves: true);
+                cachedLegalMoves = moveSpan.ToArray();
+                hasCachedMoves = true;
 			}
 
 			return cachedLegalMoves;
+		}
+
+        /// <summary>
+        /// Fills the given move span with legal moves, and slices it to the correct length.
+        /// Can choose to get only capture moves with the optional 'capturesOnly' parameter.
+		/// This gives the same result as the GetLegalMoves function, but allows you to be more
+		/// efficient with memory by allocating moves on the stack rather than the heap.
+        /// </summary>
+        public void GetLegalMovesNonAlloc(ref Span<Move> moveList, bool capturesOnly = false)
+		{
+			bool includeQuietMoves = !capturesOnly;
+			moveGen.GenerateMoves(ref moveList, board, includeQuietMoves);
 		}
 
 
@@ -130,8 +146,10 @@ namespace ChessChallenge.API
 		{
 			if (!hasCachedCaptureMoves)
 			{
-				cachedLegalCaptureMoves = moveGen.GenerateMoves(board, includeQuietMoves: false);
-				hasCachedCaptureMoves = true;
+                Span<Move> moveSpan = movesDest.AsSpan();
+                moveGen.GenerateMoves(ref moveSpan, board, includeQuietMoves: false);
+                cachedLegalCaptureMoves = moveSpan.ToArray();
+                hasCachedCaptureMoves = true;
 			}
 			return cachedLegalCaptureMoves;
 		}
