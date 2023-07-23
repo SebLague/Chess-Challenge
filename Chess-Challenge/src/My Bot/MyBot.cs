@@ -17,7 +17,9 @@ public class MyBot : IChessBot
         _repetitions = new HashSet<ulong>();
     }
 
-    int[] pieceValues = { 0, 100, 300, 300, 500, 900, 0 };
+    int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
+    ulong[] pstRanks = {0, 32973249741911296, 16357091511995071475, 17581496622553367027, 724241724997039354, 432919517870226424, 17729000522595302646 };
+    ulong[] pstFiles = {0, 17944594909985834239, 17438231369917791979, 17799354947352068342, 17580088143863153148, 217585671819360496, 17944030877684269297 };
 
     private int Evaluate(Board board)
     {
@@ -35,14 +37,24 @@ public class MyBot : IChessBot
                     var sq = BitOperations.TrailingZeroCount(bitboard);
                     bitboard &= bitboard - 1;
 
+                    if (color == 1)
+                    {
+                        sq ^= 56;
+                    }
+
+                    var rank = sq >> 3;
+                    var file = sq & 7;
+
                     // Material
                     score += pieceValues[pieceIndex];
 
-                    // Centrality
-                    var rank = sq >> 3;
-                    var file = sq & 7;
-                    var centrality = -Math.Abs(7 - rank - file) - Math.Abs(rank - file);
-                    score += centrality * (6 - pieceIndex);
+                    // Rank PST
+                    var rankScore = (sbyte)((pstRanks[pieceIndex] >> (rank * 8)) & 0xFF) * 2;
+                    score += rankScore;
+
+                    // File PST
+                    var fileScore = (sbyte)((pstFiles[pieceIndex] >> (file * 8)) & 0xFF) * 2;
+                    score += fileScore;
                 }
             }
 

@@ -107,3 +107,18 @@ Sort by most valuable victim - least valuable attacker
 Score of ChessChallenge vs ChessChallengeDev: 539 - 364 - 97
 Elo difference: 61 +/- 21
 ```
+
+### 1.7
+Evaluation changes:
+* Evaluation texel tuning using https://github.com/GediminasMasaitis/texel-tuner
+* Remove centrality evaluation
+* Split PSTs by rank and file
+566 tokens
+
+```
+Score of ChessChallenge vs ChessChallengeDev: 811 - 424 - 265  [0.629] 1500
+...      ChessChallenge playing White: 395 - 211 - 144  [0.623] 750
+...      ChessChallenge playing Black: 416 - 213 - 121  [0.635] 750
+...      White vs Black: 608 - 627 - 265  [0.494] 1500
+Elo difference: 91.7 +/- 16.4, LOS: 100.0 %, DrawRatio: 17.7 %
+```
