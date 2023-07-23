@@ -8,49 +8,61 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
+        int score = 0;
+
         Move[] moves = board.GetLegalMoves();
-        
-        // Pick a random move to play if nothing better is found
-        Random rng = new();
-        Move moveToPlay = moves[rng.Next(moves.Length)];
-        int highestValueCapture = 0;
+        Move retMove = moves[0];
 
-        foreach (Move move in moves)
-        {
-            // Always play checkmate in one
-            if (MoveIsCheckmate(board, move))
+        foreach(Move move in moves){
+            board.MakeMove(move);
+            int newScore = AlphaBetaMax(board, int.MinValue, int.MaxValue, 4);
+            board.UndoMove(move);
+            if(newScore > score)
             {
-                moveToPlay = move;
-                break;
-            }
-
-            // Always promote to queen
-            if(move.IsPromotion && move.PromotionPieceType == PieceType.Queen)
-            {
-                moveToPlay = move;
-                break;
-            }
-
-            // Find highest value capture
-            Piece capturedPiece = board.GetPiece(move.TargetSquare);
-            int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
-
-            if (capturedPieceValue > highestValueCapture)
-            {
-                moveToPlay = move;
-                highestValueCapture = capturedPieceValue;
+                score = newScore;
+                retMove = move;
             }
         }
-
-        return moveToPlay;
+        return retMove;
     }
 
-    // Test if this move gives checkmate
-    bool MoveIsCheckmate(Board board, Move move)
+    int Evaluate(Board board)
     {
-        board.MakeMove(move);
-        bool isMate = board.IsInCheckmate();
-        board.UndoMove(move);
-        return isMate;
+        int score = 0;
+        PieceList[] pieceLists = board.GetAllPieceLists();
+        for(int i = 0; i < 5; i++) {
+            int val = pieceValues[i + 1];
+            score += (pieceLists[i].Count - pieceLists[i+6].Count) * val;
+        }
+        return score*(board.IsWhiteToMove ? -1 : 1);
     }
+
+    int AlphaBetaMax(Board board, int alpha, int beta, int depth_left)
+    {
+        if(depth_left == 0) return Evaluate(board);
+        Move[] moves = board.GetLegalMoves();
+        foreach(Move move in moves){
+            board.MakeMove(move);
+            int score = AlphaBetaMin(board, alpha, beta, depth_left - 1);
+            board.UndoMove(move);
+            if(score >= beta) return beta;
+            if(score > alpha) alpha = score;
+        }
+        return alpha;
+    }
+
+    int AlphaBetaMin(Board board, int alpha, int beta, int depth_left)
+    {
+        if(depth_left == 0) return Evaluate(board);
+        Move[] moves = board.GetLegalMoves();
+        foreach(Move move in moves){
+            board.MakeMove(move);
+            int score = AlphaBetaMax(board, alpha, beta, depth_left - 1);
+            board.UndoMove(move);
+            if(score <= alpha) return alpha;
+            if(score < beta) beta = score;
+        }
+        return beta;
+    }
+
 }
