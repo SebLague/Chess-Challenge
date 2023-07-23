@@ -143,3 +143,25 @@ info depth 5 cp 89 time 187 Move: 'b2b3'
 info depth 6 cp -39 time 1381 Move: 'b1c3'
 info depth 7 cp 117 time 7861 Move: 'e2e3'
 ```
+
+### 1.8
+Add qsearch when depth <= 0
+
+614 tokens
+
+```
+info depth 1 cp 56 time 32 Move: 'g1f3'
+info depth 2 cp 0 time 34 Move: 'g1f3'
+info depth 3 cp 50 time 38 Move: 'b1c3'
+info depth 4 cp 0 time 101 Move: 'b1c3'
+info depth 5 cp 12 time 1008 Move: 'b1a3'
+info depth 6 cp 0 time 8181 Move: 'b1c3'
+```
+
+```
+Score of ChessChallenge vs ChessChallengeDev: 1215 - 138 - 147  [0.859] 1500
+...      ChessChallenge playing White: 628 - 52 - 71  [0.883] 751
+...      ChessChallenge playing Black: 587 - 86 - 76  [0.834] 749
+...      White vs Black: 714 - 639 - 147  [0.525] 1500
+Elo difference: 313.9 +/- 22.6, LOS: 100.0 %, DrawRatio: 9.8 %
+```

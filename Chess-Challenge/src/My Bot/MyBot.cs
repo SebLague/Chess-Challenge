@@ -83,14 +83,8 @@ public class MyBot : IChessBot
             return 0;
         }
 
-        // At leaf nodes, evaluate the position
-        if (depth == 0)
-        {
-            var score = Evaluate(board);
-            return score;
-        }
-
-        var moves = board.GetLegalMoves();
+        var in_qsearch = (depth <= 0);
+        var moves = board.GetLegalMoves(in_qsearch);
 
         // MVV-LVA ordering
         moves = moves.OrderBy(move => move.MovePieceType).ToArray();
@@ -98,6 +92,16 @@ public class MyBot : IChessBot
 
         var bestScore = -Inf;
         var movesEvaluated = 0;
+
+        if (in_qsearch)
+        {
+            bestScore = Evaluate(board);
+            if (bestScore >= beta)
+                return bestScore;
+
+            if (bestScore > alpha)
+                alpha = bestScore;
+        }
 
         // Loop over each legal move
         foreach (var move in moves)
@@ -135,7 +139,7 @@ public class MyBot : IChessBot
             }
         }
 
-        if (movesEvaluated == 0)
+        if (!in_qsearch && movesEvaluated == 0)
         {
             if (board.IsInCheck())
             {
