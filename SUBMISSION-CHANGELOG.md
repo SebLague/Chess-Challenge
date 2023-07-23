@@ -1,3 +1,9 @@
+Engines tested against:
+
+| Name | Version | ELO |
+| --- | --- | --- |
+| Vice | 1.1 | 2060 |
+
 ### 1.0
 Initial release - randoom legal mover
 
@@ -164,4 +170,10 @@ Score of ChessChallenge vs ChessChallengeDev: 1215 - 138 - 147  [0.859] 1500
 ...      ChessChallenge playing Black: 587 - 86 - 76  [0.834] 749
 ...      White vs Black: 714 - 639 - 147  [0.525] 1500
 Elo difference: 313.9 +/- 22.6, LOS: 100.0 %, DrawRatio: 9.8 %
+
+Score of ChessChallenge vs ChessChallengeEvil: 4924 - 0 - 76  [0.992] 5000
+...      ChessChallenge playing White: 2458 - 0 - 43  [0.991] 2501
+...      ChessChallenge playing Black: 2466 - 0 - 33  [0.993] 2499
+...      White vs Black: 2458 - 2466 - 76  [0.499] 5000
+Elo difference: 846.3 +/- 39.7, LOS: 100.0 %, DrawRatio: 1.5 %
 ```
