@@ -66,7 +66,7 @@ All names (variables, functions, etc.) are counted as a single token, regardless
 * [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
 * [How to run if using a different code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
 * Issues with illegal moves or errors when making/undoing a move
-  * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exitting early from a function for example.
+  * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exiting early from a function for example.
 * How to tell what colour MyBot is playing
   * You can look at `board.IsWhiteToMove` when the Think function is called
 * `GetPiece()` function is giving a null piece after making a move
