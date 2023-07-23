@@ -84,11 +84,9 @@ public class MyBot : IChessBot
         }
 
         var in_qsearch = (depth <= 0);
-        var moves = board.GetLegalMoves(in_qsearch);
 
         // MVV-LVA ordering
-        moves = moves.OrderBy(move => move.MovePieceType).ToArray();
-        moves = moves.OrderByDescending(move => move.CapturePieceType).ToArray();
+        var moves = board.GetLegalMoves(in_qsearch).OrderByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
 
         var bestScore = -Inf;
         var movesEvaluated = 0;
