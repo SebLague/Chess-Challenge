@@ -280,11 +280,8 @@ namespace ChessChallenge.Chess
             currentGameState = newState;
             hasCachedInCheckValue = false;
 
-            if (!inSearch)
-            {
-                RepetitionPositionHistory.Push(newState.zobristKey);
-                AllGameMoves.Add(move);
-            }
+            RepetitionPositionHistory.Push(newState.zobristKey);
+            AllGameMoves.Add(move);
         }
 
         // Undo a move previously made on the board
@@ -371,14 +368,11 @@ namespace ChessChallenge.Chess
             allPiecesBitboard = colourBitboards[WhiteIndex] | colourBitboards[BlackIndex];
             UpdateSliderBitboards();
 
-            if (!inSearch && RepetitionPositionHistory.Count > 0)
+            if (RepetitionPositionHistory.Count > 0)
             {
                 RepetitionPositionHistory.Pop();
             }
-            if (!inSearch)
-            {
-                AllGameMoves.RemoveAt(AllGameMoves.Count - 1);
-            }
+            AllGameMoves.RemoveAt(AllGameMoves.Count - 1);
 
             // Go back to previous state
             gameStateHistory.Pop();

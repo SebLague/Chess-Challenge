@@ -11,7 +11,6 @@ namespace ChessChallenge.API
 		readonly Chess.Board board;
 		readonly APIMoveGen moveGen;
 
-		readonly HashSet<ulong> repetitionHistory;
 		readonly PieceList[] allPieceLists;
 		readonly PieceList[] validPieceLists;
 
@@ -45,10 +44,6 @@ namespace ChessChallenge.API
 				}
 			}
 			this.validPieceLists = validPieceLists.ToArray();
-
-			// Init rep history
-			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
-			repetitionHistory.Remove(board.ZobristKey);
 		}
 
 		/// <summary>
@@ -62,7 +57,6 @@ namespace ChessChallenge.API
 			hasCachedCaptureMoves = false;
 			if (!move.IsNull)
 			{
-				repetitionHistory.Add(board.ZobristKey);
 				board.MakeMove(new Chess.Move(move.RawValue), inSearch: true);
 			}
 		}
@@ -77,7 +71,6 @@ namespace ChessChallenge.API
 			if (!move.IsNull)
 			{
 				board.UndoMove(new Chess.Move(move.RawValue), inSearch: true);
-				repetitionHistory.Remove(board.ZobristKey);
 			}
 		}
 
