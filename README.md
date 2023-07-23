@@ -6,10 +6,10 @@ I will then create a video exploring the implementations of the best and most un
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
 ## Change Log
-I unfortunately missed a serious bug in the board.GetPiece() and PieceList functions and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed).
-* V1.1 Bug fix for board.GetPiece() and PieceList functions. Added Board.CreateBoardFromFEN() function.
+I unfortunately missed a serious bug in the `board.GetPiece()` and PieceList functions and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed).
+* V1.1 Bug fix for `board.GetPiece()` and `PieceList` functions. Added `Board.CreateBoardFromFEN()` function.
   * V1.11 UI changes: Added coordinate names to board UI and fixed human player input bug.
-  * V1.12 Small fixes to board.IsDraw(): Fifty move counter is now updated properly during search, and insufficient material is now detected for lone bishops on the same square colour.
+  * V1.12 Small fixes to `board.IsDraw()`: Fifty move counter is now updated properly during search, and insufficient material is now detected for lone bishops on the same square colour.
 
 ## Submission Due Date
 October 1st 2023.<br>
@@ -33,6 +33,12 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
 * Once you're happy with your chess bot, head over to the [Submission Page](https://forms.gle/6jjj8jxNQ5Ln53ie6) to enter it into the competition.
   * You will be able to edit your entry up until the competition closes.
 
+## Testing Options
+For testing, you have three options in the program:.<br>
+* You can play against the bot yourself (Human vs Bot).
+* The bot can play a match against itself (MyBot vs MyBot).
+* The bot can play a match against a simple example bot (MyBot vs EvilBot).
+
 ## Rules
 * You may participate alone, or in a group of any size.
 * You may submit a maximum of two entries.
@@ -44,10 +50,10 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
     * System.Numerics
     * System.Collections.Generic
     * System.Linq
-      * You may not use the AsParallel() function
+      * You may not use the `AsParallel()` function
 * As implied by the allowed namespaces, you may not read data from a file or access the internet, nor may you create any new threads or tasks to run code in parallel/in the background.
 * You may not use the unsafe keyword.
-* You may not store data inside the name of a variable/function/class etc (to be extracted with nameof(), GetType().ToString(), Environment.StackTracks and so on).
+* You may not store data inside the name of a variable/function/class etc (to be extracted with `nameof()`, `GetType().ToString()`, Environment.StackTracks and so on).
    * Very clever ideas though, thank you to [#12](https://github.com/SebLague/Chess-Challenge/issues/12) and [#24](https://github.com/SebLague/Chess-Challenge/issues/24).
 * If your bot makes an illegal move or runs out of time, it will lose the game.
    * Games are played with 1 minute per side by default (this can be changed in the settings class). The final tournament time control is TBD, so your bot should not assume a particular time control, and instead respect the amount of time left on the timer (given in the Think function).
@@ -70,6 +76,6 @@ All names (variables, functions, etc.) are counted as a single token, regardless
   * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exitting early from a function for example.
 * How to tell what colour MyBot is playing
   * You can look at board.IsWhiteToMove when the Think function is called
-* GetPiece() function is giving a null piece after making a move
+* `GetPiece()` function is giving a null piece after making a move
   * Please make sure you are using the latest version of the project, there was a bug with this function in the original version
   
