@@ -51,7 +51,7 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
    * Very clever ideas though, thank you to [#12](https://github.com/SebLague/Chess-Challenge/issues/12) and [#24](https://github.com/SebLague/Chess-Challenge/issues/24).
 * If your bot makes an illegal move or runs out of time, it will lose the game.
    * Games are played with 1 minute per side by default (this can be changed in the settings class). The final tournament time control is TBD, so your bot should not assume a particular time control, and instead respect the amount of time left on the timer (given in the Think function).
-* Your bot may not allocate more than 256mb of memory.
+* Your bot may not use more than 256mb of memory for creating look-up tables (such as a transposition table).
 * If you have added a constructor to MyBot (for generating look up tables, etc.) it may not take longer than 5 seconds to complete.
 * All of your code/data must be contained within the _MyBot.cs_ file.
    * Note: you may create additional scripts for testing/training your bot, but only the _MyBot.cs_ file will be submitted, so it must be able to run without them.
