@@ -15,6 +15,7 @@ namespace ChessChallenge.Application
             Vector2 loadedWindowSize = GetSavedWindowSize();
             int screenWidth = (int)loadedWindowSize.X;
             int screenHeight = (int)loadedWindowSize.Y;
+            Raylib.SetWindowState(ConfigFlags.FLAG_WINDOW_RESIZABLE);
 
             if (hideRaylibLogs)
             {
@@ -33,6 +34,7 @@ namespace ChessChallenge.Application
 
             while (!Raylib.WindowShouldClose())
             {
+                UpdateWindowSize();
                 Raylib.BeginDrawing();
                 Raylib.ClearBackground(new Color(22, 22, 22, 255));
                 Raylib.BeginMode2D(cam);
@@ -53,6 +55,19 @@ namespace ChessChallenge.Application
             UIHelper.Release();
         }
 
+        static void UpdateWindowSize()
+        {
+            if (Raylib.IsWindowResized())
+            {
+                int width = Raylib.GetScreenWidth();
+                int height = Raylib.GetScreenHeight();
+                Vector2 size = new Vector2(width, height);
+                SetWindowSize(size);
+            }
+
+            // Rest of update logic
+        }
+
         public static void SetWindowSize(Vector2 size)
         {
             Raylib.SetWindowSize((int)size.X, (int)size.Y);
@@ -60,7 +75,8 @@ namespace ChessChallenge.Application
             SaveWindowSize();
         }
 
-        public static Vector2 ScreenToWorldPos(Vector2 screenPos) => Raylib.GetScreenToWorld2D(screenPos, cam);
+        public static Vector2 ScreenToWorldPos(Vector2 screenPos) =>
+            Raylib.GetScreenToWorld2D(screenPos, cam);
 
         static void UpdateCamera(int screenWidth, int screenHeight)
         {
@@ -70,11 +86,10 @@ namespace ChessChallenge.Application
             cam.zoom = screenWidth / 1280f * 0.7f;
         }
 
-
-        [UnmanagedCallersOnly(CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) })]
-        private static unsafe void LogCustom(int logLevel, sbyte* text, sbyte* args)
-        {
-        }
+        [UnmanagedCallersOnly(
+            CallConvs = new[] { typeof(System.Runtime.CompilerServices.CallConvCdecl) }
+        )]
+        private static unsafe void LogCustom(int logLevel, sbyte* text, sbyte* args) { }
 
         static Vector2 GetSavedWindowSize()
         {
@@ -83,14 +98,22 @@ namespace ChessChallenge.Application
                 string prefs = File.ReadAllText(FileHelper.PrefsFilePath);
                 if (!string.IsNullOrEmpty(prefs))
                 {
-                    if (prefs[0] == '0')
+                    string[] parts = prefs.Split('x');
+                    if (parts.Length == 2)
                     {
-                        return Settings.ScreenSizeSmall;
+                        int width = int.Parse(parts[0]);
+                        int height = int.Parse(parts[1]);
+                        return new Vector2(width, height);
                     }
-                    else if (prefs[0] == '1')
-                    {
-                        return Settings.ScreenSizeBig;
-                    }
+                }
+                // Default sizes
+                if (prefs[0] == '0')
+                {
+                    return Settings.ScreenSizeSmall;
+                }
+                else if (prefs[0] == '1')
+                {
+                    return Settings.ScreenSizeBig;
                 }
             }
             return Settings.ScreenSizeSmall;
@@ -98,14 +121,12 @@ namespace ChessChallenge.Application
 
         static void SaveWindowSize()
         {
-            Directory.CreateDirectory(FileHelper.AppDataPath);
-            bool isBigWindow = Raylib.GetScreenWidth() > Settings.ScreenSizeSmall.X;
-            File.WriteAllText(FileHelper.PrefsFilePath, isBigWindow ? "1" : "0");
+            int width = (int)Raylib.GetScreenWidth();
+            int height = (int)Raylib.GetScreenHeight();
+
+            string prefs = $"{width}x{height}";
+
+            File.WriteAllText(FileHelper.PrefsFilePath, prefs);
         }
-
-      
-
     }
-
-
 }
