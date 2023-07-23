@@ -396,5 +396,3 @@ FodyWeavers.xsd
 
 # JetBrains Rider
 *.sln.iml
-Chess-Challenge/.vscode/launch.json
-Chess-Challenge/.vscode/tasks.json
