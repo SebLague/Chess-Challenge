@@ -97,3 +97,13 @@ Elo difference: 166.2 +/- 18.1, LOS: 100.0 %, DrawRatio: 34.7 %
 Remove unused usings
 
 503 tokens
+
+### 1.6
+Sort by most valuable victim - least valuable attacker
+
+516 tokens
+
+```
+Score of ChessChallenge vs ChessChallengeDev: 539 - 364 - 97
+Elo difference: 61 +/- 21
+```

@@ -73,7 +73,8 @@ public class MyBot : IChessBot
         }
 
         var moves = board.GetLegalMoves();
-        moves = moves.OrderBy(move => !move.IsCapture).ToArray();
+        moves = moves.OrderBy(move => move.MovePieceType).ToArray();
+        moves = moves.OrderByDescending(move => move.CapturePieceType).ToArray();
         var bestScore = -Inf;
         var movesEvaluated = 0;
 
