@@ -60,6 +60,11 @@
             return (fileIndex + rankIndex) % 2 != 0;
         }
 
+        public static bool LightSquare(int squareIndex)
+        {
+            return LightSquare(FileIndex(squareIndex), RankIndex(squareIndex));
+        }
+
         public static string SquareNameFromCoordinate(int fileIndex, int rankIndex)
         {
             return fileNames[fileIndex] + "" + (rankIndex + 1);
