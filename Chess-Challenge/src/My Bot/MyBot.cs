@@ -18,6 +18,10 @@ public class MyBot : IChessBot
     }
 
     int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
+
+    // PSTs are encoded with the following format:
+    // Every rank or file is encoded as a byte, with the first rank/file being the LSB and the last rank/file being the MSB.
+    // For every value to fit inside a byte, the values are divided by 2, and multiplication inside evaluation is needed.
     ulong[] pstRanks = {0, 32973249741911296, 16357091511995071475, 17581496622553367027, 724241724997039354, 432919517870226424, 17729000522595302646 };
     ulong[] pstFiles = {0, 17944594909985834239, 17438231369917791979, 17799354947352068342, 17580088143863153148, 217585671819360496, 17944030877684269297 };
 
@@ -73,11 +77,13 @@ public class MyBot : IChessBot
     {
         bestMove = Move.NullMove;
 
+        // Repetition detection
         if (ply > 0 && repetitions.Contains(board.ZobristKey))
         {
             return 0;
         }
 
+        // At leaf nodes, evaluate the position
         if (depth == 0)
         {
             var score = Evaluate(board);
@@ -85,8 +91,11 @@ public class MyBot : IChessBot
         }
 
         var moves = board.GetLegalMoves();
+
+        // MVV-LVA ordering
         moves = moves.OrderBy(move => move.MovePieceType).ToArray();
         moves = moves.OrderByDescending(move => move.CapturePieceType).ToArray();
+
         var bestScore = -Inf;
         var movesEvaluated = 0;
 
@@ -111,9 +120,13 @@ public class MyBot : IChessBot
             {
                 bestScore = score;
                 bestMove = move;
+
+                // If the move is better than our current alpha, update alpha
                 if (score > alpha)
                 {
                     alpha = score;
+
+                    // If the move is better than our current beta, we can stop searching
                     if (score >= beta)
                     {
                         break;
@@ -143,6 +156,7 @@ public class MyBot : IChessBot
     {
         var totalTime = timer.MillisecondsRemaining;
 
+        // Add the current position to the repetition list
         _repetitions.Add(board.ZobristKey);
         var repetitionsCopy = _repetitions.ToHashSet();
 
@@ -159,6 +173,8 @@ public class MyBot : IChessBot
             }
 
             bestMove = move;
+
+            // For debugging purposes, will be removed in the final version
             Console.WriteLine($"{score} {move}");
         }
 
