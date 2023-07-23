@@ -13,9 +13,10 @@ dotnet run
 
 ## Change Log
 I unfortunately missed a serious bug in the API and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Apologies for the inconvenience. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed).
-* V1.1 Bug fix for `board.GetPiece()` and `PieceList` functions. Added `Board.CreateBoardFromFEN()` function.
-  * V1.11 UI changes: Added coordinate names to board UI and fixed human player input bug.
-  * V1.12 Small fixes to `board.IsDraw()`: Fifty move counter is now updated properly during search, and insufficient material is now detected for lone bishops on the same square colour.
+* <b>V1.1</b> Fixed major bug affecting `board.GetPiece()` and `PieceList` functions. Added `Board.CreateBoardFromFEN()` function.
+* <b>V1.11</b> UI changes: Added coordinate names to board UI and fixed human player input bug.
+* <b>V1.12</b> Small fixes to `board.IsDraw()`: Fifty move counter is now updated properly during search, and insufficient material is now detected for lone bishops on the same square colour.
+* <b>V1.13</b> Fixed issue with `board.ZobristKey` where value would sometimes be different after making and undoing a move. Added an alternative function for getting moves `board.GetLegalMovesNonAlloc()` (see docs for more info).
 
 ## Submission Due Date
 October 1st 2023.<br>
