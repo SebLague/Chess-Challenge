@@ -56,7 +56,7 @@ public class MyBot : IChessBot
 
     int AlphaBetaMin(Board board, int alpha, int beta, int depth_left)
     {
-        if (depth_left == 0) return Evaluate(board);
+        if (depth_left == 0) return -Evaluate(board);
         Move[] moves = board.GetLegalMoves();
         foreach (Move move in moves)
         {
