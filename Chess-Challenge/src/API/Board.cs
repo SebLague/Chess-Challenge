@@ -172,7 +172,13 @@ namespace ChessChallenge.API
 		{
 			return IsFiftyMoveDraw() || Arbiter.InsufficentMaterial(board) || IsInStalemate() || IsRepetition();
 
-			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
+			bool IsInStalemate()
+			{
+				Span<Move> legalMoves = stackalloc Move[APIMoveGen.MaxMoves];
+				GetLegalMovesNonAlloc(ref legalMoves);
+				return !IsInCheck() && legalMoves.Length == 0;
+			}
+
 			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
 			bool IsRepetition() => repetitionHistory.Contains(board.ZobristKey);
 		}
