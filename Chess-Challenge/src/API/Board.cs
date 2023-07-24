@@ -51,6 +51,9 @@ namespace ChessChallenge.API
 			GameRepetitionHistory = repetitionHistory.ToArray();
 			GameRepetitionHistory.Reverse();
 			repetitionHistory.Remove(board.ZobristKey);
+
+			// Init game moves history
+			GameMoveHistory = board.AllGameMoves.Select(m => new Move(MoveUtility.GetMoveNameUCI(m), this)).ToArray();
         }
 
 		/// <summary>
@@ -262,11 +265,11 @@ namespace ChessChallenge.API
 		/// </summary>
 		public string GetFenString() => FenUtility.CurrentFen(board);
 
-		/// <summary>
-		/// 64-bit number where each bit that is set to 1 represents a
-		/// square that contains a piece of the given type and colour.
-		/// </summary>
-		public ulong GetPieceBitboard(PieceType pieceType, bool white)
+        /// <summary>
+        /// 64-bit number where each bit that is set to 1 represents a
+        /// square that contains a piece of the given type and colour.
+        /// </summary>
+        public ulong GetPieceBitboard(PieceType pieceType, bool white)
 		{
 			return board.pieceBitboards[PieceHelper.MakePiece((int)pieceType, white)];
 		}
@@ -305,12 +308,23 @@ namespace ChessChallenge.API
 		public ulong ZobristKey => board.ZobristKey;
 
 		/// <summary>
-		/// Zobrist keys for all the positions played in the game so far. This is reset whenever a pawn move or
-		/// capture is made, as previous positions are now impossible to reach again.
-		/// Note that this is not updated when your bot makes moves on the board during its search, but only when
-		/// moves are actually played in the game.
+		/// Zobrist keys for all the positions played in the game so far. This is reset whenever a
+		/// pawn move or capture is made, as previous positions are now impossible to reach again.
+		/// Note that this is not updated when your bot makes moves on the board while thinking,
+		/// but rather only when moves are actually played in the game.
 		/// </summary>
 		public ulong[] GameRepetitionHistory { get; private set; }
+
+        /// <summary>
+        /// FEN representation of the game's starting position.
+        /// </summary>
+        public string GameStartFenString => board.GameStartFen;
+
+		/// <summary>
+		/// All the moves played in the game so far.
+		/// This only includes moves played in the actual game, not moves made on the board while the bot is thinking.
+		/// </summary>
+		public Move[] GameMoveHistory { get; private set; }
 
         /// <summary>
         /// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised
