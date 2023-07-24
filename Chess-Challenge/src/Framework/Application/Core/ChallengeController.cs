@@ -168,8 +168,8 @@ namespace ChessChallenge.Application
                 }
                 // reset stats
                 botMatchGameIndex = 0;
-                BotStatsA = new BotMatchStats("IBot");
-                BotStatsB = new BotMatchStats("IBot");
+                BotStatsA = new BotMatchStats(player2.ToString());
+                BotStatsB = new BotMatchStats(player1.ToString());
 
                 StartNewGame(player1,player2);
                 // block
@@ -183,8 +183,8 @@ namespace ChessChallenge.Application
               // perform elo ranking
               // see https://en.wikipedia.org/wiki/Elo_rating_system#Theory
 
-              var Ra = eloScores[player1];
-              var Rb = eloScores[player2];
+              var Ra = eloScores[player2];
+              var Rb = eloScores[player1];
 
               var Qa = Math.Pow(10.0,Ra/400.0);
               var Qb = Math.Pow(10.0,Rb/400.0);
@@ -205,7 +205,7 @@ namespace ChessChallenge.Application
 
               }
             }
-            using (StreamWriter file = new StreamWriter("myfile.txt"))
+            using (StreamWriter file = new StreamWriter("elo.txt"))
                 foreach (var entry in eloScores)
                     file.WriteLine("{0} {1}", entry.Key, entry.Value); 
             }
