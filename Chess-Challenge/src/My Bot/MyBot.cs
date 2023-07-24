@@ -10,33 +10,24 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        // int score = 0;
-        int alpha = int.MinValue;
-        int beta = int.MaxValue;
-
+        int bestScore = -int.MaxValue;
+        
         Move[] moves = GetMoves(board);
-        Move retMove = moves[0];
+        Move bestMove = moves[0];
 
         foreach (Move move in moves)
         {
             board.MakeMove(move);
-            // int newScore = AlphaBetaMax(board, int.MinValue, int.MaxValue, 4);
-            int newScore = AlphaBeta(board, -beta, -alpha, 3);
+            int score = -AlphaBeta(board, -int.MaxValue, int.MaxValue, 3);
             board.UndoMove(move);
-            if (newScore > alpha)
+            
+            if (score > bestScore)
             {
-                alpha = newScore;
-                retMove = move;
-            }
-            if (newScore >= beta)
-            {
-                alpha = newScore;
-                retMove = move;
-                break;
+                bestScore = score;
+                bestMove = move;
             }
         }
-        Console.WriteLine(alpha);
-        return retMove;
+        return bestMove;
     }
 
     Move[] GetMoves(Board board)
