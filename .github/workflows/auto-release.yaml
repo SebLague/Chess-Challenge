@@ -25,4 +25,4 @@ jobs:
         env:
           VERSION: ${{ steps.get-version.outputs.version }}
         run: |
-          gh release create v${VERSION} --generate-notes
+          gh release create "v${VERSION}" --generate-notes
