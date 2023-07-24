@@ -167,25 +167,38 @@ namespace ChessChallenge.API
 		/// </summary>
 		public bool IsInCheckmate() => IsInCheck() && GetLegalMoves().Length == 0;
 
-		/// <summary>
-		/// Test if the current position is a draw due stalemate,
-		/// 3-fold repetition, insufficient material, or 50-move rule.
-		/// </summary>
-		public bool IsDraw()
+        /// <summary>
+        /// Test if the current position is a draw due stalemate, repetition, insufficient material, or 50-move rule.
+        /// Note: this function will return true if the same position has occurred twice on the board (rather than 3 times,
+        /// which is when the game is actually drawn). This quirk is to help bots avoid repeating positions unnecessarily.
+        /// </summary>
+        public bool IsDraw()
 		{
-			return IsFiftyMoveDraw() || Arbiter.InsufficentMaterial(board) || IsInStalemate() || IsRepetition();
+			return IsFiftyMoveDraw() || IsInsufficientMaterial() || IsInStalemate() || IsRepeatedPosition();
 
 			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
 			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
-			bool IsRepetition() => repetitionHistory.Contains(board.ZobristKey);
 		}
 
 		/// <summary>
-		/// Does the given player still have the right to castle kingside?
-		/// Note that having the right to castle doesn't necessarily mean castling is legal right now
-		/// (for example, a piece might be in the way, or player might be in check, etc).
+		/// Test if the current position has occurred at least once before on the board.
+		/// This includes both positions in the actual game, and positions reached by
+		/// making moves while the bot is thinking.
 		/// </summary>
-		public bool HasKingsideCastleRight(bool white) => board.currentGameState.HasKingsideCastleRight(white);
+		public bool IsRepeatedPosition() => repetitionHistory.Contains(board.ZobristKey);
+
+		/// <summary>
+		/// Test if there are sufficient pieces remaining on the board to potentially deliver checkmate.
+		/// If not, the game is automatically a draw.
+		/// </summary>
+		public bool IsInsufficientMaterial() => Arbiter.InsufficentMaterial(board);
+
+        /// <summary>
+        /// Does the given player still have the right to castle kingside?
+        /// Note that having the right to castle doesn't necessarily mean castling is legal right now
+        /// (for example, a piece might be in the way, or player might be in check, etc).
+        /// </summary>
+        public bool HasKingsideCastleRight(bool white) => board.currentGameState.HasKingsideCastleRight(white);
 
 		/// <summary>
 		/// Does the given player still have the right to castle queenside?
