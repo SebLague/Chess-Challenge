@@ -18,6 +18,7 @@ To make your bot default for the MyBot vs X buttons (for testing), rearrange
 the items in `Application.Core.ChallengeController.CreatePlayer` such that the
 MyBot player spawns your bot.
 
+The token counter currently looks at MyBot only (sorry!). I therefore suggest developing the bot in the MyBot file until its at a finished state, then renaming it and adding it to the ELO pool when you want to try a new one out.
 
 * * * 
 # Chess Coding Challenge (C#)
