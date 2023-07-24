@@ -4,6 +4,10 @@ using System.Collections.Generic;
 
 namespace ChessChallenge.Application
 {
+    public class TokenCount {
+        public int total;
+        public int excludingLogs;
+    }
     public static class TokenCounter
     {
 
@@ -20,22 +24,27 @@ namespace ChessChallenge.Application
             SyntaxKind.CloseParenToken
         });
 
-        public static int CountTokens(string code)
+        public static TokenCount CountTokens(string code)
         {
             SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
             SyntaxNode root = tree.GetRoot();
             return CountTokens(root);
         }
 
-        static int CountTokens(SyntaxNodeOrToken syntaxNode)
+        static TokenCount CountTokens(SyntaxNodeOrToken syntaxNode)
         {
             SyntaxKind kind = syntaxNode.Kind();
             int numTokensInChildren = 0;
+            int numTokensExcludingLogs = 0;
 
 
             foreach (var child in syntaxNode.ChildNodesAndTokens())
             {
-                numTokensInChildren += CountTokens(child);
+                //System.Console.WriteLine(child.ToString());
+                if (!(child.ToString().StartsWith("System.Console.Write") || child.ToString().StartsWith("Console.Write"))) {
+                    numTokensExcludingLogs += CountTokens(child).excludingLogs; // should work with total too as logs are top level it seems
+                }
+                numTokensInChildren += CountTokens(child).total;
             }
 
             if (syntaxNode.IsToken && !tokensToIgnore.Contains(kind))
@@ -45,14 +54,15 @@ namespace ChessChallenge.Application
                 // String literals count for as many chars as are in the string
                 if (kind is SyntaxKind.StringLiteralToken or SyntaxKind.InterpolatedStringTextToken)
                 {
-                    return syntaxNode.ToString().Length;
+                    int length = syntaxNode.ToString().Length;
+                    return new TokenCount{total = length, excludingLogs = length};
                 }
 
                 // Regular tokens count as just one token
-                return 1;
+                return new TokenCount{total = 1, excludingLogs = 1};
             }
 
-            return numTokensInChildren;
+            return new TokenCount{total = numTokensInChildren, excludingLogs = numTokensExcludingLogs};
         }
 
     }
