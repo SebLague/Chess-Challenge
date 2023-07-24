@@ -170,16 +170,21 @@ namespace ChessChallenge.API
 
         /// <summary>
         /// Test if the current position is a draw due stalemate, repetition, insufficient material, or 50-move rule.
-        /// Note: this function will return true if the same position has occurred twice on the board (rather than 3 times,
-        /// which is when the game is actually drawn). This quirk is to help bots avoid repeating positions unnecessarily.
         /// </summary>
         public bool IsDraw()
 		{
-			return IsFiftyMoveDraw() || IsInsufficientMaterial() || IsInStalemate() || IsRepeatedPosition();
+			return IsFiftyMoveDraw() || IsInsufficientMaterial() || IsInStalemate() || IsThreefoldRepetition();
 
 			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
 			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
 		}
+
+		/// <summary>
+		/// Test if the current position has occurred at least twice before on the board.
+		/// This includes both positions in the actual game, and positions reached by
+		/// making moves while the bot is thinking.
+		/// </summary>
+		public bool IsThreefoldRepetition() => board.RepetitionPositionHistory.Count((x => x == board.ZobristKey)) == 3;
 
 		/// <summary>
 		/// Test if the current position has occurred at least once before on the board.
