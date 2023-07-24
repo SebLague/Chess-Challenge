@@ -20,7 +20,7 @@ namespace ChessChallenge.Application
         {
             Human,
             MyBot,
-            MyBot2,
+            RandomBot,
             MyBot3,
             EvilBot
         }
@@ -152,7 +152,7 @@ namespace ChessChallenge.Application
 
           void ELOThread(){
 
-            var bots = new List<PlayerType> { PlayerType.MyBot,PlayerType.MyBot2,PlayerType.MyBot3,PlayerType.EvilBot };
+            var bots = new List<PlayerType> { PlayerType.MyBot,PlayerType.RandomBot,PlayerType.MyBot3,PlayerType.EvilBot };
             var eloScores = new Dictionary<PlayerType,double>();
 
             foreach (PlayerType bot in bots){
@@ -285,7 +285,7 @@ namespace ChessChallenge.Application
             return type switch
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
-                PlayerType.MyBot2 => new ChessPlayer(new MyBot2(), type, GameDurationMilliseconds),
+                PlayerType.RandomBot => new ChessPlayer(new RandomBot(), type, GameDurationMilliseconds),
                 PlayerType.MyBot3 => new ChessPlayer(new MyBot3(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
