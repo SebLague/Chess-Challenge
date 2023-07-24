@@ -11,6 +11,7 @@ namespace ChessChallenge.API
 		readonly Chess.Board board;
 		readonly APIMoveGen moveGen;
 
+		readonly HashSet<ulong> repetitionHistory;
 		readonly PieceList[] allPieceLists;
 		readonly PieceList[] validPieceLists;
 
