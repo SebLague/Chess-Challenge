@@ -10,6 +10,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using static ChessChallenge.Application.Settings;
 using static ChessChallenge.Application.ConsoleHelper;
+using System.Collections.Generic;
 
 namespace ChessChallenge.Application
 {
@@ -19,6 +20,8 @@ namespace ChessChallenge.Application
         {
             Human,
             MyBot,
+            MyBot2,
+            MyBot3,
             EvilBot
         }
 
@@ -26,6 +29,7 @@ namespace ChessChallenge.Application
         Random rng;
         int gameID;
         bool isPlaying;
+        bool eloMatchRunning = false;
         Board board;
         public ChessPlayer PlayerWhite { get; private set; }
         public ChessPlayer PlayerBlack {get;private set;}
@@ -140,6 +144,77 @@ namespace ChessChallenge.Application
             //Console.WriteLine("Exitting thread: " + threadID);
         }
 
+
+        public void StartELOTourney() {
+          Task.Factory.StartNew(ELOThread, TaskCreationOptions.LongRunning);
+
+
+
+          void ELOThread(){
+
+            var bots = new List<PlayerType> { PlayerType.MyBot,PlayerType.MyBot2,PlayerType.MyBot3,PlayerType.EvilBot };
+            var eloScores = new Dictionary<PlayerType,double>();
+
+            foreach (PlayerType bot in bots){
+              eloScores[bot] = 1000.0;
+            }
+
+            var K = 32;
+
+            foreach (PlayerType player1 in bots) {
+              foreach (PlayerType player2 in bots) {
+                if (player1 == player2) {
+                  continue;
+                }
+                // reset stats
+                botMatchGameIndex = 0;
+                BotStatsA = new BotMatchStats("IBot");
+                BotStatsB = new BotMatchStats("IBot");
+
+                StartNewGame(player1,player2);
+                // block
+                eloMatchRunning = true;
+                while (eloMatchRunning) {
+                }
+
+                var n_games = botMatchGameIndex + 1;
+
+
+              // perform elo ranking
+              // see https://en.wikipedia.org/wiki/Elo_rating_system#Theory
+
+              var Ra = eloScores[player1];
+              var Rb = eloScores[player2];
+
+              var Qa = Math.Pow(10.0,Ra/400.0);
+              var Qb = Math.Pow(10.0,Rb/400.0);
+
+              var expectedScoreA = Qa / (Qa+Qb);
+              var expectedScoreB = Qb / (Qa+Qb);
+
+              var scoreA = 0.5*BotStatsA.NumDraws + 1*BotStatsA.NumWins;
+              var scoreB = 0.5*BotStatsB.NumDraws + 1*BotStatsB.NumWins;
+
+              var Ra_new = Ra + K * (scoreA-expectedScoreA);
+              var Rb_new = Rb + K * (scoreB-expectedScoreB);
+
+              eloScores[player1] = Ra_new;
+              eloScores[player2] = Rb_new;
+              ConsoleHelper.Log(player1 + ": " + Ra + " -> " + Ra_new);
+              ConsoleHelper.Log(player2 + ": " + Rb + " -> " + Rb_new);
+
+              }
+            }
+            using (StreamWriter file = new StreamWriter("myfile.txt"))
+                foreach (var entry in eloScores)
+                    file.WriteLine("{0} {1}", entry.Key, entry.Value); 
+            }
+
+
+
+
+        }
+
         Move GetBotMove()
         {
             // Board b = new Board();
@@ -210,6 +285,8 @@ namespace ChessChallenge.Application
             return type switch
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
+                PlayerType.MyBot2 => new ChessPlayer(new MyBot2(), type, GameDurationMilliseconds),
+                PlayerType.MyBot3 => new ChessPlayer(new MyBot3(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
@@ -292,7 +369,9 @@ namespace ChessChallenge.Application
                 {
                     UpdateBotMatchStats(result);
                     botMatchGameIndex++;
-                    int numGamesToPlay = botMatchStartFens.Length * 2;
+                    
+                    // TODO Change me back later!!
+                    int numGamesToPlay = 20;
 
                     if (botMatchGameIndex < numGamesToPlay && autoStartNextBotMatch)
                     {
@@ -308,6 +387,7 @@ namespace ChessChallenge.Application
                     else if (autoStartNextBotMatch)
                     {
                         Log("Match finished", false, ConsoleColor.Blue);
+                        eloMatchRunning = false;
                     }
                 }
             }

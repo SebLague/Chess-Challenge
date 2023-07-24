@@ -30,6 +30,11 @@ namespace ChessChallenge.Application
                 controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.EvilBot);
             }
 
+            if (NextButtonInRow("ELO Tourney", ref buttonPos, spacing, buttonSize))
+            {
+              controller.StartELOTourney();
+            }
+
             // Page buttons
             buttonPos.Y += breakSpacing;
 

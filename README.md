@@ -1,3 +1,25 @@
+
+The button ELO Tourney runs a tourney of all our bots against eachother (and EvilBot), and calculates ELO scores for each.
+The results of this are output to elo.txt.
+
+To add a bot to the internal tourney:
+
+* Create a bot class that is a copy of `MyBot` (modified to have custom playing logic).
+* Add the class name to `Application.Core.ChallengeController.PlayerType` enum.
+* Update the switch statement in
+  `Application.Core.ChallengeController.CreatePlayer` to instantiate an
+  instance of your new bot class.
+* Add your bot to the ELO players in `Application.Core.ChallengeController.StartELOTourney`.
+
+
+* * * 
+
+To make your bot default for the MyBot vs X buttons (for testing), rearrange
+the items in `Application.Core.ChallengeController.CreatePlayer` such that the
+MyBot player spawns your bot.
+
+
+* * * 
 # Chess Coding Challenge (C#)
 Welcome to the [chess coding challenge](https://youtu.be/iScy18pVR58)! This is a friendly competition in which your goal is to create a small chess bot (in C#) using the framework provided in this repository.
 Once submissions close, these bots will battle it out to discover which bot is best!
@@ -46,6 +68,7 @@ You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
     * `System.Linq`
       * You may not use the `AsParallel()` function
 * As implied by the allowed namespaces, you may not read data from a file or access the internet, nor may you create any new threads or tasks to run code in parallel/in the background.
+
 * You may not use the unsafe keyword.
 * You may not store data inside the name of a variable/function/class etc (to be extracted with `nameof()`, `GetType().ToString()`, `Environment.StackTrace` and so on). Thank you to [#12](https://github.com/SebLague/Chess-Challenge/issues/12) and [#24](https://github.com/SebLague/Chess-Challenge/issues/24).
 * If your bot makes an illegal move or runs out of time, it will lose the game.
