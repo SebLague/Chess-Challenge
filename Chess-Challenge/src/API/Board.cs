@@ -4,6 +4,7 @@ namespace ChessChallenge.API
 	using ChessChallenge.Chess;
 	using System;
 	using System.Collections.Generic;
+	using System.Linq;
 
 	public sealed class Board
 	{
@@ -47,8 +48,10 @@ namespace ChessChallenge.API
 
 			// Init rep history
 			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
+			GameRepetitionHistory = repetitionHistory.ToArray();
+			GameRepetitionHistory.Reverse();
 			repetitionHistory.Remove(board.ZobristKey);
-		}
+        }
 
 		/// <summary>
 		/// Updates the board state with the given move.
@@ -277,10 +280,24 @@ namespace ChessChallenge.API
 		/// </summary>
 		public int PlyCount => board.plyCount;
 
+        /// <summary>
+        ///  Number of ply (a single move by either white or black) since the last pawn move or capture.
+		///  If this value reaches a hundred (meaning 50 full moves without a pawn move or capture), the game is drawn.
+        /// </summary>
+        public int FiftyMoveCounter => board.currentGameState.fiftyMoveCounter;
+
 		/// <summary>
 		/// 64-bit hash of the current position
 		/// </summary>
 		public ulong ZobristKey => board.ZobristKey;
+
+		/// <summary>
+		/// Zobrist keys for all the positions played in the game so far. This is reset whenever a pawn move or
+		/// capture is made, as previous positions are now impossible to reach again.
+		/// Note that this is not updated when your bot makes moves on the board during its search, but only when
+		/// moves are actually played in the game.
+		/// </summary>
+		public ulong[] GameRepetitionHistory { get; private set; }
 
         /// <summary>
         /// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised
