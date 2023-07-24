@@ -40,9 +40,8 @@ namespace ChessChallenge.Application
 
             foreach (var child in syntaxNode.ChildNodesAndTokens())
             {
-                //System.Console.WriteLine(child.ToString());
                 if (!(child.ToString().StartsWith("System.Console.Write") || child.ToString().StartsWith("Console.Write"))) {
-                    numTokensExcludingLogs += CountTokens(child).excludingLogs; // should work with total too as logs are top level it seems
+                    numTokensExcludingLogs += CountTokens(child).excludingLogs;
                 }
                 numTokensInChildren += CountTokens(child).total;
             }
