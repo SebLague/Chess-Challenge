@@ -97,13 +97,13 @@ namespace ChessChallenge.API
 		}
 
 		/// <summary>
-		/// Try skip the current turn
-		/// This will fail and return false if in check
-		/// Note: skipping a turn is not allowed in the game, but it can be used as a search technique
+		/// Try to skip the current turn.
+		/// This will return false if in check (unless <paramref name="skipEvenIfInCheck"/> is set to true).
+		/// Note: skipping a turn is not allowed in the game, but it can be used as a search technique.
 		/// </summary>
-		public bool TrySkipTurn()
+		public bool TrySkipTurn(bool skipEvenIfInCheck = false)
 		{
-			if (IsInCheck())
+			if (!skipEvenIfInCheck && IsInCheck())
 			{
 				return false;
 			}
