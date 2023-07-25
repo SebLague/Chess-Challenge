@@ -268,12 +268,13 @@ namespace ChessChallenge.Application
         static void MiscTest()
         {
             Console.WriteLine("Running Misc Tests");
+
+            // Captures
             var board = new Chess.Board();
             board.LoadPosition("1q3rk1/P5p1/4p2p/2ppP1N1/5Qb1/1PP5/7P/2R2RK1 w - - 0 28");
             boardAPI = new(board);
             Assert(boardAPI.IsWhiteToMove, "Colour to move wrong");
 
-            //var moves = boardAPI.GetLegalMoves();
             var captures = boardAPI.GetLegalMoves(true);
             Assert(captures.Length == 4, "Captures wrong");
             int numTested = 0;
@@ -308,6 +309,45 @@ namespace ChessChallenge.Application
                 }
             }
             Assert(numTested == 4, "Target square wrong");
+
+            // Game moves
+            string startPos = "r1bqkbnr/pppppppp/2n5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2";
+            board.LoadPosition(startPos);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("e4e5", board), false);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("c6e5", board), false);
+            var b = new Chess.Board(board);
+            boardAPI = new(b);
+            Assert(boardAPI.GameMoveHistory[0].MovePieceType is PieceType.Pawn, "Wrong game move history");
+            Assert(boardAPI.GameMoveHistory[0].CapturePieceType is PieceType.None, "Wrong game move history");
+            Assert(boardAPI.GameMoveHistory[1].MovePieceType is PieceType.Knight, "Wrong game move history");
+            Assert(boardAPI.GameMoveHistory[1].CapturePieceType is PieceType.Pawn, "Wrong game move history");
+            Assert(boardAPI.GameStartFenString == startPos, "Wrong game start fen");
+            Assert(boardAPI.GetFenString() == "r1bqkbnr/pppppppp/8/4n3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3", "Wrong game fen");
+
+            // Test for bug: Invalid target piece in capture when en passant is available
+            string[] invalidCaptureFens =
+            {
+                "r1b1r1k1/ppp2pp1/7p/2Pp4/4q3/PQ6/4PPPP/3RKB1R w K d6 0 16", // c5d6
+                "8/8/4k3/8/5PpP/6P1/7K/8 b - f3 0 73" // g4f3
+            };
+            foreach (var fen in invalidCaptureFens)
+            {
+                board.LoadPosition(fen);
+                boardAPI = new(board);
+                captures = boardAPI.GetLegalMoves(true);
+                foreach (var c in captures)
+                {
+                    Assert(c.MovePieceType != PieceType.None, $"Move piece type wrong for move {c}");
+                    Assert(c.CapturePieceType != PieceType.None, $"Capture piece type wrong for move {c}");
+                }
+            }
+
+            board.LoadPosition(invalidCaptureFens[0]);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("c5d6", board), false);
+            boardAPI = new(board);
+            Assert(boardAPI.GameMoveHistory[0].CapturePieceType == PieceType.Pawn, "Wrong capture type: game history");
+            Assert(boardAPI.GameMoveHistory[0].IsEnPassant, "Wrong move flag: move history");
+
         }
 
         static void MoveGenTest()

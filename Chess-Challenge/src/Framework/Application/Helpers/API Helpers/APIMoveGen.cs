@@ -109,14 +109,16 @@ namespace ChessChallenge.Application.APIHelpers
         API.Move CreateAPIMove(int startSquare, int targetSquare, int flag)
         {
             int movePieceType = PieceHelper.PieceType(board.Square[startSquare]);
-            int capturePieceType = PieceHelper.PieceType(board.Square[targetSquare]);
-            API.Move apiMove = new(new Move(startSquare, targetSquare, flag), movePieceType, capturePieceType);
-            return apiMove;
+            return CreateAPIMove(startSquare, targetSquare, flag, movePieceType);
         }
 
         API.Move CreateAPIMove(int startSquare, int targetSquare, int flag, int movePieceType)
         {
             int capturePieceType = PieceHelper.PieceType(board.Square[targetSquare]);
+            if (flag == Move.EnPassantCaptureFlag)
+            {
+                capturePieceType = PieceHelper.Pawn;
+            }
             API.Move apiMove = new(new Move(startSquare, targetSquare, flag), movePieceType, capturePieceType);
             return apiMove;
         }

@@ -25,9 +25,23 @@ namespace ChessChallenge.API
         /// Create a new board. Note: this should not be used in the challenge,
         /// use the board provided in the Think method instead.
         /// </summary>
-        public Board(Chess.Board board)
+        public Board(Chess.Board boardSource)
 		{
-			this.board = board;
+			// Clone board and create game move history
+			board = new Chess.Board();
+			board.LoadPosition(boardSource.StartPositionInfo);
+			GameMoveHistory = new Move[boardSource.AllGameMoves.Count];
+
+			for (int i = 0; i < boardSource.AllGameMoves.Count; i ++)
+			{
+				Chess.Move move = boardSource.AllGameMoves[i];
+				int movePieceType = PieceHelper.PieceType(board.Square[move.StartSquareIndex]);
+				int capturePieceType = move.IsEnPassant ? PieceHelper.Pawn : PieceHelper.PieceType(board.Square[move.TargetSquareIndex]);
+				GameMoveHistory[i] = new Move(move, movePieceType, capturePieceType);
+				board.MakeMove(move, false);
+			}
+
+			// Init move gen
 			moveGen = new APIMoveGen();
 			cachedLegalMoves = Array.Empty<Move>();
 			cachedLegalCaptureMoves = Array.Empty<Move>();
@@ -49,11 +63,7 @@ namespace ChessChallenge.API
 			// Init rep history
 			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
 			GameRepetitionHistory = repetitionHistory.ToArray();
-			GameRepetitionHistory.Reverse();
 			repetitionHistory.Remove(board.ZobristKey);
-
-			// Init game moves history
-			GameMoveHistory = board.AllGameMoves.Select(m => new Move(MoveUtility.GetMoveNameUCI(m), this)).ToArray();
         }
 
 		/// <summary>

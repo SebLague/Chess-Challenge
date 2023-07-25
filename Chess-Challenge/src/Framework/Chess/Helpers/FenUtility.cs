@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 
 namespace ChessChallenge.Chess
 {
@@ -11,72 +13,7 @@ namespace ChessChallenge.Chess
         public static PositionInfo PositionFromFen(string fen)
         {
 
-            PositionInfo loadedPositionInfo = new PositionInfo();
-            string[] sections = fen.Split(' ');
-
-            int file = 0;
-            int rank = 7;
-
-            foreach (char symbol in sections[0])
-            {
-                if (symbol == '/')
-                {
-                    file = 0;
-                    rank--;
-                }
-                else
-                {
-                    if (char.IsDigit(symbol))
-                    {
-                        file += (int)char.GetNumericValue(symbol);
-                    }
-                    else
-                    {
-                        int pieceColour = (char.IsUpper(symbol)) ? PieceHelper.White : PieceHelper.Black;
-                        int pieceType = char.ToLower(symbol) switch
-                        {
-                            'k' => PieceHelper.King,
-                            'p' => PieceHelper.Pawn,
-                            'n' => PieceHelper.Knight,
-                            'b' => PieceHelper.Bishop,
-                            'r' => PieceHelper.Rook,
-                            'q' => PieceHelper.Queen,
-                            _ => PieceHelper.None
-                        };
-
-                        loadedPositionInfo.squares[rank * 8 + file] = pieceType | pieceColour;
-                        file++;
-                    }
-                }
-            }
-
-            loadedPositionInfo.whiteToMove = (sections[1] == "w");
-
-            string castlingRights = sections[2];
-            loadedPositionInfo.whiteCastleKingside = castlingRights.Contains("K");
-            loadedPositionInfo.whiteCastleQueenside = castlingRights.Contains("Q");
-            loadedPositionInfo.blackCastleKingside = castlingRights.Contains("k");
-            loadedPositionInfo.blackCastleQueenside = castlingRights.Contains("q");
-
-            if (sections.Length > 3)
-            {
-                string enPassantFileName = sections[3][0].ToString();
-                if (BoardHelper.fileNames.Contains(enPassantFileName))
-                {
-                    loadedPositionInfo.epFile = BoardHelper.fileNames.IndexOf(enPassantFileName) + 1;
-                }
-            }
-
-            // Half-move clock
-            if (sections.Length > 4)
-            {
-                int.TryParse(sections[4], out loadedPositionInfo.fiftyMovePlyCount);
-            }
-            // Full move number
-            if (sections.Length > 5)
-            {
-                int.TryParse(sections[5], out loadedPositionInfo.moveCount);
-            }
+            PositionInfo loadedPositionInfo = new(fen);
             return loadedPositionInfo;
         }
 
@@ -273,27 +210,103 @@ namespace ChessChallenge.Chess
             }
         }
 
-        public class PositionInfo
+        public readonly struct PositionInfo
         {
-            public int[] squares;
+            public readonly string fen;
+            public readonly ReadOnlyCollection<int> squares;
+
             // Castling rights
-            public bool whiteCastleKingside;
-            public bool whiteCastleQueenside;
-            public bool blackCastleKingside;
-            public bool blackCastleQueenside;
+            public readonly bool whiteCastleKingside;
+            public readonly bool whiteCastleQueenside;
+            public readonly bool blackCastleKingside;
+            public readonly bool blackCastleQueenside;
             // En passant file (1 is a-file, 8 is h-file, 0 means none)
-            public int epFile;
-            public bool whiteToMove;
+            public readonly int epFile;
+            public readonly bool whiteToMove;
             // Number of half-moves since last capture or pawn advance
             // (starts at 0 and increments after each player's move)
-            public int fiftyMovePlyCount;
+            public readonly int fiftyMovePlyCount;
             // Total number of moves played in the game
             // (starts at 1 and increments after black's move)
-            public int moveCount;
+            public readonly int moveCount;
 
-            public PositionInfo()
+            public PositionInfo(string fen)
             {
-                squares = new int[64];
+                this.fen = fen;
+                int[] squarePieces = new int[64];
+
+                string[] sections = fen.Split(' ');
+
+                int file = 0;
+                int rank = 7;
+
+                foreach (char symbol in sections[0])
+                {
+                    if (symbol == '/')
+                    {
+                        file = 0;
+                        rank--;
+                    }
+                    else
+                    {
+                        if (char.IsDigit(symbol))
+                        {
+                            file += (int)char.GetNumericValue(symbol);
+                        }
+                        else
+                        {
+                            int pieceColour = (char.IsUpper(symbol)) ? PieceHelper.White : PieceHelper.Black;
+                            int pieceType = char.ToLower(symbol) switch
+                            {
+                                'k' => PieceHelper.King,
+                                'p' => PieceHelper.Pawn,
+                                'n' => PieceHelper.Knight,
+                                'b' => PieceHelper.Bishop,
+                                'r' => PieceHelper.Rook,
+                                'q' => PieceHelper.Queen,
+                                _ => PieceHelper.None
+                            };
+
+                            squarePieces[rank * 8 + file] = pieceType | pieceColour;
+                            file++;
+                        }
+                    }
+                }
+
+                squares = new(squarePieces);
+
+                whiteToMove = (sections[1] == "w");
+
+                string castlingRights = sections[2];
+                whiteCastleKingside = castlingRights.Contains('K');
+                whiteCastleQueenside = castlingRights.Contains('Q');
+                blackCastleKingside = castlingRights.Contains('k');
+                blackCastleQueenside = castlingRights.Contains('q');
+
+                // Default values
+                epFile = 0;
+                fiftyMovePlyCount = 0;
+                moveCount = 0;
+
+                if (sections.Length > 3)
+                {
+                    string enPassantFileName = sections[3][0].ToString();
+                    if (BoardHelper.fileNames.Contains(enPassantFileName))
+                    {
+                        epFile = BoardHelper.fileNames.IndexOf(enPassantFileName) + 1;
+                    }
+                }
+
+                // Half-move clock
+                if (sections.Length > 4)
+                {
+                    int.TryParse(sections[4], out fiftyMovePlyCount);
+                }
+                // Full move number
+                if (sections.Length > 5)
+                {
+                    int.TryParse(sections[5], out moveCount);
+                }
             }
         }
     }
