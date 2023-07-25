@@ -59,7 +59,8 @@ namespace ChessChallenge.Chess
         public GameState currentGameState;
 
         public List<Move> AllGameMoves;
-        public string GameStartFen { get; private set; }
+        public string GameStartFen => StartPositionInfo.fen;
+        public FenUtility.PositionInfo StartPositionInfo;
 
         // piece count excluding pawns and kings
         public int totalPieceCountWithoutPawnsAndKings;
@@ -72,16 +73,13 @@ namespace ChessChallenge.Chess
         {
             if (source != null)
             {
-                string fen = FenUtility.CurrentFen(source);
-                LoadPosition(fen);
+                LoadPosition(source.StartPositionInfo);
 
-                RepetitionPositionHistory = new(source.RepetitionPositionHistory);
-                AllGameMoves = new(source.AllGameMoves);
-           
-                currentGameState = source.currentGameState;
-               
+                for (int i = 0; i < source.AllGameMoves.Count; i++)
+                {
+                    MakeMove(source.AllGameMoves[i], false);
+                }
             }
-
         }
 
 
@@ -470,9 +468,13 @@ namespace ChessChallenge.Chess
         // Load custom position from fen string
         public void LoadPosition(string fen)
         {
+            LoadPosition(FenUtility.PositionFromFen(fen));
+        }
+
+        public void LoadPosition(FenUtility.PositionInfo posInfo)
+        {
+            StartPositionInfo = posInfo;
             Initialize();
-            GameStartFen = fen;
-            FenUtility.PositionInfo posInfo = FenUtility.PositionFromFen(fen);
 
             // Load pieces into board array and piece lists
             for (int squareIndex = 0; squareIndex < 64; squareIndex++)
