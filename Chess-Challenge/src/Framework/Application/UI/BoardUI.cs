@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.IO;
 using static ChessChallenge.Application.UIHelper;
+using ChessChallenge.Application.APIHelpers;
 
 namespace ChessChallenge.Application
 {
@@ -22,8 +23,6 @@ namespace ChessChallenge.Application
         static readonly Color nameCol = new(67, 204, 101, 255);
 
         // Bitboard debug mode
-        public static bool VisualizeBitboardEnabled { get; set; }
-        public static ulong BitboardToVisualize { get; set; }
         static readonly Color bitboardColZERO = new(61, 121, 217, 200);
         static readonly Color bitboardColONE = new(252, 43, 92, 200);
 
@@ -210,7 +209,7 @@ namespace ChessChallenge.Application
                 UpdateMoveAnimation(animT);
             }
 
-            if (VisualizeBitboardEnabled)
+            if (BitboardDebugState.BitboardDebugVisualizationRequested)
             {
                 ForEachSquare(DrawBitboardDebugOverlaySquare);
             }
@@ -364,7 +363,8 @@ namespace ChessChallenge.Application
 
         void DrawBitboardDebugOverlaySquare(int file, int rank)
         {
-            bool isSet = BitBoardUtility.ContainsSquare(BitboardToVisualize, new Coord(file,rank).SquareIndex);
+            ulong bitboard = BitboardDebugState.BitboardToVisualize;
+            bool isSet = BitBoardUtility.ContainsSquare(bitboard, new Coord(file,rank).SquareIndex);
             Color col = isSet ? bitboardColONE : bitboardColZERO;
 
             Vector2 squarePos = GetSquarePos(file, rank, whitePerspective);
