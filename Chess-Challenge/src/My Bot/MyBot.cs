@@ -1,10 +1,16 @@
 ﻿using ChessChallenge.API;
+using System.Collections;
 
 public class MyBot : IChessBot
-{
+{   
+
     public Move Think(Board board, Timer timer)
-    {
+    {  
+        System.Random rand = new System.Random();
         Move[] moves = board.GetLegalMoves();
-        return moves[0];
+        
+        int N = rand.Next(moves.Length);
+        return moves[N];
+
     }
 }
