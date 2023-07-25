@@ -9,8 +9,12 @@ namespace ChessChallenge.Application
         static MoveGenerator moveGen;
         static API.Board boardAPI;
 
-        public static void Run()
+        static bool anyFailed;
+
+        public static void Run(bool runPerft)
         {
+            anyFailed = false;
+
             MoveGenTest();
             PieceListTest();
             DrawTest();
@@ -18,29 +22,55 @@ namespace ChessChallenge.Application
             MiscTest();
             TestBitboards();
             TestMoveCreate();
-            Console.WriteLine("Tests Finished");
+
+            if (runPerft)
+            {
+                RunPerft(true);
+                RunPerft(false);
+            }
+
+            if (anyFailed)
+            {
+                WriteWithCol("TEST FAILED");
+            }
+            else
+            {
+                WriteWithCol("ALL TESTS PASSED", ConsoleColor.Green);
+            }
+            
         }
 
-        public static void RunPerft()
+        public static void RunPerft(bool useStackalloc = true)
         {
             Warmer.Warm();
             int[] depths = { 5, 5, 6, 5, 5, 4, 5, 4, 6, 6, 6, 7, 4, 5, 6, 5, 6, 6, 10, 7, 6, 5, 4, 5, 4, 6, 6, 9, 4, 5 };
             ulong[] expectedNodes = { 4865609, 5617302, 11030083, 15587335, 89941194, 3894594, 193690690, 497787, 1134888, 1440467, 661072, 15594314, 1274206, 58773923, 3821001, 1004658, 217342, 92683, 5966690, 567584, 3114998, 42761834, 3050662, 10574719, 6871272, 71179139, 28859283, 7618365, 28181, 6323457 };
             string[] fens = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "2b1b3/1r1P4/3K3p/1p6/2p5/6k1/1P3p2/4B3 w - - 0 42", "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -", "r3k2r/pp3pp1/PN1pr1p1/4p1P1/4P3/3P4/P1P2PP1/R3K2R w KQkq - 4 4", "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -", "r3k1nr/p2pp1pp/b1n1P1P1/1BK1Pp1q/8/8/2PP1PPP/6N1 w kq - 0 1", "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1", "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1", "5k2/8/8/8/8/8/8/4K2R w K - 0 1", "3k4/8/8/8/8/8/8/R3K3 w Q - 0 1", "r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1", "r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1", "2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1", "8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1", "4k3/1P6/8/8/8/8/K7/8 w - - 0 1", "8/P1k5/K7/8/8/8/8/8 w - - 0 1", "K1k5/8/P7/8/8/8/8/8 w - - 0 1", "8/k1P5/8/1K6/8/8/8/8 w - - 0 1", "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1", "r1bq2r1/1pppkppp/1b3n2/pP1PP3/2n5/2P5/P3QPPP/RNB1K2R w KQ a6 0 12", "r3k2r/pppqbppp/3p1n1B/1N2p3/1nB1P3/3P3b/PPPQNPPP/R3K2R w KQkq - 11 10", "4k2r/1pp1n2p/6N1/1K1P2r1/4P3/P5P1/1Pp4P/R7 w k - 0 6", "1Bb3BN/R2Pk2r/1Q5B/4q2R/2bN4/4Q1BK/1p6/1bq1R1rb w - - 0 1", "n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", "8/PPPk4/8/8/8/8/4Kppp/8 b - - 0 1", "8/2k1p3/3pP3/3P2K1/8/8/8/8 w - - 0 1", "3r4/2p1p3/8/1P1P1P2/3K4/5k2/8/8 b - - 0 1", "8/1p4p1/8/q1PK1P1r/3p1k2/8/4P3/4Q3 b - - 0 1" };
-            Console.WriteLine("Running perft...");
+            Console.WriteLine($"Running perft (useStackalloc={useStackalloc})");
 
             var board = new Chess.Board();
             long timeTotal = 0;
+
             for (int i = 0; i < fens.Length; i++)
             {
                 board.LoadPosition(fens[i]);
                 boardAPI = new(board);
                 System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
-                ulong result = SearchStackalloc(depths[i]);
+                ulong result;
+                if (useStackalloc)
+                {
+                    result = SearchStackalloc(depths[i]);
+                }
+                else
+                {
+                    result = Search(depths[i]);
+                }
+
                 if (result != expectedNodes[i])
                 {
                     Console.WriteLine("Error");
+                    anyFailed = true;
                     break;
                 }
                 else
@@ -283,7 +313,7 @@ namespace ChessChallenge.Application
         static void MoveGenTest()
         {
             Console.WriteLine("Running move gen tests");
-            ChessChallenge.Chess.Board board = new();
+            Chess.Board board = new();
             moveGen = new();
 
             string[] testFens =
@@ -360,14 +390,15 @@ namespace ChessChallenge.Application
         {
             if (!condition)
             {
-                LogError(msg);
+                WriteWithCol(msg);
+                anyFailed = true;
             }
         }
 
 
-        static void LogError(string msg)
+        static void WriteWithCol(string msg, ConsoleColor col = ConsoleColor.Red)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
+            Console.ForegroundColor = col;
             Console.WriteLine(msg);
             Console.ResetColor();
         }

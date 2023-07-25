@@ -4,6 +4,7 @@ namespace ChessChallenge.API
 	using ChessChallenge.Chess;
 	using System;
 	using System.Collections.Generic;
+	using System.Linq;
 
 	public sealed class Board
 	{
@@ -47,8 +48,13 @@ namespace ChessChallenge.API
 
 			// Init rep history
 			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
+			GameRepetitionHistory = repetitionHistory.ToArray();
+			GameRepetitionHistory.Reverse();
 			repetitionHistory.Remove(board.ZobristKey);
-		}
+
+			// Init game moves history
+			GameMoveHistory = board.AllGameMoves.Select(m => new Move(MoveUtility.GetMoveNameUCI(m), this)).ToArray();
+        }
 
 		/// <summary>
 		/// Updates the board state with the given move.
@@ -164,25 +170,38 @@ namespace ChessChallenge.API
 		/// </summary>
 		public bool IsInCheckmate() => IsInCheck() && GetLegalMoves().Length == 0;
 
-		/// <summary>
-		/// Test if the current position is a draw due stalemate,
-		/// 3-fold repetition, insufficient material, or 50-move rule.
-		/// </summary>
-		public bool IsDraw()
+        /// <summary>
+        /// Test if the current position is a draw due stalemate, repetition, insufficient material, or 50-move rule.
+        /// Note: this function will return true if the same position has occurred twice on the board (rather than 3 times,
+        /// which is when the game is actually drawn). This quirk is to help bots avoid repeating positions unnecessarily.
+        /// </summary>
+        public bool IsDraw()
 		{
-			return IsFiftyMoveDraw() || Arbiter.InsufficentMaterial(board) || IsInStalemate() || IsRepetition();
+			return IsFiftyMoveDraw() || IsInsufficientMaterial() || IsInStalemate() || IsRepeatedPosition();
 
 			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
 			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
-			bool IsRepetition() => repetitionHistory.Contains(board.ZobristKey);
 		}
 
 		/// <summary>
-		/// Does the given player still have the right to castle kingside?
-		/// Note that having the right to castle doesn't necessarily mean castling is legal right now
-		/// (for example, a piece might be in the way, or player might be in check, etc).
+		/// Test if the current position has occurred at least once before on the board.
+		/// This includes both positions in the actual game, and positions reached by
+		/// making moves while the bot is thinking.
 		/// </summary>
-		public bool HasKingsideCastleRight(bool white) => board.currentGameState.HasKingsideCastleRight(white);
+		public bool IsRepeatedPosition() => repetitionHistory.Contains(board.ZobristKey);
+
+		/// <summary>
+		/// Test if there are sufficient pieces remaining on the board to potentially deliver checkmate.
+		/// If not, the game is automatically a draw.
+		/// </summary>
+		public bool IsInsufficientMaterial() => Arbiter.InsufficentMaterial(board);
+
+        /// <summary>
+        /// Does the given player still have the right to castle kingside?
+        /// Note that having the right to castle doesn't necessarily mean castling is legal right now
+        /// (for example, a piece might be in the way, or player might be in check, etc).
+        /// </summary>
+        public bool HasKingsideCastleRight(bool white) => board.currentGameState.HasKingsideCastleRight(white);
 
 		/// <summary>
 		/// Does the given player still have the right to castle queenside?
@@ -246,11 +265,11 @@ namespace ChessChallenge.API
 		/// </summary>
 		public string GetFenString() => FenUtility.CurrentFen(board);
 
-		/// <summary>
-		/// 64-bit number where each bit that is set to 1 represents a
-		/// square that contains a piece of the given type and colour.
-		/// </summary>
-		public ulong GetPieceBitboard(PieceType pieceType, bool white)
+        /// <summary>
+        /// 64-bit number where each bit that is set to 1 represents a
+        /// square that contains a piece of the given type and colour.
+        /// </summary>
+        public ulong GetPieceBitboard(PieceType pieceType, bool white)
 		{
 			return board.pieceBitboards[PieceHelper.MakePiece((int)pieceType, white)];
 		}
@@ -277,10 +296,35 @@ namespace ChessChallenge.API
 		/// </summary>
 		public int PlyCount => board.plyCount;
 
+        /// <summary>
+        ///  Number of ply (a single move by either white or black) since the last pawn move or capture.
+		///  If this value reaches a hundred (meaning 50 full moves without a pawn move or capture), the game is drawn.
+        /// </summary>
+        public int FiftyMoveCounter => board.currentGameState.fiftyMoveCounter;
+
 		/// <summary>
 		/// 64-bit hash of the current position
 		/// </summary>
 		public ulong ZobristKey => board.ZobristKey;
+
+		/// <summary>
+		/// Zobrist keys for all the positions played in the game so far. This is reset whenever a
+		/// pawn move or capture is made, as previous positions are now impossible to reach again.
+		/// Note that this is not updated when your bot makes moves on the board while thinking,
+		/// but rather only when moves are actually played in the game.
+		/// </summary>
+		public ulong[] GameRepetitionHistory { get; private set; }
+
+        /// <summary>
+        /// FEN representation of the game's starting position.
+        /// </summary>
+        public string GameStartFenString => board.GameStartFen;
+
+		/// <summary>
+		/// All the moves played in the game so far.
+		/// This only includes moves played in the actual game, not moves made on the board while the bot is thinking.
+		/// </summary>
+		public Move[] GameMoveHistory { get; private set; }
 
         /// <summary>
         /// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised
