@@ -308,6 +308,25 @@ namespace ChessChallenge.Application
                 }
             }
             Assert(numTested == 4, "Target square wrong");
+
+            // Invalid target piece in capture when en passant is available
+            string[] invalidCaptureFens =
+            {
+                "r1b1r1k1/ppp2pp1/7p/2Pp4/4q3/PQ6/4PPPP/3RKB1R w K d6 0 16", // c5d6
+                "8/8/4k3/8/5PpP/6P1/7K/8 b - f3 0 73" // g4f3
+            };
+            foreach (var fen in invalidCaptureFens)
+            {
+                Console.WriteLine($"Checking captures for FEN: {fen}");
+                board.LoadPosition(fen);
+                boardAPI = new(board);
+                captures = boardAPI.GetLegalMoves(true);
+                foreach (var c in captures)
+                {
+                    Assert(c.MovePieceType != PieceType.None, $"Move piece type wrong for move {c}");
+                    Assert(c.CapturePieceType != PieceType.None, $"Capture piece type wrong for move {c}");
+                }
+            }
         }
 
         static void MoveGenTest()
