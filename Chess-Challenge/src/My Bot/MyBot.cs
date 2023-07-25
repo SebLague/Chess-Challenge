@@ -7,15 +7,8 @@ using Timer = ChessChallenge.API.Timer;
 
 public class MyBot : IChessBot
 {
-    private HashSet<ulong> _repetitions;
-
     private const int Inf = 2000000;
     private const int Mate = 1000000;
-
-    public MyBot()
-    {
-        _repetitions = new HashSet<ulong>();
-    }
 
     int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
 
@@ -73,12 +66,12 @@ public class MyBot : IChessBot
         return score;
     }
 
-    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, HashSet<ulong> repetitions, out Move bestMove)
+    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, out Move bestMove)
     {
         bestMove = Move.NullMove;
 
         // Repetition detection
-        if (ply > 0 && repetitions.Contains(board.ZobristKey))
+        if (ply > 0 && board.IsRepeatedPosition())
         {
             return 0;
         }
@@ -115,7 +108,7 @@ public class MyBot : IChessBot
             }
 
             board.MakeMove(move);
-            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, repetitions, out _);
+            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, out _);
             board.UndoMove(move);
 
             // Count the number of moves we have evaluated for detecting mates and stalemates
@@ -162,15 +155,11 @@ public class MyBot : IChessBot
     {
         var totalTime = timer.MillisecondsRemaining;
 
-        // Add the current position to the repetition list
-        _repetitions.Add(board.ZobristKey);
-        var repetitionsCopy = _repetitions.ToHashSet();
-
         var bestMove = Move.NullMove;
         // Iterative deepening
         for (var depth = 1; depth < 128; depth++)
         {
-            var score = Search(board, timer, totalTime, 0, depth, -Inf, Inf, repetitionsCopy, out var move);
+            var score = Search(board, timer, totalTime, 0, depth, -Inf, Inf, out var move);
 
             // If we are out of time, we cannot trust the move that was found during this iteration
             if (timer.MillisecondsElapsedThisTurn * 30 > totalTime)
