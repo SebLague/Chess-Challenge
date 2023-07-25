@@ -11,7 +11,9 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         Move bestMove = Move.NullMove;
-        for (int depth = 0; depth <= 5; depth++)
+
+        // iterative deepening
+        for (int depth = 0; depth <= 10; depth++)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -21,6 +23,7 @@ public class MyBot : IChessBot
 
             sw.Stop();
             Console.WriteLine($"evals={numEvals} depth={depth} time={sw.ElapsedMilliseconds}ms");
+            numEvals = 0;
         }
 
         return bestMove;
@@ -30,6 +33,7 @@ public class MyBot : IChessBot
     {
         int bestEval = int.MinValue;
         Move bestMove = Move.NullMove;
+
         foreach (Move aMove in board.GetLegalMoves())
         {
             int moveEval = -Negamax(board, aMove, int.MinValue, int.MaxValue, maxDepth);
@@ -53,15 +57,19 @@ public class MyBot : IChessBot
         {
             foreach (Move aMove in board.GetLegalMoves())
             {
-                int moveEval = -Negamax(board, aMove, -alpha, -beta, depth - 1);
-                if (moveEval >= beta)
+                int moveEval = -Negamax(board, aMove, alpha, beta, depth - 1);
+                if (moveEval > bestEval)
                 {
                     bestEval = moveEval;
-                    break;
-                }
 
-                bestEval = Math.Max(moveEval, bestEval);
-                alpha = Math.Max(moveEval, alpha);
+                    // alpha/beta pruning
+                    alpha = Math.Max(bestEval, alpha);
+                    if (alpha >= beta)
+                    {
+                        bestEval = alpha;
+                        break;
+                    }
+                }
             }
         }
 
