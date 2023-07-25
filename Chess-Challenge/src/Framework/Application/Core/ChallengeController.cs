@@ -145,8 +145,8 @@ namespace ChessChallenge.Application
             API.Board botBoard = new(board);
             try
             {
-                API.Timer timer = new(PlayerToMove.TimeRemainingMs);
                 botBoard.OpponentRemainingMs = PlayerNotToMove.TimeRemainingMs;
+                API.Timer timer = new(PlayerToMove.TimeRemainingMs);
                 
                 API.Move move = PlayerToMove.Bot.Think(botBoard, timer);
                 return new Move(move.RawValue);
