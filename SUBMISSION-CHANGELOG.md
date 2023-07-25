@@ -201,6 +201,7 @@ Elo difference: 44.4 +/- 13.8, LOS: 100.0 %, DrawRatio: 19.3 %
 ```
 
 ### 1.10
+In-check extension
 
 610 tokens
 
