@@ -324,7 +324,7 @@ namespace ChessChallenge.Application
             Assert(boardAPI.GameStartFenString == startPos, "Wrong game start fen");
             Assert(boardAPI.GetFenString() == "r1bqkbnr/pppppppp/8/4n3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3", "Wrong game fen");
 
-            // Invalid target piece in capture when en passant is available
+            // Test for bug: Invalid target piece in capture when en passant is available
             string[] invalidCaptureFens =
             {
                 "r1b1r1k1/ppp2pp1/7p/2Pp4/4q3/PQ6/4PPPP/3RKB1R w K d6 0 16", // c5d6
@@ -332,7 +332,6 @@ namespace ChessChallenge.Application
             };
             foreach (var fen in invalidCaptureFens)
             {
-                Console.WriteLine($"Checking captures for FEN: {fen}");
                 board.LoadPosition(fen);
                 boardAPI = new(board);
                 captures = boardAPI.GetLegalMoves(true);
@@ -342,6 +341,13 @@ namespace ChessChallenge.Application
                     Assert(c.CapturePieceType != PieceType.None, $"Capture piece type wrong for move {c}");
                 }
             }
+
+            board.LoadPosition(invalidCaptureFens[0]);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("c5d6", board), false);
+            boardAPI = new(board);
+            Assert(boardAPI.GameMoveHistory[0].CapturePieceType == PieceType.Pawn, "Wrong capture type: game history");
+            Assert(boardAPI.GameMoveHistory[0].IsEnPassant, "Wrong move flag: move history");
+
         }
 
         static void MoveGenTest()

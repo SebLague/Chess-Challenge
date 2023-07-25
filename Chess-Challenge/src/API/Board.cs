@@ -36,7 +36,7 @@ namespace ChessChallenge.API
 			{
 				Chess.Move move = boardSource.AllGameMoves[i];
 				int movePieceType = PieceHelper.PieceType(board.Square[move.StartSquareIndex]);
-				int capturePieceType = PieceHelper.PieceType(board.Square[move.TargetSquareIndex]);
+				int capturePieceType = move.IsEnPassant ? PieceHelper.Pawn : PieceHelper.PieceType(board.Square[move.TargetSquareIndex]);
 				GameMoveHistory[i] = new Move(move, movePieceType, capturePieceType);
 				board.MakeMove(move, false);
 			}
