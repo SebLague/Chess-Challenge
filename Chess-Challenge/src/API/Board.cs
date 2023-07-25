@@ -20,6 +20,7 @@ namespace ChessChallenge.API
 		Move[] cachedLegalCaptureMoves;
 		bool hasCachedCaptureMoves;
         readonly Move[] movesDest;
+		public int OpponentRemainingMs = int.MaxValue;
 
         /// <summary>
         /// Create a new board. Note: this should not be used in the challenge,
