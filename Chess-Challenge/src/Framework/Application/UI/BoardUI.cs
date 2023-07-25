@@ -10,6 +10,8 @@ namespace ChessChallenge.Application
 {
     public class BoardUI
     {
+      
+        // Board settings
         const int squareSize = 100;
         const double moveAnimDuration = 0.15;
         bool whitePerspective = true;
@@ -18,6 +20,12 @@ namespace ChessChallenge.Application
         static readonly Color activeTextCol = new(200, 200, 200, 255);
         static readonly Color inactiveTextCol = new(100, 100, 100, 255);
         static readonly Color nameCol = new(67, 204, 101, 255);
+
+        // Bitboard debug mode
+        public static bool VisualizeBitboardEnabled { get; set; }
+        public static ulong BitboardToVisualize { get; set; }
+        static readonly Color bitboardColZERO = new(61, 121, 217, 200);
+        static readonly Color bitboardColONE = new(252, 43, 92, 200);
 
         // Colour state
         Color topTextCol;
@@ -195,32 +203,48 @@ namespace ChessChallenge.Application
             }
 
             DrawBorder();
-            for (int y = 0; y < 8; y++)
+            ForEachSquare(DrawSquare);
+            
+            if (isAnimatingMove)
             {
-                for (int x = 0; x < 8; x++)
-                {
-                    DrawSquare(x, y);
-                }
+                UpdateMoveAnimation(animT);
+            }
+
+            if (VisualizeBitboardEnabled)
+            {
+                ForEachSquare(DrawBitboardDebugOverlaySquare);
             }
 
             if (isDraggingPiece)
             {
                 DrawPiece(board.Square[dragSquare], dragPos - new Vector2(squareSize * 0.5f, squareSize * 0.5f));
             }
-            if (isAnimatingMove)
-            {
-                Coord startCoord = new Coord(moveToAnimate.StartSquareIndex);
-                Coord targetCoord = new Coord(moveToAnimate.TargetSquareIndex);
-                Vector2 startPos = GetSquarePos(startCoord.fileIndex, startCoord.rankIndex, whitePerspective);
-                Vector2 targetPos = GetSquarePos(targetCoord.fileIndex, targetCoord.rankIndex, whitePerspective);
 
-                Vector2 animPos = Vector2.Lerp(startPos, targetPos, (float)animT);
-                DrawPiece(board.Square[moveToAnimate.StartSquareIndex], animPos);
-
-            }
 
             // Reset state
             isDraggingPiece = false;
+        }
+
+        static void ForEachSquare(Action<int, int> action)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    action(x, y);
+                }
+            }
+        }
+
+        void UpdateMoveAnimation(double animT)
+        {
+            Coord startCoord = new Coord(moveToAnimate.StartSquareIndex);
+            Coord targetCoord = new Coord(moveToAnimate.TargetSquareIndex);
+            Vector2 startPos = GetSquarePos(startCoord.fileIndex, startCoord.rankIndex, whitePerspective);
+            Vector2 targetPos = GetSquarePos(targetCoord.fileIndex, targetCoord.rankIndex, whitePerspective);
+
+            Vector2 animPos = Vector2.Lerp(startPos, targetPos, (float)animT);
+            DrawPiece(board.Square[moveToAnimate.StartSquareIndex], animPos);
         }
 
         public void DrawPlayerNames(string nameWhite, string nameBlack, int timeWhite, int timeBlack, bool isPlaying)
@@ -336,6 +360,17 @@ namespace ChessChallenge.Application
                     DrawText(rankName, drawPos, textSize, 0, coordNameCol, AlignH.Right, AlignV.Top);
                 }
             }
+        }
+
+        void DrawBitboardDebugOverlaySquare(int file, int rank)
+        {
+            bool isSet = BitBoardUtility.ContainsSquare(BitboardToVisualize, new Coord(file,rank).SquareIndex);
+            Color col = isSet ? bitboardColONE : bitboardColZERO;
+
+            Vector2 squarePos = GetSquarePos(file, rank, whitePerspective);
+            Raylib.DrawRectangle((int)squarePos.X, (int)squarePos.Y, squareSize, squareSize, col);
+            Vector2 textPos = squarePos + new Vector2(squareSize, squareSize) / 2;
+            DrawText(isSet ? "1" : "0", textPos, 50, 0, Color.WHITE, AlignH.Centre);
         }
 
         static Vector2 GetSquarePos(int file, int rank, bool whitePerspective)

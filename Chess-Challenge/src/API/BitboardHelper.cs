@@ -1,6 +1,7 @@
 
 namespace ChessChallenge.API
 {
+    using ChessChallenge.Application;
     using ChessChallenge.Chess;
 
     /// <summary>
@@ -99,6 +100,15 @@ namespace ChessChallenge.API
         {
             return isWhite ? Bits.WhitePawnAttacks[square.Index] : Bits.BlackPawnAttacks[square.Index];
         }
+
+        public static void VisualizeBitboard(ulong bitboard)
+        {
+            BoardUI.VisualizeBitboardEnabled = true;
+            BoardUI.BitboardToVisualize = bitboard;
+        }
+
+        public static void StopVisualizingBitboard() => BoardUI.VisualizeBitboardEnabled = false;
+
         static ulong GetRookAttacks(Square square, ulong blockers)
         {
             ulong mask = Magic.RookMask[square.Index];
