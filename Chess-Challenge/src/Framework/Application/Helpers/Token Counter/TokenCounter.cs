@@ -10,12 +10,13 @@ namespace ChessChallenge.Application
         static readonly HashSet<SyntaxKind> tokensToIgnore = new(new SyntaxKind[]
         {
             SyntaxKind.PrivateKeyword,
+            SyntaxKind.InternalKeyword,
             SyntaxKind.PublicKeyword,
             SyntaxKind.SemicolonToken,
             SyntaxKind.CommaToken,
             SyntaxKind.ReadOnlyKeyword,
             // only count open brace since I want to count the pair as a single token
-            SyntaxKind.CloseBraceToken, 
+            SyntaxKind.CloseBraceToken,
             SyntaxKind.CloseBracketToken,
             SyntaxKind.CloseParenToken
         });
