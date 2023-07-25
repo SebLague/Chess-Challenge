@@ -87,7 +87,8 @@ namespace ChessChallenge.Application
                 board.UndoMove(moveToUndo, false);
             }
 
-            boardUI.UpdatePosition(board);
+            var lastMove = (allMoves.Count == 0) ? new Move(0) : allMoves.Last() ;
+            boardUI.UpdatePosition(board, lastMove);
             NotifyTurnToMove();
         }
 
@@ -185,6 +186,12 @@ namespace ChessChallenge.Application
             {
                 PlayerToMove.Human.SetPosition(FenUtility.CurrentFen(board));
                 PlayerToMove.Human.NotifyTurnToMove();
+
+                if (PlayerNotToMove.IsHuman)
+                {
+                    // for the case of a human vs human match when a manual undo fires
+                    PlayerNotToMove.Human.CancelTurnToMove();
+                }
             }
             else
             {
@@ -431,7 +438,8 @@ namespace ChessChallenge.Application
         }
 
 
-        ChessPlayer PlayerToMove => board.IsWhiteToMove ? PlayerWhite : PlayerBlack;
+        ChessPlayer PlayerToMove    =>  (board.IsWhiteToMove) ? PlayerWhite : PlayerBlack;
+        ChessPlayer PlayerNotToMove => !(board.IsWhiteToMove) ? PlayerWhite : PlayerBlack;
         public int TotalGameCount => botMatchStartFens.Length * 2;
         public int CurrGameNumber => Math.Min(TotalGameCount, botMatchGameIndex + 1);
         public string AllPGNs => pgns.ToString();
