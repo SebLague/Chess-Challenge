@@ -1,4 +1,4 @@
-﻿using ChessChallenge.Chess;
+using ChessChallenge.Chess;
 using ChessChallenge.Example;
 using Raylib_cs;
 using System;
@@ -54,6 +54,8 @@ namespace ChessChallenge.Application
         readonly MoveGenerator moveGenerator;
         readonly int tokenCount;
         readonly StringBuilder pgns;
+        int totalMovesPlayed = 0; 
+        public int trueTotalMovesPlayed = 0;
 
         public ChallengeController()
         {
@@ -77,6 +79,7 @@ namespace ChessChallenge.Application
 
         public void StartNewGame(PlayerType whiteType, PlayerType blackType)
         {
+            trueTotalMovesPlayed += totalMovesPlayed;
             // End any ongoing game
             EndGame(GameResult.DrawByArbiter, log: false, autoStartNextBotMatch: false);
             gameID = rng.Next();
@@ -142,6 +145,7 @@ namespace ChessChallenge.Application
 
         Move GetBotMove()
         {
+            totalMovesPlayed++;
             // Board b = new Board();
             // b.LoadPosition(FenUtility.CurrentFen(board));
             API.Board botBoard = new(new(board));
