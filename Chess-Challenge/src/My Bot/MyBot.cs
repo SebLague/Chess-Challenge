@@ -83,15 +83,19 @@ public class MyBot : IChessBot
             return 0;
         }
 
-        var in_qsearch = (depth <= 0);
+        // If we are in check, we should search deeper
+        if (board.IsInCheck())
+            depth++;
+
+        var inQsearch = (depth <= 0);
 
         // MVV-LVA ordering
-        var moves = board.GetLegalMoves(in_qsearch).OrderByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
+        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
 
         var bestScore = -Inf;
         var movesEvaluated = 0;
 
-        if (in_qsearch)
+        if (inQsearch)
         {
             bestScore = Evaluate(board);
             if (bestScore >= beta)
@@ -137,7 +141,7 @@ public class MyBot : IChessBot
             }
         }
 
-        if (!in_qsearch && movesEvaluated == 0)
+        if (!inQsearch && movesEvaluated == 0)
         {
             if (board.IsInCheck())
             {
