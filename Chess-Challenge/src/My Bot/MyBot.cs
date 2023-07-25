@@ -1,6 +1,7 @@
 ﻿using ChessChallenge.API;
 using System;
 using System.Diagnostics;
+using static System.Formats.Asn1.AsnWriter;
 
 public class MyBot : IChessBot
 {
@@ -10,7 +11,7 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         Move bestMove = Move.NullMove;
-        for (int depth = 0; depth <= 10; depth++)
+        for (int depth = 0; depth <= 5; depth++)
         {
             Stopwatch sw = new Stopwatch();
             sw.Start();
@@ -31,7 +32,7 @@ public class MyBot : IChessBot
         Move bestMove = Move.NullMove;
         foreach (Move aMove in board.GetLegalMoves())
         {
-            int moveEval = -Negamax(board, aMove, maxDepth);
+            int moveEval = -Negamax(board, aMove, int.MinValue, int.MaxValue, maxDepth);
             if (moveEval > bestEval)
             {
                 bestEval = moveEval;
@@ -42,7 +43,7 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
-    private int Negamax(Board board, Move move, int depth)
+    private int Negamax(Board board, Move move, int alpha, int beta, int depth)
     {
         board.MakeMove(move);
         int bestEval = int.MinValue;
@@ -52,8 +53,15 @@ public class MyBot : IChessBot
         {
             foreach (Move aMove in board.GetLegalMoves())
             {
-                int moveEval = -Negamax(board, aMove, depth - 1);
+                int moveEval = -Negamax(board, aMove, -alpha, -beta, depth - 1);
+                if (moveEval >= beta)
+                {
+                    bestEval = moveEval;
+                    break;
+                }
+
                 bestEval = Math.Max(moveEval, bestEval);
+                alpha = Math.Max(moveEval, alpha);
             }
         }
 
