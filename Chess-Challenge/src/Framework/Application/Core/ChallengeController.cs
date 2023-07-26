@@ -159,12 +159,10 @@ namespace ChessChallenge.Application
 
         Move GetBotMove()
         {
-            // Board b = new Board();
-            // b.LoadPosition(FenUtility.CurrentFen(board));
-            API.Board botBoard = new(new(board));
+            API.Board botBoard = new(board);
             try
             {
-                API.Timer timer = new(PlayerToMove.TimeRemainingMs);
+                API.Timer timer = new(PlayerToMove.TimeRemainingMs, PlayerNotOnMove.TimeRemainingMs, GameDurationMilliseconds);
                 API.Move move = PlayerToMove.Bot.Think(botBoard, timer);
                 return new Move(move.RawValue);
             }
@@ -186,12 +184,6 @@ namespace ChessChallenge.Application
             {
                 PlayerToMove.Human.SetPosition(FenUtility.CurrentFen(board));
                 PlayerToMove.Human.NotifyTurnToMove();
-
-                if (PlayerNotToMove.IsHuman)
-                {
-                    // for the case of a human vs human match when a manual undo fires
-                    PlayerNotToMove.Human.CancelTurnToMove();
-                }
             }
             else
             {
@@ -438,8 +430,9 @@ namespace ChessChallenge.Application
         }
 
 
-        ChessPlayer PlayerToMove    =>  (board.IsWhiteToMove) ? PlayerWhite : PlayerBlack;
-        ChessPlayer PlayerNotToMove => !(board.IsWhiteToMove) ? PlayerWhite : PlayerBlack;
+        ChessPlayer PlayerToMove => board.IsWhiteToMove ? PlayerWhite : PlayerBlack;
+        ChessPlayer PlayerNotOnMove => board.IsWhiteToMove ? PlayerBlack : PlayerWhite;
+
         public int TotalGameCount => botMatchStartFens.Length * 2;
         public int CurrGameNumber => Math.Min(TotalGameCount, botMatchGameIndex + 1);
         public string AllPGNs => pgns.ToString();
