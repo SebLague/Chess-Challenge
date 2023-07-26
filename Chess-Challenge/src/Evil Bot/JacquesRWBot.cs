@@ -163,6 +163,6 @@ public class JacquesRWBot : IChessBot
             if (timer.MillisecondsElapsedThisTurn >= timer.MillisecondsRemaining / 30)
                 break;
         }
-        return bestmoveRoot;
+        return bestmoveRoot.IsNull ? board.GetLegalMoves()[0] : bestmoveRoot;
     }
 }

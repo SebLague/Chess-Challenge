@@ -30,7 +30,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
-  publish-artifacts:
+  publish-code:
 
     runs-on:  windows-latest
 
@@ -54,13 +54,20 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-nuget-
 
+    - name: Set version to ${{ github.event.inputs.new_engine_version }}
+      shell: pwsh
+      run: |
+        $input_path = "Directory.Build.props"
+        $regex = "(?<=<Version>).*(?=</Version>)"
+        (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_engine_version }}' | Out-File $input_path
+
     - name: Build
       run: dotnet build -c Release
 
     - name: Test
       run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" -v normal
 
-    - name: Upload ${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }} artifact
+    - name: Upload ${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }} source code
       if: github.event.inputs.new_engine_version != ''
       uses: actions/upload-artifact@v3
       with:
@@ -69,8 +76,89 @@ jobs:
           Chess-Challenge/src/My Bot/*.cs
         if-no-files-found: error
 
+  publish-uci:
+
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        runtime-identifier: [win-x64, win-arm64, linux-x64, linux-arm64, linux-arm, osx-x64, osx.11.0-arm64, osx.12-arm64, osx.13-arm64]
+        include:
+          - runtime-identifier: win-x64
+            os: windows-latest
+          - runtime-identifier: win-arm64
+            os: windows-latest
+          - runtime-identifier: linux-x64
+            os: ubuntu-latest
+          - runtime-identifier: linux-arm64
+            os: ubuntu-latest
+          - runtime-identifier: linux-arm
+            os: ubuntu-latest
+          - runtime-identifier: osx-x64
+            os: ubuntu-latest
+          - runtime-identifier: osx.11.0-arm64
+            os: ubuntu-latest
+          - runtime-identifier: osx.12-arm64
+            os: ubuntu-latest
+          - runtime-identifier: osx.13-arm64
+            os: ubuntu-latest
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Inject slug/short variables
+      uses: rlespinasse/github-slug-action@v3.x
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Nuget cache
+      uses: actions/cache@v3
+      with:
+        path:
+          ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Set version to ${{ github.event.inputs.new_engine_version }}
+      shell: pwsh
+      run: |
+        $input_path = "Directory.Build.props"
+        $regex = "(?<=<Version>).*(?=</Version>)"
+        (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_engine_version }}' | Out-File $input_path
+
+    - name: Publish ${{ matrix.runtime-identifier }} version
+      run: dotnet publish TeenyLynx.UCI/TeenyLynx.UCI.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained /p:Optimized=true /p:DeterministicBuild=true -o artifacts/${{ matrix.runtime-identifier }}
+
+    - name: Upload ${{ env.BOT_NAME }}-${{ matrix.runtime-identifier }} artifact
+      if: github.event.inputs.new_engine_version != ''
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }}-${{ matrix.runtime-identifier }}
+        path: |
+          artifacts/${{ matrix.runtime-identifier }}/
+          !artifacts/**/*.pdb
+        if-no-files-found: error
+
+    - name: Upload ${{ env.BOT_NAME }}-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }} artifact
+      if: github.event.inputs.new_engine_version == ''
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.BOT_NAME }}-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }}
+        path: |
+          artifacts/${{ matrix.runtime-identifier }}/
+          !artifacts/**/*.pdb
+          !artifacts/**/*.runtimeconfig.json
+          !artifacts/**/src
+          !artifacts/**/resources
+        if-no-files-found: error
+
   release:
-    needs: publish-artifacts
+    needs: [publish-uci, publish-code]
     if: github.event.inputs.new_engine_version != ''
 
     runs-on: ubuntu-latest
@@ -85,6 +173,13 @@ jobs:
 
     - name: Inject slug/short variables
       uses: rlespinasse/github-slug-action@v3.x
+
+    - name: Set version to ${{ github.event.inputs.new_engine_version }}
+      shell: pwsh
+      run: |
+        $input_path = "Directory.Build.props"
+        $regex = "(?<=<Version>).*(?=</Version>)"
+        (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_engine_version }}' | Out-File $input_path
 
     - name: Commit and push version increment
       if: github.event.inputs.should_commit_new_version == 'true'
@@ -107,6 +202,10 @@ jobs:
       with:
         path: artifacts/
 
+    - name: Compress artifacts again
+      if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
+      run: for i in artifacts/*[!.cs]; do zip -0 -r -q -j "${i%/}.zip" "$i" & done; wait
+
     - name: Create GitHub release and upload assets
       if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
       env:
@@ -114,7 +213,10 @@ jobs:
       run: |
         set -x
         assets=()
-        for asset in artifacts/${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }}/*; do
+        for asset in artifacts/*.zip; do
+          assets+=("-a" "$asset")
+        done
+        for asset in artifacts/${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }}/*.cs; do
           assets+=("-a" "$asset")
         done
         tag_name="v${{ github.event.inputs.new_engine_version }}"

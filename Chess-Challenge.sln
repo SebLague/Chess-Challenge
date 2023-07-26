@@ -9,12 +9,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
 		.github\workflows\ci.yml = .github\workflows\ci.yml
+		Directory.Build.props = Directory.Build.props
 		.github\workflows\release.yml = .github\workflows\release.yml
 	EndProjectSection
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Lynx.EvaluationConstantsEncoder", "Lynx.EvaluationConstantsEncoder\Lynx.EvaluationConstantsEncoder.csproj", "{F19A8B82-E29A-460F-88A3-9C3ECE95F94F}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeenyLynx.Test", "TeenyLynx.Test\TeenyLynx.Test.csproj", "{A8564782-DF2F-4EEF-B853-2ABBC096998F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeenyLynx.UCI", "TeenyLynx.UCI\TeenyLynx.UCI.csproj", "{2E7127E4-6386-4C85-B632-0B4905EFC7E5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TeenyLynx.Encoder", "TeenyLynx.Encoder\TeenyLynx.Encoder.csproj", "{C4B1E90F-499D-46ED-A8C0-FBEC3D26902F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -26,14 +29,18 @@ Global
 		{2803E64F-15AC-430B-A5A2-69C00EA7505F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2803E64F-15AC-430B-A5A2-69C00EA7505F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2803E64F-15AC-430B-A5A2-69C00EA7505F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F19A8B82-E29A-460F-88A3-9C3ECE95F94F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F19A8B82-E29A-460F-88A3-9C3ECE95F94F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F19A8B82-E29A-460F-88A3-9C3ECE95F94F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F19A8B82-E29A-460F-88A3-9C3ECE95F94F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A8564782-DF2F-4EEF-B853-2ABBC096998F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A8564782-DF2F-4EEF-B853-2ABBC096998F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A8564782-DF2F-4EEF-B853-2ABBC096998F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A8564782-DF2F-4EEF-B853-2ABBC096998F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2E7127E4-6386-4C85-B632-0B4905EFC7E5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2E7127E4-6386-4C85-B632-0B4905EFC7E5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2E7127E4-6386-4C85-B632-0B4905EFC7E5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2E7127E4-6386-4C85-B632-0B4905EFC7E5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C4B1E90F-499D-46ED-A8C0-FBEC3D26902F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C4B1E90F-499D-46ED-A8C0-FBEC3D26902F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C4B1E90F-499D-46ED-A8C0-FBEC3D26902F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C4B1E90F-499D-46ED-A8C0-FBEC3D26902F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

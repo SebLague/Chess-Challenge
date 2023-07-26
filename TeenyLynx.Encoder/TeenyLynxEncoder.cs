@@ -1,5 +1,7 @@
 ﻿#pragma warning disable RCS1243, S125, S3963, S3358 // Duplicate word in a comment, commented code, static inline initialization and ternary operators
 
+using Lynx;
+
 namespace TeenyLynx.Encoder;
 public static class TeenyLynxEncoder
 {
@@ -55,7 +57,7 @@ public static class TeenyLynxEncoder
         var positionalScore = EvaluationConstants.PositionalScore.Take(EvaluationConstants.PositionalScore.Length / 2).ToArray();
 
         // 1 bitboard * 64 squares * 8 bits/square = 512 bits
-        var endgameScore = EvaluationConstants.EndgamePositionalScore[(int)Model.Piece.K];
+        var endgameScore = EvaluationConstants.EndgamePositionalScore[(int)Lynx.Model.Piece.K];
 
         // 1 bitboard * 36 squares * 8 bits/square = 288 bits
         var mvvlva = TeenyLynxMVVLVA;

@@ -1,5 +1,7 @@
 ﻿#pragma warning disable RCS1243, S125, S3963 // Duplicate word in a comment, commented code
 
+using Lynx;
+
 namespace TeenyLynx.Encoder;
 public static class PositionScoreEncoder
 {

@@ -7,7 +7,7 @@ on:
 
 env:
     DOTNET_VERSION: 8.x
-    PROJECT_NAME: Chess-Challenge
+    BOT_NAME: TeenyLynx
     DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
@@ -52,3 +52,18 @@ jobs:
 
     - name: Test
       run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" -v normal
+
+    - name: Publish CLI
+      run: dotnet publish TeenyLynx.UCI/TeenyLynx.UCI.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained /p:Optimized=true /p:DeterministicBuild=true -o artifacts/${{ matrix.runtime-identifier }}
+
+    - name: Upload TeenyLynx-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }} artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.BOT_NAME }}-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }}
+        path: |
+          artifacts/${{ matrix.runtime-identifier }}/
+          !artifacts/${{ matrix.runtime-identifier }}/Chess-Challenge.pdb
+          !artifacts/**/*.runtimeconfig.json
+          !artifacts/**/src
+          !artifacts/**/resources
+        if-no-files-found: error

@@ -1,0 +1,19 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>1.0.0</Version>
+    <Authors>Eduardo Cáceres</Authors>
+    <RepositoryUrl>https://github.com/lynx-chess/TeenyLynx</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(DeterministicBuild)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
+  </ItemGroup>
+
+</Project>

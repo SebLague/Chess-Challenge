@@ -1,4 +1,6 @@
 ﻿//#define DEBUG
+#define UCI
+
 #pragma warning disable RCS1001, S125 // Add braces (when expression spans over multiple lines) - Tokens are tokens
 
 using ChessChallenge.API;
@@ -13,7 +15,7 @@ public class MyBot : IChessBot
 {
     public /*internal*/ Board _position;
     Timer _timer;
-    int _timePerMove, _targetDepth;
+    int _timePerMove, _targetDepth, _nodes;
 
     readonly int[] _indexes = new int[129];
     readonly Move[] _pVTable = new Move[8_256];   // 128 * (128 + 1) / 2
@@ -22,10 +24,6 @@ public class MyBot : IChessBot
     //readonly int[,] _historyMoves = new int[12, 64];
 
     bool _isFollowingPV, _isScoringPV;
-
-#if DEBUG
-    int _nodes;
-#endif
 
     /// <summary>
     /// <see cref="_indexes"/> initialization
@@ -94,8 +92,8 @@ public class MyBot : IChessBot
                 //}
 
                 bestMove = _pVTable[0];
-#if DEBUG
-                Console.WriteLine($"info depth {_targetDepth} score {(isMateDetected ? "mate x" : $"cp {bestEvaluation}")} nodes {_nodes} nps {Convert.ToInt64(Clamp(_nodes / ((0.001 * _timer.MillisecondsElapsedThisTurn) + 1), 0, long.MaxValue))} time {_timer.MillisecondsElapsedThisTurn} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
+#if DEBUG || UCI
+                Console.WriteLine($"info depth {_targetDepth} score {(isMateDetected ? "mate 99" : $"cp {bestEvaluation}")} nodes {_nodes} nps {Convert.ToInt64(Clamp(_nodes / ((0.001 * _timer.MillisecondsElapsedThisTurn) + 1), 0, long.MaxValue))} time {_timer.MillisecondsElapsedThisTurn} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
 #endif
                 //alpha = bestEvaluation - 50;
                 //beta = bestEvaluation + 50;
@@ -216,9 +214,7 @@ public class MyBot : IChessBot
                 alpha = staticEvaluation;
         }
 
-#if DEBUG
         ++_nodes;
-#endif
 
         var moves = _position.GetLegalMoves(isQuiescence);
 

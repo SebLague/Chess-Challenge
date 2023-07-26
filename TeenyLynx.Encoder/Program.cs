@@ -1,7 +1,7 @@
-﻿using static Lynx.EvaluationConstantsEncoder.PositionScoreEncoder;
-using static Lynx.EvaluationConstantsEncoder.MVVLVAEncoder;
+﻿using static TeenyLynx.Encoder.PositionScoreEncoder;
+using static TeenyLynx.Encoder.MVVLVAEncoder;
 using Lynx;
-using Lynx.EvaluationConstantsEncoder;
+using TeenyLynx.Encoder;
 
 //TestGenerator();
 
