@@ -23,4 +23,11 @@
     <PublishReadyToRun>false</PublishReadyToRun>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Include="..\LICENSE" Link="LICENSE">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+    </None>
+  </ItemGroup>
+
 </Project>

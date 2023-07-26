@@ -3,9 +3,9 @@ using static TeenyLynx.Encoder.MVVLVAEncoder;
 using Lynx;
 using TeenyLynx.Encoder;
 
-//TestGenerator();
+TestGenerator();
 
-//EncodePositionScoreLynxDataDecimal();
+EncodePositionScoreLynxDataDecimal();
 
 TeenyLynxEncoder.EncodeLynxData();
 
