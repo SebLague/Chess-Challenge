@@ -1,6 +1,6 @@
 ﻿#pragma warning disable RCS1243, S125, S3963, S3358 // Duplicate word in a comment, commented code, static inline initialization and ternary operators
 
-namespace Lynx.EvaluationConstantsEncoder;
+namespace TeenyLynx.Encoder;
 public static class TeenyLynxEncoder
 {
     /// <summary>

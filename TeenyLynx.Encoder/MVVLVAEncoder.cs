@@ -1,6 +1,6 @@
 ﻿#pragma warning disable RCS1243, S101, S125, S2368, IDE0047 // Class name, duplicate word in a comment, commented code,  multidimensional array parameters, extra parenthesis
 
-namespace Lynx.EvaluationConstantsEncoder;
+namespace TeenyLynx.Encoder;
 public static class MVVLVAEncoder
 {
     /// <summary>

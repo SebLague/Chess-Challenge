@@ -1,6 +1,6 @@
 ﻿#pragma warning disable RCS1243, S125, S3963 // Duplicate word in a comment, commented code
 
-namespace Lynx.EvaluationConstantsEncoder;
+namespace TeenyLynx.Encoder;
 public static class PositionScoreEncoder
 {
     public static readonly byte ConstantIncrease;
