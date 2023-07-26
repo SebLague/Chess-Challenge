@@ -71,7 +71,7 @@ All names (variables, functions, etc.) are counted as a single token, regardless
   * Now use the command: `dotnet run`
   * This should launch the project. If not, open an issue with any error messages and relevant info.
 *  [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
-  * or with the Dockerfile provided (run: `./run.sh` (you need to have docker or podman installed on your machine))
+  * Or with the Dockerfile provided (run: `./run.sh` (you need to have docker or podman installed on your machine))
 * Issues with illegal moves or errors when making/undoing a move
   * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exiting early from a function for example.
 * How to tell what colour MyBot is playing
