@@ -271,6 +271,26 @@ namespace ChessChallenge.API
 		{
 			return validPieceLists;
 		}
+
+		/// <summary>
+		/// Gets the amount of pieces the given colour has
+		/// </summary>
+		public int GetPieceCount(bool white)
+		{
+			int count = 0;
+			ulong bits = white == true ? this.WhitePiecesBitboard : this.BlackPiecesBitboard;
+			for(int x = 0; x < 64; x++)
+        	{
+            	ulong bit = bits & 1;
+            	if(bit == 1)
+            	{
+            	    count++;
+            	}
+            	bits >>= 1;
+        	}
+
+			return count;
+		}
 		
 		/// <summary>
 		/// Is the given square attacked by the opponent?
