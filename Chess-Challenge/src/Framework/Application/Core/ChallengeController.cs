@@ -282,22 +282,6 @@ namespace ChessChallenge.Application
                     Log("Game Over: " + result, false, ConsoleColor.Blue);
                 }
 
-                // Call optional end-of-game method for training convenience
-                if (PlayerWhite.IsBot || PlayerBlack.IsBot)
-                {
-                    if (PlayerWhite.IsBot)
-                    {
-                        API.Board botBoard = new(board);
-                        PlayerWhite.Bot.GameOver(botBoard);
-                    }
-
-                    if (PlayerBlack.IsBot)
-                    {
-                        API.Board botBoard = new(board);
-                        PlayerBlack.Bot.GameOver(botBoard);
-                    }
-                }
-
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));
                 pgns.AppendLine(pgn);
 
