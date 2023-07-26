@@ -132,7 +132,7 @@ jobs:
         (Get-Content $input_path) -Replace $regex, '${{ github.event.inputs.new_engine_version }}' | Out-File $input_path
 
     - name: Publish ${{ matrix.runtime-identifier }} version
-      run: dotnet publish TeenyLynx.UCI/TeenyLynx.UCI.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained /p:Optimized=true /p:DeterministicBuild=true -o artifacts/${{ matrix.runtime-identifier }}
+      run: dotnet publish TeenyLynx.UCI/TeenyLynx.UCI.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained /p:Optimized=true /p:DeterministicBuild=true /p:UCI=true -o artifacts/${{ matrix.runtime-identifier }}
 
     - name: Upload ${{ env.BOT_NAME }}-${{ matrix.runtime-identifier }} artifact
       if: github.event.inputs.new_engine_version != ''

@@ -48,13 +48,13 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: Build
-      run: dotnet build -c Release
+      run: dotnet build -c Release /p:UCI=true
 
     - name: Test
       run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" -v normal
 
     - name: Publish CLI
-      run: dotnet publish TeenyLynx.UCI/TeenyLynx.UCI.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained /p:Optimized=true /p:DeterministicBuild=true -o artifacts/${{ matrix.runtime-identifier }}
+      run: dotnet publish TeenyLynx.UCI/TeenyLynx.UCI.csproj -c Release --runtime ${{ matrix.runtime-identifier }} --self-contained /p:Optimized=true /p:DeterministicBuild=true /p:UCI=true -o artifacts/${{ matrix.runtime-identifier }}
 
     - name: Upload TeenyLynx-${{ env.GITHUB_REF_SLUG }}-${{ github.run_number }}-${{ matrix.runtime-identifier }} artifact
       uses: actions/upload-artifact@v3

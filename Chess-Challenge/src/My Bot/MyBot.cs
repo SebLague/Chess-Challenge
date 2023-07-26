@@ -1,5 +1,5 @@
 ﻿//#define DEBUG
-#define UCI
+//#define UCI
 
 #pragma warning disable RCS1001, S125 // Add braces (when expression spans over multiple lines) - Tokens are tokens
 
@@ -15,7 +15,11 @@ public class MyBot : IChessBot
 {
     public /*internal*/ Board _position;
     Timer _timer;
-    int _timePerMove, _targetDepth, _nodes;
+    int _timePerMove, _targetDepth
+#if DEBUG || UCI
+    , _nodes
+#endif
+        ;
 
     readonly int[] _indexes = new int[129];
     readonly Move[] _pVTable = new Move[8_256];   // 128 * (128 + 1) / 2
@@ -60,8 +64,10 @@ public class MyBot : IChessBot
         movesToGo = Clamp(movesToGo, 40, 100);
         _timePerMove = Clamp(timer.MillisecondsRemaining / movesToGo, 1, 2000);
 
-#if DEBUG
+#if DEBUG || UCI
         _nodes = 0;
+#endif
+#if DEBUG
         Console.WriteLine($"\n[{this.GetType().Name}] Searching {_position.GetFenString()} ({_timePerMove}ms to move)");
 #endif
 
@@ -214,7 +220,9 @@ public class MyBot : IChessBot
                 alpha = staticEvaluation;
         }
 
+#if UCI || DEBUG
         ++_nodes;
+#endif
 
         var moves = _position.GetLegalMoves(isQuiescence);
 

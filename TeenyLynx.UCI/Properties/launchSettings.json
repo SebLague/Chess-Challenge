@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "TeenyLynx.UCI": {
+      "commandName": "Project",
+      "commandLineArgs": "/p:UCI=true"
+    }
+  }
+}

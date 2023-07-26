@@ -61,4 +61,8 @@
     </AssemblyAttribute>
   </ItemGroup>
 
+  <PropertyGroup>
+    <DefineConstants Condition="'$(UCI)' != ''">$(DefineConstants);UCI</DefineConstants>
+  </PropertyGroup>
+
 </Project>
