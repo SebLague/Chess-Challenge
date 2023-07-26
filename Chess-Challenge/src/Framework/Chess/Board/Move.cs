@@ -50,6 +50,7 @@ namespace ChessChallenge.Chess
         public int StartSquareIndex => moveValue & startSquareMask;
         public int TargetSquareIndex => (moveValue & targetSquareMask) >> 6;
         public bool IsPromotion => MoveFlag >= PromoteToQueenFlag;
+        public bool IsEnPassant => MoveFlag == EnPassantCaptureFlag;
         public int MoveFlag => moveValue >> 12;
 
         public int PromotionPieceType
