@@ -146,10 +146,7 @@ namespace ChessChallenge.Application
         {
 
             totalMovesPlayed++;
-            // Board b = new Board();
-            // b.LoadPosition(FenUtility.CurrentFen(board));
-            API.Board botBoard = new(new(board));
-
+            
             API.Board botBoard = new(board);
 
             try
