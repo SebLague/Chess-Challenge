@@ -35,8 +35,13 @@ namespace ChessChallenge.Application
             if (args.Length > 0)
             {
                 Log($"Trying to run against {args[0]}");
+                ChallengeController.PlayerType botTypeA = ChallengeController.PlayerType.MyBot;
                 ChallengeController.PlayerType botTypeB = (ChallengeController.PlayerType)Enum.Parse(typeof(ChallengeController.PlayerType), args[0]);
-                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, botTypeB);
+                if (args.Length > 1) {
+                  botTypeA = (ChallengeController.PlayerType)Enum.Parse(typeof(ChallengeController.PlayerType), args[0]);
+                  botTypeB = (ChallengeController.PlayerType)Enum.Parse(typeof(ChallengeController.PlayerType), args[1]);
+                }
+                controller.StartNewBotMatch(botTypeA, botTypeB);
             }
 
             while (!Raylib.WindowShouldClose())
