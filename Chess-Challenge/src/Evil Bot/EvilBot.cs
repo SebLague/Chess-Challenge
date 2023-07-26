@@ -1,4 +1,4 @@
-﻿using ChessChallenge.API;
+using ChessChallenge.API;
 using System;
 
 namespace ChessChallenge.Example
@@ -41,7 +41,7 @@ namespace ChessChallenge.Example
 
             return moveToPlay;
         }
-        
+
         // Test if this move gives checkmate
         bool MoveIsCheckmate(Board board, Move move)
         {
