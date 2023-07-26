@@ -41,7 +41,12 @@ namespace ChessChallenge.Example
 
             return moveToPlay;
         }
-        
+
+        public void GameOver(Board board)
+        {
+            // Code you put here will be run once at the end of every game.
+        }
+
         // Test if this move gives checkmate
         bool MoveIsCheckmate(Board board, Move move)
         {
