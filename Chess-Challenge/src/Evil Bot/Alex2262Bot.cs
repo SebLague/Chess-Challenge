@@ -41,7 +41,7 @@ public class Alex2262Bot : IChessBot
     ulong[] repetitionTable = new ulong[1024];
 
     Move bestMoveRoot = Move.NullMove;
-    int nodes = 0, gamePly = 0;
+    int nodes = 0/*, gamePly = 0*/;
 
     bool stopped = false;
 
@@ -73,7 +73,7 @@ public class Alex2262Bot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        gamePly = 0;
+        //gamePly = 0;
         nodes = 0;
         stopped = false;
 

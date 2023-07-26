@@ -1,7 +1,5 @@
-﻿// Change: _timePerMove = Clamp(timer.MillisecondsRemaining / movesToGo, 1, 2000);, increasing to 2s the max time per move
-
-#define DEBUG
-#pragma warning disable RCS1001 // Add braces (when expression spans over multiple lines) - Tokens are tokens
+﻿//#define DEBUG
+#pragma warning disable RCS1001, S125 // Add braces (when expression spans over multiple lines) - Tokens are tokens
 
 using ChessChallenge.API;
 using System;
@@ -11,7 +9,7 @@ using static ChessChallenge.API.BitboardHelper;
 using static System.Math;
 using static System.BitConverter;
 
-public class OldTeenyLynxBot : IChessBot
+public class TeenyLynxBot_1_0_0 : IChessBot
 {
     public /*internal*/ Board _position;
     Timer _timer;
@@ -32,7 +30,7 @@ public class OldTeenyLynxBot : IChessBot
     /// <summary>
     /// <see cref="_indexes"/> initialization
     /// </summary>
-    public OldTeenyLynxBot()
+    public TeenyLynxBot_1_0_0()
     {
         int previousPVIndex = _indexes[0] = 0;
 
@@ -129,13 +127,13 @@ public class OldTeenyLynxBot : IChessBot
 
     int NegaMax(int ply, int alpha, int beta)
     {
-        if (_position.IsDraw())
+        if (_position.IsDraw()) //  IsFiftyMoveDraw() || IsInsufficientMaterial() || IsRepeatedPosition(), no need to check for stalemate
             return 0;
 
         if (_timer.MillisecondsElapsedThisTurn > _timePerMove)
             throw new();
 
-        //if (_position.IsInCheck())
+        //if (_position.IsInCheck())    // TODO investigate, this makes the bot suggest null moves either other move
         //    ++_targetDepth;
 
         // TODO: GetLegalMovesNonAlloc
@@ -160,15 +158,8 @@ public class OldTeenyLynxBot : IChessBot
         #region Move sorting
 
         if (_isFollowingPV)
-        {
-            _isFollowingPV = false;
-            foreach (var move in legalMoves)
-                if (move == _pVTable[ply])
-                {
-                    _isFollowingPV = _isScoringPV = true;
-                    break;
-                }
-        }
+            _isFollowingPV = legalMoves.Any(m => m == _pVTable[ply])
+                && (_isScoringPV = true);
 
         #endregion
 
@@ -181,29 +172,23 @@ public class OldTeenyLynxBot : IChessBot
             // Fail-hard beta-cutoff - refutation found, no need to keep searching this line
             if (evaluation >= beta)
                 return beta;
-            //{
             //if (!move.IsCapture)
             //{
             //    _killerMoves[1, ply] = _killerMoves[0, ply];
             //    _killerMoves[0, ply] = move.RawValue;
             //}
 
-            //    return beta;
-            //}
-
             if (evaluation > alpha)
             {
                 alpha = evaluation;
-                bestMove = move;
+                bestMove = _pVTable[pvIndex] = move;
+                CopyPVTableMoves(pvIndex + 1, nextPvIndex, ply);
 
                 // 🔍 History moves
                 //if (!move.IsCapture)
                 //{
                 //    _historyMoves[(int)move.MovePieceType, move.TargetSquare.Index] += ply << 2;
                 //}
-
-                _pVTable[pvIndex] = move;
-                CopyPVTableMoves(pvIndex + 1, nextPvIndex, ply);
             }
         }
 
@@ -214,23 +199,19 @@ public class OldTeenyLynxBot : IChessBot
         return alpha;
     }
 
-    /*internal*/
-    public int QuiescenceSearch(int ply, int alpha, int beta)
+    public /* internal */int QuiescenceSearch(int ply, int alpha, int beta)
     {
-        if (_position.IsDraw())
+        if (_position.IsDraw()) //  IsFiftyMoveDraw() || IsInsufficientMaterial() || IsRepeatedPosition(), no need to check for stalemate
             return 0;
 
         int pvIndex = _indexes[ply],
             nextPvIndex = _indexes[ply + 1],
             staticEvaluation = 0,
-            whiteKing,
-            blackKing;
+            kingSquare;
 
         Move bestMove = _pVTable[pvIndex] = new();   // Nulling the first value before any returns
 
         #region Static evaluation
-
-        var isWhiteToMove = _position.IsWhiteToMove;
 
         ulong bitboard;
         for (int i = 0; ++i < 6;)
@@ -257,17 +238,20 @@ public class OldTeenyLynxBot : IChessBot
         }
 
         bitboard = _position.GetPieceBitboard(PieceType.King, true);
-        whiteKing = ClearAndGetIndexOfLSB(ref bitboard);
+        kingSquare = ClearAndGetIndexOfLSB(ref bitboard);
+
+        staticEvaluation += _position.GetPieceBitboard(PieceType.Queen, false) > 0      // White king, no black queens
+            ? Magic[kingSquare + 320]    // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
+            : Magic[kingSquare + 384];   // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
 
         bitboard = _position.GetPieceBitboard(PieceType.King, false);
-        blackKing = ClearAndGetIndexOfLSB(ref bitboard) ^ 56;
+        kingSquare = ClearAndGetIndexOfLSB(ref bitboard) ^ 56;
 
-        // TODO: split if enough tokens, depending on opposite side queen
-        staticEvaluation += (_position.GetPieceBitboard(PieceType.Queen, true) | _position.GetPieceBitboard(PieceType.Queen, false)) == 0
-            ? Magic[whiteKing + 384] - Magic[blackKing + 384]     // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
-            : Magic[whiteKing + 320] - Magic[blackKing + 320];    // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
+        staticEvaluation -= _position.GetPieceBitboard(PieceType.Queen, true) > 0       // Black king, no white queens
+            ? Magic[kingSquare + 320]    // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
+            : Magic[kingSquare + 384];   // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
 
-        if (!isWhiteToMove)
+        if (!_position.IsWhiteToMove)
             staticEvaluation = -staticEvaluation;
 
         #endregion
@@ -296,14 +280,12 @@ public class OldTeenyLynxBot : IChessBot
 
             // Fail-hard beta-cutoff
             if (evaluation >= beta)
-                return evaluation; // Pruning before starting quiescence search
+                return evaluation;
 
             if (evaluation > alpha)
             {
                 alpha = evaluation;
-                bestMove = move;
-
-                _pVTable[pvIndex] = move;
+                bestMove = _pVTable[pvIndex] = move;
                 CopyPVTableMoves(pvIndex + 1, nextPvIndex, ply);
             }
         }
@@ -311,16 +293,14 @@ public class OldTeenyLynxBot : IChessBot
         // TODO: GetLegalMovesNonAlloc
         //Span<Move> spanLegalMoves = stackalloc Move[256];
         //_position.GetLegalMovesNonAlloc(ref spanLegalMoves);
-        if (bestMove.IsNull)
-            return _position.GetLegalMoves().Any()//.Length > 0
-                ? alpha
-                : EvaluateFinalPosition(ply);
+        if (bestMove.IsNull && _position.GetLegalMoves().Length == 0)
+            return EvaluateFinalPosition(ply);
 
         // Node fails low
         return alpha;
     }
 
-    int Score(Move move, int depth/*, int[,]? killerMoves = null,  int[,]? historyMoves = null*/)
+    public /*internal*/ int Score(Move move, int depth/*, int[,]? killerMoves = null,  int[,]? historyMoves = null*/)
     {
         if (_isScoringPV && move == _pVTable[depth])
         {

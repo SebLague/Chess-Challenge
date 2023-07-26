@@ -23,19 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="src\Evil Bot\iudwgerteBot.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="src\Evil Bot\NegaMaxAndQuiescenceUnified.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="src\My Bot\MyBot.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="src\Framework\Application\UI\BotBrainCapacityUI.cs">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="src\Evil Bot\EvilBot.cs">
+    <Compile Update="src\Evil Bot\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>

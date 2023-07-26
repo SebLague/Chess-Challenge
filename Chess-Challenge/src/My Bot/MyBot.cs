@@ -79,9 +79,9 @@ public class MyBot : IChessBot
                 //AspirationWindows_SearchAgain:
                 _isFollowingPV = true;
 #if DEBUG
-                bestEvaluation = NegaMax(0, alpha, beta);
+                bestEvaluation = NegaMax(0, alpha, beta, false);
 #else
-                int bestEvaluation = NegaMax(0, alpha, beta);
+                int bestEvaluation = NegaMax(0, alpha, beta, false);
 #endif
                 isMateDetected = Abs(bestEvaluation) > 27_000;
 
@@ -125,15 +125,15 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
-    int NegaMax(int ply, int alpha, int beta)
+    public /*internal */int NegaMax(int ply, int alpha, int beta, bool isQuiescence)
     {
         if (_position.IsDraw()) //  IsFiftyMoveDraw() || IsInsufficientMaterial() || IsRepeatedPosition(), no need to check for stalemate
             return 0;
 
-        if (_timer.MillisecondsElapsedThisTurn > _timePerMove)
+        if (!isQuiescence && _timer.MillisecondsElapsedThisTurn > _timePerMove)
             throw new();
 
-        //if (_position.IsInCheck())    // TODO investigate, this makes the bot suggest null moves either other move
+        //if (!isQuiescence && _position.IsInCheck())    // TODO investigate, this makes the bot suggest null moves either other move
         //    ++_targetDepth;
 
         // TODO: GetLegalMovesNonAlloc
@@ -141,38 +141,102 @@ public class MyBot : IChessBot
         //_position.GetLegalMovesNonAlloc(ref spanLegalMoves);
         //spanLegalMoves.Sort((a, b) => Score(a, ply > Score(b, ply) ? 1 : 0));
 
-        var legalMoves = _position.GetLegalMoves();
-        if (ply > _targetDepth)
-            return legalMoves.Any()//.Length > 0
-                 ? QuiescenceSearch(ply, alpha, beta)
+        if (!isQuiescence && ply > _targetDepth)
+            return _position.GetLegalMoves().Any()//.Length > 0
+                 ? NegaMax(ply, alpha, beta, true) // Quiescence
                  : EvaluateFinalPosition(ply);
+
+        int pvIndex = _indexes[ply],
+            nextPvIndex = _indexes[ply + 1],
+            staticEvaluation = 0,
+            kingSquare;
+        Move bestMove = _pVTable[pvIndex] = new();
+
+        #region Move sorting
+
+        if (!isQuiescence && _isFollowingPV)
+            _isFollowingPV = _position.GetLegalMoves().Any(m => m == _pVTable[ply])
+                && (_isScoringPV = true);
+
+        #endregion
+
+        if (isQuiescence)
+        {
+            #region Static evaluation
+
+            ulong bitboard;
+            for (int i = 0; ++i < 6;)
+            {
+                void Eval(bool localIsWhiteToMove)
+                {
+                    bitboard = _position.GetPieceBitboard((PieceType)i, localIsWhiteToMove);
+
+                    while (bitboard != default)
+                    {
+                        var square = ClearAndGetIndexOfLSB(ref bitboard);
+
+                        if (!localIsWhiteToMove)
+                            square ^= 56;
+
+                        staticEvaluation += (localIsWhiteToMove ? 1 : -1) * (
+                            MaterialScore[i]
+                            + Magic[square + 64 * (i - 1)]);
+                    }
+                }
+
+                Eval(true);
+                Eval(false);
+            }
+
+            bitboard = _position.GetPieceBitboard(PieceType.King, true);
+            kingSquare = ClearAndGetIndexOfLSB(ref bitboard);
+
+            staticEvaluation += _position.GetPieceBitboard(PieceType.Queen, false) > 0      // White king, no black queens
+                ? Magic[kingSquare + 320]    // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
+                : Magic[kingSquare + 384];   // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
+
+            bitboard = _position.GetPieceBitboard(PieceType.King, false);
+            kingSquare = ClearAndGetIndexOfLSB(ref bitboard) ^ 56;
+
+            staticEvaluation -= _position.GetPieceBitboard(PieceType.Queen, true) > 0       // Black king, no white queens
+                ? Magic[kingSquare + 320]    // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
+                : Magic[kingSquare + 384];   // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
+
+            if (!_position.IsWhiteToMove)
+                staticEvaluation = -staticEvaluation;
+
+            #endregion
+
+            // Fail-hard beta-cutoff (updating alpha after this check)
+            if (staticEvaluation >= beta)
+                return staticEvaluation;
+
+            // Better move
+            if (staticEvaluation > alpha)
+                alpha = staticEvaluation;
+        }
 
 #if DEBUG
         ++_nodes;
 #endif
 
-        int pvIndex = _indexes[ply],
-            nextPvIndex = _indexes[ply + 1];
-        Move bestMove = _pVTable[pvIndex] = new();
+        var moves = isQuiescence
+            ? _position.GetLegalMoves(true)
+            : _position.GetLegalMoves();
 
-        #region Move sorting
+        if (isQuiescence && moves.Length == 0)
+            return staticEvaluation;
 
-        if (_isFollowingPV)
-            _isFollowingPV = legalMoves.Any(m => m == _pVTable[ply])
-                && (_isScoringPV = true);
-
-        #endregion
-
-        foreach (var move in legalMoves.OrderByDescending(move => Score(move, ply/*, _killerMoves*/)))
+        foreach (var move in moves.OrderByDescending(move => Score(move, ply/*, _killerMoves*/)))
         {
             _position.MakeMove(move);
-            var evaluation = -NegaMax(ply + 1, -beta, -alpha);
+            var evaluation = -NegaMax(ply + 1, -beta, -alpha, isQuiescence); // Invokes itself, either Negamax or Quiescence
             _position.UndoMove(move);
 
             // Fail-hard beta-cutoff - refutation found, no need to keep searching this line
             if (evaluation >= beta)
                 return beta;
-            //if (!move.IsCapture)
+            //if (isNotQuiescence && !move.IsCapture)
             //{
             //    _killerMoves[1, ply] = _killerMoves[0, ply];
             //    _killerMoves[0, ply] = move.RawValue;
@@ -185,114 +249,13 @@ public class MyBot : IChessBot
                 CopyPVTableMoves(pvIndex + 1, nextPvIndex, ply);
 
                 // 🔍 History moves
-                //if (!move.IsCapture)
+                //if (!move.IsCapture) // No isNotQuiescence check needed, in quiecence there will never be non capure moves
                 //{
                 //    _historyMoves[(int)move.MovePieceType, move.TargetSquare.Index] += ply << 2;
                 //}
             }
         }
 
-        if (bestMove.IsNull && legalMoves.Length == 0)
-            return EvaluateFinalPosition(ply);
-
-        // Node fails low
-        return alpha;
-    }
-
-    public /* internal */int QuiescenceSearch(int ply, int alpha, int beta)
-    {
-        if (_position.IsDraw()) //  IsFiftyMoveDraw() || IsInsufficientMaterial() || IsRepeatedPosition(), no need to check for stalemate
-            return 0;
-
-        int pvIndex = _indexes[ply],
-            nextPvIndex = _indexes[ply + 1],
-            staticEvaluation = 0,
-            kingSquare;
-
-        Move bestMove = _pVTable[pvIndex] = new();   // Nulling the first value before any returns
-
-        #region Static evaluation
-
-        ulong bitboard;
-        for (int i = 0; ++i < 6;)
-        {
-            void Eval(bool localIsWhiteToMove)
-            {
-                bitboard = _position.GetPieceBitboard((PieceType)i, localIsWhiteToMove);
-
-                while (bitboard != default)
-                {
-                    var square = ClearAndGetIndexOfLSB(ref bitboard);
-
-                    if (!localIsWhiteToMove)
-                        square ^= 56;
-
-                    staticEvaluation += (localIsWhiteToMove ? 1 : -1) * (
-                        MaterialScore[i]
-                        + Magic[square + 64 * (i - 1)]);
-                }
-            }
-
-            Eval(true);
-            Eval(false);
-        }
-
-        bitboard = _position.GetPieceBitboard(PieceType.King, true);
-        kingSquare = ClearAndGetIndexOfLSB(ref bitboard);
-
-        staticEvaluation += _position.GetPieceBitboard(PieceType.Queen, false) > 0      // White king, no black queens
-            ? Magic[kingSquare + 320]    // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
-            : Magic[kingSquare + 384];   // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
-
-        bitboard = _position.GetPieceBitboard(PieceType.King, false);
-        kingSquare = ClearAndGetIndexOfLSB(ref bitboard) ^ 56;
-
-        staticEvaluation -= _position.GetPieceBitboard(PieceType.Queen, true) > 0       // Black king, no white queens
-            ? Magic[kingSquare + 320]    // Regular king positional values -  64 * ((int)PieceType(King), after regular tables
-            : Magic[kingSquare + 384];   // Endgame king position values - 64 * ((int)PieceType(King) - 1), last regular table
-
-        if (!_position.IsWhiteToMove)
-            staticEvaluation = -staticEvaluation;
-
-        #endregion
-
-        // Fail-hard beta-cutoff (updating alpha after this check)
-        if (staticEvaluation >= beta)
-            return staticEvaluation;
-
-        // Better move
-        if (staticEvaluation > alpha)
-            alpha = staticEvaluation;
-
-        var captures = _position.GetLegalMoves(true);
-        if (captures.Length == 0)
-            return staticEvaluation;
-
-#if DEBUG
-        ++_nodes;
-#endif
-
-        foreach (var move in captures.OrderByDescending(m => Score(m, ply)))
-        {
-            _position.MakeMove(move);
-            var evaluation = -QuiescenceSearch(ply + 1, -beta, -alpha);
-            _position.UndoMove(move);
-
-            // Fail-hard beta-cutoff
-            if (evaluation >= beta)
-                return evaluation;
-
-            if (evaluation > alpha)
-            {
-                alpha = evaluation;
-                bestMove = _pVTable[pvIndex] = move;
-                CopyPVTableMoves(pvIndex + 1, nextPvIndex, ply);
-            }
-        }
-
-        // TODO: GetLegalMovesNonAlloc
-        //Span<Move> spanLegalMoves = stackalloc Move[256];
-        //_position.GetLegalMovesNonAlloc(ref spanLegalMoves);
         if (bestMove.IsNull && _position.GetLegalMoves().Length == 0)
             return EvaluateFinalPosition(ply);
 
