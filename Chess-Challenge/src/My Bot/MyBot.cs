@@ -126,7 +126,7 @@ public class MyBot : IChessBot
 #if DEBUG
         Console.WriteLine($"bestmove {bestMove.ToString()[7..^1]} score cp {bestEvaluation} depth {_targetDepth - 1} time {timer.MillisecondsElapsedThisTurn} nodes {_nodes} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
 #endif
-        return bestMove;
+        return bestMove.IsNull ? board.GetLegalMoves()[0] : bestMove;
     }
 
     public /*internal */int NegaMax(int ply, int alpha, int beta, bool isQuiescence)
