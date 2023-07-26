@@ -289,7 +289,7 @@ namespace ChessChallenge.Application
 
                 if (log)
                 {
-                    Log("Game Over: " + result, false, ConsoleColor.Blue);
+                   Log("Game Over: " + result + " Match: " + CurrGameNumber, false, ConsoleColor.Blue);
                 }
 
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));
