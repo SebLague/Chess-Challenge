@@ -104,6 +104,7 @@ jobs:
         WINS=$(grep -oP 'Benchmark finished: \+\K\d+' output.log)
         DRAWS=$(grep -oP 'Benchmark finished: \+\d+ =\K\d+' output.log)
         LOSSES=$(grep -oP 'Benchmark finished: \+\d+ =\d+ -\K\d+' output.log)
+        mv output.log ${{ matrix.chunk }}.log
         echo "+$WINS =$DRAWS -$LOSSES" >> res_${{ matrix.chunk }}.txt
 
     - name: Upload Results
@@ -111,6 +112,12 @@ jobs:
       with:
         name: res_${{ needs.prepare.outputs.key }}
         path: res_${{ matrix.chunk }}.txt
+
+    - name: Upload Log
+      uses: actions/upload-artifact@v3
+      with:
+        name: log_${{ needs.prepare.outputs.key }}
+        path: ${{ matrix.chunk }}.log
 
   combine:
     runs-on: ubuntu-latest
