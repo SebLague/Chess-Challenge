@@ -6,14 +6,16 @@ using static ChessChallenge.Application.ConsoleHelper;
 
 public class MyBot : IChessBot
 {
-    //                             .  P   K   B   R   Q   K
+    //                                    .  P   K   B   R   Q   K
     private static int[] PIECE_VALUES = { 0, 10, 30, 30, 50, 90, 2000 };
-    private static int MAX_DEPTH = 3;
+    private static int WORST_SCORE = -Int32.MaxValue;
+    /// <summary>the depth to which the bot searches</summary>
+    private static int DEPTH = 3;
     private Move bestMove = Move.NullMove;
 
     public Move Think(Board board, Timer timer)
     {
-        Search(board, 0, MAX_DEPTH);
+        Search(board, DEPTH);
         return bestMove;
     }
 
@@ -22,26 +24,29 @@ public class MyBot : IChessBot
     /// </summary>
     /// <param name="board">current board</param>
     /// <param name="depth">current search depth</param>
+    /// <remarks>the depth is decreased by 1 for each recursive call</remarks>
     /// <param name="maxDepth">maximal depth to be searched + the depth at which the boards are ultimately evaluated</param>
-    /// <returns>score of the board at depth=maxdepth with the best score obtained</returns>
-    int Search(Board board, int depth, int maxDepth)
+    /// <returns>score of the board at depth=0 with the best score obtained</returns>
+    double Search(Board board, int depth)
     {
         // we have reached the depth - evaluate the board for the current color
-        if (depth == maxDepth)
+        if (depth == 0)
             return Evaluate(board);
 
-        int bestScore = int.MinValue ;
+        double bestScore = WORST_SCORE;
         Move[] moves = board.GetLegalMoves();
+        if (depth == DEPTH)
+          bestMove = moves[0];
         foreach (Move move in moves)
         {
             board.MakeMove(move);
             // negate the score because after making a move,
             // we are looking at the board from the other player's perspective
-            int score = -Search(board, depth+1, maxDepth);
+            double score = -Search(board, depth-1);
             if (score > bestScore)
             {
                 bestScore = score;
-                if (depth == 0)
+                if (depth == DEPTH)
                     this.bestMove = move;
             }
             board.UndoMove(move);
@@ -55,11 +60,11 @@ public class MyBot : IChessBot
     /// </summary>
     /// <param name="board">board to be evaluated</param>
     /// <returns>score of the board</returns>
-    private int Evaluate(Board board)
+    private double Evaluate(Board board)
     {
-      if (board.IsInCheckmate()) return Int32.MinValue;
-      if (board.IsInCheck()) return Int32.MinValue / 2;
-      if (board.IsRepeatedPosition()) return Int32.MinValue / 4;
+      if (board.IsInCheckmate()) return WORST_SCORE;
+      if (board.IsInCheck()) return WORST_SCORE / 2;
+      if (board.IsRepeatedPosition()) return WORST_SCORE / 4;
       if (board.IsDraw()) return 0;
 
       int myMobility = board.GetLegalMoves().Length;
@@ -67,12 +72,12 @@ public class MyBot : IChessBot
       int theirMobility = board.GetLegalMoves().Length;
       board.UndoSkipTurn();
 
-      int score = board.GetLegalMoves().Length;
-      int[] pieceScores = { 0, 0, 0, 0, 0, 0, 0 };
+      double score = board.GetLegalMoves().Length;
+      double[] pieceScores = { 0, 0, 0, 0, 0, 0, 0 };
       foreach(PieceList list in board.GetAllPieceLists()) {
           pieceScores[(int)list.TypeOfPieceInList] += list.Count * (list.IsWhitePieceList==board.IsWhiteToMove ? 1 : -1);
       }
-      int pieceScore = pieceScores.Select((pieceScore, index) => pieceScore * PIECE_VALUES[index]).Sum();
+      double pieceScore = pieceScores.Select((pieceScore, index) => pieceScore * PIECE_VALUES[index]).Sum();
       return (myMobility - theirMobility) + pieceScore;
     }
 }
