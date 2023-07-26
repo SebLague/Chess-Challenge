@@ -1,5 +1,4 @@
 ﻿using ChessChallenge.Chess;
-using ChessChallenge.Example;
 using Raylib_cs;
 using System;
 using System.IO;
@@ -11,7 +10,8 @@ using System.Threading.Tasks;
 using static ChessChallenge.Application.Settings;
 using static ChessChallenge.Application.ConsoleHelper;
 using System.Collections.Generic;
-using System.Numerics;
+using System.Reflection;
+using Bots;
 
 namespace ChessChallenge.Application
 {
@@ -35,11 +35,12 @@ namespace ChessChallenge.Application
                 _bot = bot;
             }
             public PlayerArgs(PlayerType type) : this(type, typeof(MyBot)) {}
+            public PlayerArgs(Type bot) : this(PlayerType.Bot, bot) {}
 
             public bool IsBot => Type is PlayerType.Bot;
 
             public string Name =>
-                IsBot ? "Bot: " + _bot.ToString() : "Human";
+                IsBot ? _bot.ToString() : "Human";
 
             public object? GetBotInstance()
             {
@@ -99,6 +100,12 @@ namespace ChessChallenge.Application
             botTaskWaitHandle = new AutoResetEvent(false);
 
             StartNewGame(new PlayerArgs(PlayerType.Human), new PlayerArgs(PlayerType.Bot));
+        }
+
+        public IEnumerable<Type> GetBotTypes()
+        {
+            return Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => t.Namespace == "AllBots");
         }
 
         public void StartNewGame(PlayerArgs white, PlayerArgs black)
@@ -168,73 +175,69 @@ namespace ChessChallenge.Application
 
 
         public void StartELOTourney() {
-          Task.Factory.StartNew(ELOThread, TaskCreationOptions.LongRunning);
 
+            Task.Factory.StartNew(ELOThread, TaskCreationOptions.LongRunning);
 
+            void ELOThread()
+            {
+                var bots = GetBotTypes();
+                var eloScores = new Dictionary<Type,double>();
 
-          void ELOThread(){
-
-            var bots = new List<PlayerType> { PlayerType.MyBot,PlayerType.RandomBot,PlayerType.MyBot3,PlayerType.EvilBot };
-            var eloScores = new Dictionary<PlayerType,double>();
-
-            foreach (PlayerType bot in bots){
-              eloScores[bot] = 1000.0;
-            }
-
-            var K = 32;
-
-            foreach (PlayerType player1 in bots) {
-              foreach (PlayerType player2 in bots) {
-                if (player1 == player2) {
-                  continue;
-                }
-                // reset stats
-                botMatchGameIndex = 0;
-                BotStatsA = new BotMatchStats(player2.ToString());
-                BotStatsB = new BotMatchStats(player1.ToString());
-
-                StartNewGame(player1,player2);
-                // block
-                eloMatchRunning = true;
-                while (eloMatchRunning) {
+                foreach (var bot in bots) {
+                    eloScores[bot] = 1000.0;
                 }
 
-                var n_games = botMatchGameIndex + 1;
+                var K = 32;
+
+                foreach (var player1 in bots) {
+                    foreach (var player2 in bots) {
+                        if (player1 == player2) {
+                            continue;
+                        }
+                        // reset stats
+                        botMatchGameIndex = 0;
+                        BotStatsA = new BotMatchStats(player2.ToString());
+                        BotStatsB = new BotMatchStats(player1.ToString());
+                    
+                        StartNewGame(new PlayerArgs(player1), new PlayerArgs(player2));
+                        // block
+                        eloMatchRunning = true;
+                        while (eloMatchRunning) {
+                        }
+
+                        var n_games = botMatchGameIndex + 1;
 
 
-              // perform elo ranking
-              // see https://en.wikipedia.org/wiki/Elo_rating_system#Theory
+                        // perform elo ranking
+                        // see https://en.wikipedia.org/wiki/Elo_rating_system#Theory
 
-              var Ra = eloScores[player2];
-              var Rb = eloScores[player1];
+                        var Ra = eloScores[player2];
+                        var Rb = eloScores[player1];
 
-              var Qa = Math.Pow(10.0,Ra/400.0);
-              var Qb = Math.Pow(10.0,Rb/400.0);
+                        var Qa = Math.Pow(10.0,Ra/400.0);
+                        var Qb = Math.Pow(10.0,Rb/400.0);
 
-              var expectedScoreA = Qa / (Qa+Qb);
-              var expectedScoreB = Qb / (Qa+Qb);
+                        var expectedScoreA = Qa / (Qa+Qb);
+                        var expectedScoreB = Qb / (Qa+Qb);
 
-              var scoreA = 0.5*BotStatsA.NumDraws + 1*BotStatsA.NumWins;
-              var scoreB = 0.5*BotStatsB.NumDraws + 1*BotStatsB.NumWins;
+                        var scoreA = 0.5*BotStatsA.NumDraws + 1*BotStatsA.NumWins;
+                        var scoreB = 0.5*BotStatsB.NumDraws + 1*BotStatsB.NumWins;
 
-              var Ra_new = Ra + K * (scoreA-expectedScoreA);
-              var Rb_new = Rb + K * (scoreB-expectedScoreB);
+                        var Ra_new = Ra + K * (scoreA-expectedScoreA);
+                        var Rb_new = Rb + K * (scoreB-expectedScoreB);
 
-              eloScores[player1] = Ra_new;
-              eloScores[player2] = Rb_new;
-              ConsoleHelper.Log(player1 + ": " + Ra + " -> " + Ra_new);
-              ConsoleHelper.Log(player2 + ": " + Rb + " -> " + Rb_new);
-
-              }
+                        eloScores[player1] = Ra_new;
+                        eloScores[player2] = Rb_new;
+                        Log(player1 + ": " + Ra + " -> " + Ra_new);
+                        Log(player2 + ": " + Rb + " -> " + Rb_new);
+                    }
+                }
+                using (StreamWriter file = new StreamWriter("elo.txt"))
+                {
+                    foreach (var entry in eloScores)
+                        file.WriteLine("{0} {1}", entry.Key, entry.Value);
+                }
             }
-            using (StreamWriter file = new StreamWriter("elo.txt"))
-                foreach (var entry in eloScores)
-                    file.WriteLine("{0} {1}", entry.Key, entry.Value); 
-            }
-
-
-
-
         }
 
         Move GetBotMove()
@@ -499,8 +502,8 @@ namespace ChessChallenge.Application
         {
             EndGame(GameResult.DrawByArbiter, log: false, autoStartNextBotMatch: false);
 
-            var argsA = new PlayerArgs(PlayerType.Bot, botTypeA);
-            var argsB = new PlayerArgs(PlayerType.Bot, botTypeB);
+            var argsA = new PlayerArgs(botTypeA);
+            var argsB = new PlayerArgs(botTypeB);
 
             botMatchGameIndex = 0;
             string nameA = GetPlayerName(argsA);

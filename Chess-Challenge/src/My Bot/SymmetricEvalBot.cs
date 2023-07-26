@@ -1,5 +1,7 @@
 ﻿using ChessChallenge.API;
 
+namespace Bots;
+
 public class MyBot3 : IChessBot //Nik I want to change this class name >:(
 {
     public Move Think(Board board, Timer timer)

@@ -1,7 +1,7 @@
 ﻿using ChessChallenge.API;
 using System;
 
-namespace ChessChallenge.Example
+namespace Bots
 {
     // A simple bot that can spot mate in one, and always captures the most valuable piece it can.
     // Plays randomly otherwise.

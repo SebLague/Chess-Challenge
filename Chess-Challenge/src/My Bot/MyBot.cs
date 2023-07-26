@@ -1,5 +1,7 @@
 ﻿using ChessChallenge.API;
 
+namespace Bots;
+
 public class MyBot : IChessBot
 {
     public Move Think(Board board, Timer timer)

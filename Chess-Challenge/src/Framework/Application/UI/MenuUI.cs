@@ -17,17 +17,17 @@ namespace ChessChallenge.Application
             // Game Buttons
             if (NextButtonInRow("Human vs MyBot", ref buttonPos, spacing, buttonSize))
             {
-                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBot : ChallengeController.PlayerType.Human;
-                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.MyBot : ChallengeController.PlayerType.Human;
-                controller.StartNewGame(whiteType, blackType);
+                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.Bot : ChallengeController.PlayerType.Human;
+                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.Bot : ChallengeController.PlayerType.Human;
+                controller.StartNewGame(new ChallengeController.PlayerArgs(whiteType), new ChallengeController.PlayerArgs(blackType));
             }
             if (NextButtonInRow("MyBot vs MyBot", ref buttonPos, spacing, buttonSize))
             {
-                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.MyBot);
+                controller.StartNewBotMatch(typeof(Bots.MyBot), typeof(Bots.MyBot));
             }
             if (NextButtonInRow("MyBot vs EvilBot", ref buttonPos, spacing, buttonSize))
             {
-                controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.EvilBot);
+                controller.StartNewBotMatch(typeof(Bots.MyBot), typeof(Bots.EvilBot));
             }
 
             if (NextButtonInRow("ELO Tourney", ref buttonPos, spacing, buttonSize))
