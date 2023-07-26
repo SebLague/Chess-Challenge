@@ -1,25 +1,77 @@
-name: Benchmark MyBot
+name: Benchmark
 
 on:
-  push:
-    branches:
-      - main
-  pull_request:
-    types: [opened, synchronize, reopened]
-
-permissions:
-  pull-requests: write
+  workflow_call:
+    inputs:
+      opponent:
+        required: true
+        type: string
+      opponent_long:
+        required: false
+        type: string
+      threads:
+        required: true
+        type: number
+      jobs:
+        required: false
+        type: number
+      fens:
+        required: false
+        type: number
+      run:
+        required: false
+        type: string
+    outputs:
+      wins:
+        value: ${{ jobs.combine.outputs.wins }}
+      draws:
+        value: ${{ jobs.combine.outputs.draws }}
+      losses:
+        value: ${{ jobs.combine.outputs.losses }}
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      chunks: ${{ steps.prepare.outputs.chunks }}
+      offset: ${{ steps.prepare.outputs.offset }}
+      key: ${{ steps.prepare.outputs.key }}
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+      - name: Prepare
+        id: prepare
+        run: |
+          JOBS=${{ inputs.jobs || 1 }}
+          if [ -n '${{ inputs.fens || '' }}' ]; then
+            sed -n "1,${{ inputs.fens }}p" Chess-Challenge/resources/Fens.txt > tmp.txt
+            mv tmp.txt Chess-Challenge/resources/Fens.txt
+          fi
+          LINES=$(wc -l < Chess-Challenge/resources/Fens.txt)
+          OFFSET=$((LINES / JOBS + (LINES % JOBS != 0)))
+          JOBS=$((LINES / OFFSET + (LINES % OFFSET != 0)))
+          CHUNKS="[$(seq 0 $((JOBS - 1)) | tr '\n' ',' | sed 's/,$//')]"
+          SUFFIX=$(openssl rand -hex 4)
+          KEY="${{inputs.opponent}}_$SUFFIX"
+          echo "::notice title=Benchmark against ${{inputs.opponent_long || inputs.opponent }} ($SUFFIX)::$LINES FENs, $JOBS jobs with ${{ inputs.threads }} threads, $OFFSET FENs per job"
+          echo "chunks=$CHUNKS" >> $GITHUB_OUTPUT
+          echo "offset=$OFFSET" >> $GITHUB_OUTPUT
+          echo "key=$KEY" >> $GITHUB_OUTPUT
+
+
   benchmark:
+    runs-on: ubuntu-latest
+    needs: prepare
     strategy:
       matrix:
-        opponent: [EvilBot]
-        chunk: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25]
-    runs-on: ubuntu-latest
+        chunk: ${{ fromJson(needs.prepare.outputs.chunks) }}
+    outputs:
+      wins: ${{ steps.benchmark.outputs.wins }}
+      draws: ${{ steps.benchmark.outputs.draws }}
+      losses: ${{ steps.benchmark.outputs.losses }}
 
     steps:
-    - name: Checkout code
+    - name: Checkout
       uses: actions/checkout@v3
 
     - name: Setup .NET
@@ -33,37 +85,43 @@ jobs:
         Xvfb :99 &
         echo "DISPLAY=:99.0" >> $GITHUB_ENV
 
-    - name: Benchmark against ${{ matrix.opponent }}
-      run: |
-        cd Chess-Challenge
-        START_LINE=$(( (${{ matrix.chunk }} - 1) * 20 + 1 ))
-        END_LINE=$(( $START_LINE + 19 ))
-        sed -n "${START_LINE},${END_LINE}p" resources/Fens.txt > temp.txt
-        head -c -1 temp.txt > temp_no_newline.txt
-        mv temp_no_newline.txt resources/Fens.txt
-        dotnet run ${{ matrix.opponent }} > output.log &
-        DOTNET_PID=$!
-        while ! grep -q "Match finished:" output.log; do sleep 1; done
-        kill $DOTNET_PID
-        WINS=$(grep -oP 'Match finished: \+\K\d+' output.log)
-        DRAWS=$(grep -oP 'Match finished: \+\d+ =\K\d+' output.log)
-        LOSSES=$(grep -oP 'Match finished: \+\d+ =\d+ -\K\d+' output.log)
-        cd ..
-        echo "+$WINS =$DRAWS -$LOSSES" > res_${{ matrix.chunk }}.txt
+    - name: Prepare
+      run: ${{ inputs.run || 'echo "Nothing to prepare"' }}
 
-    - name: Upload result
+    - name: Run Benchmark
+      id: benchmark
+      run: |
+        START_LINE=$(( ${{ matrix.chunk }} * ${{ needs.prepare.outputs.offset }} + 1 ))
+        END_LINE=$(( $START_LINE + ${{ needs.prepare.outputs.offset }} - 1 ))
+        sed -n "${START_LINE},${END_LINE}p" Chess-Challenge/resources/Fens.txt > temp.txt
+        mv temp.txt Chess-Challenge/resources/Fens.txt
+        echo "=== benchmark.yaml FENS ==="
+        cat Chess-Challenge/resources/Fens.txt
+        echo "=== benchmark.yaml FENS ==="
+
+        ./scripts/benchmark.sh ${{ inputs.threads }} ${{ inputs.opponent }}> >(tee output.log)
+
+        WINS=$(grep -oP 'Benchmark finished: \+\K\d+' output.log)
+        DRAWS=$(grep -oP 'Benchmark finished: \+\d+ =\K\d+' output.log)
+        LOSSES=$(grep -oP 'Benchmark finished: \+\d+ =\d+ -\K\d+' output.log)
+        echo "+$WINS =$DRAWS -$LOSSES" >> res_${{ matrix.chunk }}.txt
+
+    - name: Upload Results
       uses: actions/upload-artifact@v3
       with:
-        name: res_${{ matrix.opponent }}
+        name: res_${{ needs.prepare.outputs.key }}
         path: res_${{ matrix.chunk }}.txt
 
-  combine_results:
-    needs: benchmark
+  combine:
     runs-on: ubuntu-latest
+    needs:
+      - benchmark
+      - prepare
     outputs:
-      wins_EvilBot: ${{ steps.combine.outputs.wins_EvilBot }}
-      draws_EvilBot: ${{ steps.combine.outputs.draws_EvilBot }}
-      losses_EvilBot: ${{ steps.combine.outputs.losses_EvilBot }}
+      wins: ${{ steps.combine.outputs.wins }}
+      draws: ${{ steps.combine.outputs.draws }}
+      losses: ${{ steps.combine.outputs.losses }}
+
     steps:
     - name: Download results
       uses: actions/download-artifact@v3
@@ -71,78 +129,16 @@ jobs:
     - name: Combine results
       id: combine
       run: |
-        wins_EvilBot=0
-        draws_EvilBot=0
-        losses_EvilBot=0
-        for file in res_EvilBot/*; do
+        wins=0
+        draws=0
+        losses=0
+        for file in res_${{ needs.prepare.outputs.key }}/*; do
           RESULT=$(cat $file)
-          wins_EvilBot=$((wins_EvilBot + $(echo $RESULT | grep -oP '\+\K\d+')))
-          draws_EvilBot=$((draws_EvilBot + $(echo $RESULT | grep -oP '=\K\d+')))
-          losses_EvilBot=$((losses_EvilBot + $(echo $RESULT | grep -oP '\-\K\d+')))
+          wins=$((wins + $(echo $RESULT | grep -oP '\+\K\d+')))
+          draws=$((draws + $(echo $RESULT | grep -oP '=\K\d+')))
+          losses=$((losses + $(echo $RESULT | grep -oP '\-\K\d+')))
         done
-        echo "wins_EvilBot=$wins_EvilBot" >> $GITHUB_OUTPUT
-        echo "draws_EvilBot=$draws_EvilBot" >> $GITHUB_OUTPUT
-        echo "losses_EvilBot=$losses_EvilBot" >> $GITHUB_OUTPUT
+        echo "wins=$wins" >> $GITHUB_OUTPUT
+        echo "draws=$draws" >> $GITHUB_OUTPUT
+        echo "losses=$losses" >> $GITHUB_OUTPUT
 
-  generate_comment:
-    needs: combine_results
-    runs-on: ubuntu-latest
-    outputs:
-      comment: ${{ steps.generate.outputs.comment }}
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-      with:
-        fetch-depth: 5
-
-    - name: Generate comment
-      id: generate
-      run: |
-        LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
-        COMMIT_MESSAGE=$(git log -1 --pretty=format:%s $LAST_COMMIT_SHA)
-        SHORT_SHA=$(echo $LAST_COMMIT_SHA | cut -c 1-7)
-        COMMENT="Benchmark of commit \`${COMMIT_MESSAGE} (#${SHORT_SHA})\`\n"
-        COMMENT+="| Opponent | Wins | Draws | Losses |\n"
-        COMMENT+="| --- | --- | --- | --- |\n"
-        COMMENT+="| EvilBot | ${{ needs.combine_results.outputs.wins_EvilBot }} | ${{ needs.combine_results.outputs.draws_EvilBot }} | ${{ needs.combine_results.outputs.losses_EvilBot }} |"
-        COMMENT=$(echo "$COMMENT" | sed "s/\`/\\\\\`/g")
-        echo "comment=$COMMENT" >> $GITHUB_OUTPUT
-
-    - name: Print stats
-      run: |
-        echo "::notice title=Benchmark against EvilBot::+${{ needs.combine_results.outputs.wins_EvilBot }} =${{ needs.combine_results.outputs.draws_EvilBot }} -${{ needs.combine_results.outputs.losses_EvilBot }}"
-
-
-  publish_stats:
-    needs: generate_comment
-    runs-on: ubuntu-latest
-
-    steps:
-    - name: Comment PR
-      if: github.event_name == 'pull_request'
-      uses: actions/github-script@v6
-      with:
-        script: |
-          const issueComment = `${{ needs.generate_comment.outputs.comment }}`
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: issueComment
-          })
-          const pr = await github.rest.pulls.get({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            pull_number: context.issue.number
-          })
-          const existingDescription = pr.data.body || ''
-          const benchmarkIndex = existingDescription.indexOf('<!-- benchmark -->')
-          const newDescription = benchmarkIndex >= 0 ? existingDescription.slice(0, benchmarkIndex) : existingDescription
-          const prDescription = `${newDescription}\n<!-- benchmark -->\n**Latest benchmark results:**\n\n${issueComment}`
-          github.rest.pulls.update({
-            pull_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: prDescription
-          })
