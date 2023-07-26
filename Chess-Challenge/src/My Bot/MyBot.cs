@@ -7,35 +7,27 @@ using static ChessChallenge.Application.ConsoleHelper;
 public class MyBot : IChessBot
 {
     //                             .  P   K   B   R   Q   K
-    private int[] _pieceValues = { 0, 10, 30, 30, 50, 90, 2000 };
+    private static int[] PIECE_VALUES = { 0, 10, 30, 30, 50, 90, 2000 };
+    private static int MAX_DEPTH = 3;
     private Move bestMove = Move.NullMove;
 
     public Move Think(Board board, Timer timer)
     {
-        int depth = 0;
-        int maxdepth = 3;
-        int bestScore = Search(board, depth, maxdepth);
+        Search(board, 0, MAX_DEPTH);
         return bestMove;
     }
 
-    int Search(Board board, int depth, int maxdepth)
-        /*  Input
-         *
-         *  board: Board, Current board
-         *  depth: int, Current search depth
-         *  maxdepth: int, maximal depth to be searches + the depth at which the boards are ultimately evaluated
-         *
-         *  Output
-         *
-         *  bestscore: int, the score of the board at depth=maxdepth with the best score obtained
-        */
+    /// <summary>
+    /// Search is a recursive function that searches for the best move at a given depth.
+    /// </summary>
+    /// <param name="board">current board</param>
+    /// <param name="depth">current search depth</param>
+    /// <param name="maxDepth">maximal depth to be searched + the depth at which the boards are ultimately evaluated</param>
+    /// <returns>score of the board at depth=maxdepth with the best score obtained</returns>
+    int Search(Board board, int depth, int maxDepth)
     {
-        if (depth == maxdepth)
-        /*
-         *Evaluate returns int score, scored in respect to the next moving player. The board it is evaluating is the
-         *end board of one branch and scores will be handed back to the next node (*-1, since the black moves that creates a bad setting for white will be made and
-         *a white move that creates a bad setting for black is our right move)
-        */
+        // we have reached the depth - evaluate the board for the current color
+        if (depth == maxDepth)
             return Evaluate(board);
 
         int bestScore = int.MinValue ;
@@ -43,7 +35,9 @@ public class MyBot : IChessBot
         foreach (Move move in moves)
         {
             board.MakeMove(move);
-            int score = -Search(board, depth+1, maxdepth);
+            // negate the score because after making a move,
+            // we are looking at the board from the other player's perspective
+            int score = -Search(board, depth+1, maxDepth);
             if (score > bestScore)
             {
                 bestScore = score;
@@ -55,6 +49,12 @@ public class MyBot : IChessBot
         return bestScore;
     }
 
+    /// <summary>
+    /// Evaluate evaluates a board and returns a score.
+    /// The higher the score, the better the board is for the current color
+    /// </summary>
+    /// <param name="board">board to be evaluated</param>
+    /// <returns>score of the board</returns>
     private int Evaluate(Board board)
     {
       if (board.IsInCheckmate()) return Int32.MinValue;
@@ -72,9 +72,7 @@ public class MyBot : IChessBot
       foreach(PieceList list in board.GetAllPieceLists()) {
           pieceScores[(int)list.TypeOfPieceInList] += list.Count * (list.IsWhitePieceList==board.IsWhiteToMove ? 1 : -1);
       }
-      int pieceScore = pieceScores.Select((pieceScore, index) => pieceScore * _pieceValues[index]).Sum();
+      int pieceScore = pieceScores.Select((pieceScore, index) => pieceScore * PIECE_VALUES[index]).Sum();
       return (myMobility - theirMobility) + pieceScore;
     }
 }
-
-
