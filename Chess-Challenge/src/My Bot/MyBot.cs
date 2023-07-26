@@ -16,10 +16,10 @@ public class MyBot : IChessBot
         static int GetScore(Board board, int score, int[] values, bool color){
             if(color == true){
                 var opponant_pieces = board.BlackPiecesBitboard;
-                Console.WriteLine("black pieces: ", opponant_pieces);
+                Console.WriteLine("black pieces: "+ opponant_pieces);
             }else{
                 var opponant_pieces = board.WhitePiecesBitboard;
-                Console.WriteLine("White peices: ",opponant_pieces);
+                Console.WriteLine("White peices: "+ opponant_pieces);
             }
             //get bitboard of the whole board, when there is a piece there use getpeice to get infro about that pieve
             return 0;
