@@ -8,7 +8,7 @@ public class Stockfish : IChessBot
 {
 
     // The name of the stockfish binaries that you downloaded and placed in ...\Chess-Challenge\bin\Debug\net6.0
-    const string STOCKFISH_BINARIES = "stockfish.exe";
+    const string STOCKFISH_BINARIES = "stockfish";
 
     // Adjust this so the time it takes to think is adequate
     // Adjusting this also have an effect on how strong it will play
@@ -61,7 +61,7 @@ public class Stockfish : IChessBot
         catch (System.ComponentModel.Win32Exception)
         {
             Console.WriteLine(
-                "Unable to find stockfish binaries, expecting a file named " 
+                "Unable to find stockfish binaries, expecting a binary file named " 
                 + STOCKFISH_BINARIES + " inside of: \n" + Directory.GetCurrentDirectory()
                 + "\n\nDownload your stockfish binaries at https://stockfishchess.org/download/"
             );
