@@ -36,13 +36,13 @@ public class MyBot : IChessBot
         double bestScore = WORST_SCORE;
         Move[] moves = board.GetLegalMoves();
         if (depth == DEPTH)
-          bestMove = moves[0];
+            bestMove = moves[0];
         foreach (Move move in moves)
         {
             board.MakeMove(move);
             // negate the score because after making a move,
             // we are looking at the board from the other player's perspective
-            double score = -Search(board, depth-1);
+            double score = -Search(board, depth - 1);
             if (score > bestScore)
             {
                 bestScore = score;
@@ -62,22 +62,23 @@ public class MyBot : IChessBot
     /// <returns>score of the board</returns>
     private double Evaluate(Board board)
     {
-      if (board.IsInCheckmate()) return WORST_SCORE;
-      if (board.IsInCheck()) return WORST_SCORE / 2;
-      if (board.IsRepeatedPosition()) return WORST_SCORE / 4;
-      if (board.IsDraw()) return 0;
+        if (board.IsInCheckmate()) return WORST_SCORE;
+        if (board.IsInCheck()) return WORST_SCORE / 2;
+        if (board.IsRepeatedPosition()) return WORST_SCORE / 4;
+        if (board.IsDraw()) return 0;
 
-      int myMobility = board.GetLegalMoves().Length;
-      board.TrySkipTurn(); // we already checked for IsInCheck above
-      int theirMobility = board.GetLegalMoves().Length;
-      board.UndoSkipTurn();
+        int myMobility = board.GetLegalMoves().Length;
+        board.TrySkipTurn(); // we already checked for IsInCheck above
+        int theirMobility = board.GetLegalMoves().Length;
+        board.UndoSkipTurn();
 
-      double score = board.GetLegalMoves().Length;
-      double[] pieceScores = { 0, 0, 0, 0, 0, 0, 0 };
-      foreach(PieceList list in board.GetAllPieceLists()) {
-          pieceScores[(int)list.TypeOfPieceInList] += list.Count * (list.IsWhitePieceList==board.IsWhiteToMove ? 1 : -1);
-      }
-      double pieceScore = pieceScores.Select((pieceScore, index) => pieceScore * PIECE_VALUES[index]).Sum();
-      return (myMobility - theirMobility) + pieceScore;
+        double score = board.GetLegalMoves().Length;
+        double[] pieceScores = { 0, 0, 0, 0, 0, 0, 0 };
+        foreach (PieceList list in board.GetAllPieceLists())
+        {
+            pieceScores[(int)list.TypeOfPieceInList] += list.Count * (list.IsWhitePieceList == board.IsWhiteToMove ? 1 : -1);
+        }
+        double pieceScore = pieceScores.Select((pieceScore, index) => pieceScore * PIECE_VALUES[index]).Sum();
+        return (myMobility - theirMobility) + pieceScore;
     }
 }
