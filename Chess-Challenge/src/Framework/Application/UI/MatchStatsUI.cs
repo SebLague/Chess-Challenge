@@ -15,9 +15,9 @@ namespace ChessChallenge.Application
                 int regularFontSize = UIHelper.ScaleInt(35);
                 int headerFontSize = UIHelper.ScaleInt(45);
                 Color col = new(180, 180, 180, 255);
-                Color white = new(255, 255, 255, 255);
-                Color red = new Color(240, 0, 0, 255);
-                Color green = new Color(0, 0, 240, 255);
+                Color white = new(225, 225, 225, 225);
+                Color red = new Color(200, 0, 0, 255);
+                Color green = new Color(0, 200, 0, 255);
                 Vector2 startPos = UIHelper.Scale(new Vector2(1500, 150));
                 float spacingY = UIHelper.Scale(35);
 
