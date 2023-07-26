@@ -280,14 +280,14 @@ namespace ChessChallenge.API
 			int count = 0;
 			ulong bits = white == true ? this.WhitePiecesBitboard : this.BlackPiecesBitboard;
 			for(int x = 0; x < 64; x++)
-        	{
-            	ulong bit = bits & 1;
-            	if(bit == 1)
-            	{
-            	    count++;
-            	}
-            	bits >>= 1;
-        	}
+			{
+            			ulong bit = bits & 1;
+            			if(bit == 1)
+            			{
+            	    			count++;
+            			}
+            			bits >>= 1;
+        		}
 
 			return count;
 		}
