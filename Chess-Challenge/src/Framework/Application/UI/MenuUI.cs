@@ -59,6 +59,10 @@ namespace ChessChallenge.Application
             {
                 FileHelper.OpenUrl("https://forms.gle/6jjj8jxNQ5Ln53ie6");
             }
+            if (NextButtonInRow("Fast forward", ref buttonPos, spacing, buttonSize))
+            {
+                controller.fastForward = !controller.fastForward;
+            }
 
             // Window and quit buttons
             buttonPos.Y += breakSpacing;
