@@ -279,10 +279,7 @@ namespace ChessChallenge.API
 		{
 			int count = 0;
 			ulong bits = white == true ? this.WhitePiecesBitboard : this.BlackPiecesBitboard;
-			for(int x = 0; x < 64; x++)
-			{
-            	
-        	}
+			count = BitboardHelper.GetNumberOfSetBits(bits);
 
 			return count;
 		}
