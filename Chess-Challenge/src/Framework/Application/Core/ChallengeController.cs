@@ -19,6 +19,8 @@ namespace ChessChallenge.Application
         {
             Human,
             MyBot,
+            SFBot,			
+            TestBot,			
             EvilBot
         }
 
@@ -208,6 +210,8 @@ namespace ChessChallenge.Application
             return type switch
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
+                PlayerType.SFBot => new ChessPlayer(new SFBot(), type, GameDurationMilliseconds),
+                PlayerType.TestBot => new ChessPlayer(new TestBot(), type, GameDurationMilliseconds),									
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
