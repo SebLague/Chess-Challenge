@@ -11,6 +11,7 @@ using System.Threading.Tasks;
 using static ChessChallenge.Application.Settings;
 using static ChessChallenge.Application.ConsoleHelper;
 using System.Collections.Generic;
+using System.Numerics;
 
 namespace ChessChallenge.Application
 {
@@ -19,10 +20,31 @@ namespace ChessChallenge.Application
         public enum PlayerType
         {
             Human,
-            MyBot,
-            RandomBot,
-            MyBot3,
-            EvilBot
+            Bot
+        }
+
+        public class PlayerArgs
+        {
+            public readonly PlayerType Type;
+
+            private Type _bot;
+
+            public PlayerArgs(PlayerType type, Type bot)
+            {
+                Type = type;
+                _bot = bot;
+            }
+            public PlayerArgs(PlayerType type) : this(type, typeof(MyBot)) {}
+
+            public bool IsBot => Type is PlayerType.Bot;
+
+            public string Name =>
+                IsBot ? "Bot: " + _bot.ToString() : "Human";
+
+            public object? GetBotInstance()
+            {
+                return Activator.CreateInstance(_bot);
+            }
         }
 
         // Game state
@@ -76,10 +98,10 @@ namespace ChessChallenge.Application
             botMatchStartFens = FileHelper.ReadResourceFile("Fens.txt").Split('\n').Where(fen => fen.Length > 0).ToArray();
             botTaskWaitHandle = new AutoResetEvent(false);
 
-            StartNewGame(PlayerType.Human, PlayerType.MyBot);
+            StartNewGame(new PlayerArgs(PlayerType.Human), new PlayerArgs(PlayerType.Bot));
         }
 
-        public void StartNewGame(PlayerType whiteType, PlayerType blackType)
+        public void StartNewGame(PlayerArgs white, PlayerArgs black)
         {
             // End any ongoing game
             EndGame(GameResult.DrawByArbiter, log: false, autoStartNextBotMatch: false);
@@ -96,13 +118,13 @@ namespace ChessChallenge.Application
             }
             // Board Setup
             board = new Board();
-            bool isGameWithHuman = whiteType is PlayerType.Human || blackType is PlayerType.Human;
+            bool isGameWithHuman = !white.IsBot || !black.IsBot;
             int fenIndex = isGameWithHuman ? 0 : botMatchGameIndex / 2;
             board.LoadPosition(botMatchStartFens[fenIndex]);
 
             // Player Setup
-            PlayerWhite = CreatePlayer(whiteType);
-            PlayerBlack = CreatePlayer(blackType);
+            PlayerWhite = CreatePlayer(white);
+            PlayerBlack = CreatePlayer(black);
             PlayerWhite.SubscribeToMoveChosenEventIfHuman(OnMoveChosen);
             PlayerBlack.SubscribeToMoveChosenEventIfHuman(OnMoveChosen);
 
@@ -280,15 +302,12 @@ namespace ChessChallenge.Application
             }
         }
 
-        ChessPlayer CreatePlayer(PlayerType type)
+        ChessPlayer CreatePlayer(PlayerArgs args)
         {
-            return type switch
+            return args.Type switch
             {
-                PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
-                PlayerType.RandomBot => new ChessPlayer(new RandomBot(), type, GameDurationMilliseconds),
-                PlayerType.MyBot3 => new ChessPlayer(new MyBot3(), type, GameDurationMilliseconds),
-                PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
-                _ => new ChessPlayer(new HumanPlayer(boardUI), type)
+                PlayerType.Bot => new ChessPlayer(args.GetBotInstance()!, args, GameDurationMilliseconds),
+                _ => new ChessPlayer(new HumanPlayer(boardUI), args, GameDurationMilliseconds)
             };
         }
 
@@ -397,7 +416,7 @@ namespace ChessChallenge.Application
         {
             if (originalGameID == gameID)
             {
-                StartNewGame(PlayerBlack.PlayerType, PlayerWhite.PlayerType);
+                StartNewGame(PlayerBlack.PlayerArgs, PlayerWhite.PlayerArgs);
             }
             timer.Close();
         }
@@ -473,15 +492,19 @@ namespace ChessChallenge.Application
             MatchStatsUI.DrawMatchStats(this);
         }
 
-        static string GetPlayerName(ChessPlayer player) => GetPlayerName(player.PlayerType);
-        static string GetPlayerName(PlayerType type) => type.ToString();
+        static string GetPlayerName(ChessPlayer player) => GetPlayerName(player.PlayerArgs);
+        static string GetPlayerName(PlayerArgs args) => args.Name;
 
-        public void StartNewBotMatch(PlayerType botTypeA, PlayerType botTypeB)
+        public void StartNewBotMatch(Type botTypeA, Type botTypeB)
         {
             EndGame(GameResult.DrawByArbiter, log: false, autoStartNextBotMatch: false);
+
+            var argsA = new PlayerArgs(PlayerType.Bot, botTypeA);
+            var argsB = new PlayerArgs(PlayerType.Bot, botTypeB);
+
             botMatchGameIndex = 0;
-            string nameA = GetPlayerName(botTypeA);
-            string nameB = GetPlayerName(botTypeB);
+            string nameA = GetPlayerName(argsA);
+            string nameB = GetPlayerName(argsB);
             if (nameA == nameB)
             {
                 nameA += " (A)";
@@ -491,7 +514,7 @@ namespace ChessChallenge.Application
             BotStatsB = new BotMatchStats(nameB);
             botAPlaysWhite = true;
             Log($"Starting new match: {nameA} vs {nameB}", false, ConsoleColor.Blue);
-            StartNewGame(botTypeA, botTypeB);
+            StartNewGame(argsA, argsA);
         }
 
 
