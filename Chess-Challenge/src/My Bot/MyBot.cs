@@ -11,7 +11,6 @@ public class MyBot : IChessBot
     /// <summary>the depth to which the bot searches</summary>
     private int DEPTH = 3;
     private Move bestMove = Move.NullMove;
-    ulong visualizeBitboard = 0;
 
     public MyBot()
     {
