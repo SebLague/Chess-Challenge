@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatGptOneLiner", "ChatGptOneLiner\ChatGptOneLiner.csproj", "{3D49C9B9-13A4-488F-8BB1-237271AAD69C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -20,6 +22,10 @@ Global
 		{2803E64F-15AC-430B-A5A2-69C00EA7505F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2803E64F-15AC-430B-A5A2-69C00EA7505F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2803E64F-15AC-430B-A5A2-69C00EA7505F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3D49C9B9-13A4-488F-8BB1-237271AAD69C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3D49C9B9-13A4-488F-8BB1-237271AAD69C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3D49C9B9-13A4-488F-8BB1-237271AAD69C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3D49C9B9-13A4-488F-8BB1-237271AAD69C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

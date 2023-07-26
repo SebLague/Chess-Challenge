@@ -8,7 +8,20 @@ public class MyBot : IChessBot
 
     // Piece values: pawn, knight, bishop, rook, queen, king
     int[] pieceValues = { 100, 300, 320, 500, 900, 10000 };
-
+    int[,] pawnBlackPositionValues = 
+        { 
+            { 100, 100, 103, 105, 105, 103, 100, 100 },
+            { 20,20,23,25,25,23,20,20 },
+            { 13,13,16,18,18,16,13,13 },
+            { 12,12,15,17,17,15,12,12 },
+            { 11,11,14,16,16,14,11,11 },
+            { 10,10,13,15,15,13,10,10 },
+            { 0,0,0,0,0,0,0,0 },
+            { 0,0,0,0,0,0,0,0 },
+        };
+    public MyBot() {
+        //Random random = new Random();
+    }
     public Move Think(Board board, Timer timer)
     {
         Move[] allMoves = board.GetLegalMoves();
@@ -18,7 +31,7 @@ public class MyBot : IChessBot
         foreach (Move move in allMoves)
         {
             board.MakeMove(move);
-            int evaluation = -search(board, 3); //hardcode 3 (2 per side plus one from previous line). this function is now recursive
+            int evaluation = -Search(board, 3); //hardcode 3 (2 per side plus one from previous line). this function is now recursive
             if (evaluation > bestEvaluation)
             {
                 bestEvaluation = evaluation;
@@ -30,12 +43,12 @@ public class MyBot : IChessBot
         return moveToPlay;
     }
 
-    int search(Board board, int depth)
+    int Search(Board board, int depth)
     {
         // reached the end of recursive loop, evaluate the position now
         if (depth == 0)
         {
-            return evalute(board);
+            return Evalute(board);
         }
 
         Move[] allMoves = board.GetLegalMoves();
@@ -56,7 +69,7 @@ public class MyBot : IChessBot
         foreach (Move move in allMoves)
         {
             board.MakeMove(move);
-            int evaluation = -search(board, depth - 1); //negative because we're now evaluating for opponent and what's good for them is bad for us
+            int evaluation = -Search(board, depth - 1); //negative because we're now evaluating for opponent and what's good for them is bad for us
             bestEvaluation = Math.Max(bestEvaluation, evaluation);
             board.UndoMove(move);
         }
@@ -64,19 +77,20 @@ public class MyBot : IChessBot
     }
 
     // Main method for evaluating the "score" of a position. Currently just material evaluation
-    int evalute(Board board)
+    int Evalute(Board board)
     {
         PieceList[] arrayOfPieceLists = board.GetAllPieceLists();
-        int materialEvaluation = getTotalPieceValue(arrayOfPieceLists);
+        int materialEvaluation = GetAllPiecesMaterialValue(arrayOfPieceLists);
+        int positionEvaluation = GetAllPiecesPositionValue(arrayOfPieceLists);
         int perspective = (board.IsWhiteToMove) ? 1 : -1;
         // positive good for current player moving/being evaluted
 
-        return materialEvaluation * perspective;
+        return (materialEvaluation + positionEvaluation) * perspective;
     }
 
 
     // Uses pieceValue array and arrayOfPieceLists to calculate total piece value for a specific player. There's probably an efficient way to slim this down but that's for later
-    int getTotalPieceValue(PieceList[] arrayOfPieceLists)
+    int GetAllPiecesMaterialValue(PieceList[] arrayOfPieceLists)
     {
         int index = 0;
         int total = 0;
@@ -94,4 +108,20 @@ public class MyBot : IChessBot
         }
         return total;
     }
+
+    int GetAllPiecesPositionValue(PieceList[] pieceLists)
+    {
+        int total = 0;
+        foreach (Piece piece in pieceLists[0]) // Add points for my good positions
+        {
+            total += pawnBlackPositionValues[7 - piece.Square.File, piece.Square.Rank]; // Row, Column (currently assumes position values are symmetrical because it simplifies our calculation)
+        }
+        foreach (Piece piece in pieceLists[6]) // Subtract points for opponent's good positions
+        {
+            total += pawnBlackPositionValues[piece.Square.File, piece.Square.Rank] * -1; // Row, Column (currently assumes position values are symmetrical because it simplifies our calculation)
+        }
+        return total;
+    }
+
+
 }
