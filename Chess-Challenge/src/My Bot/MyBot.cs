@@ -220,9 +220,7 @@ public class MyBot : IChessBot
         ++_nodes;
 #endif
 
-        var moves = isQuiescence
-            ? _position.GetLegalMoves(true)
-            : _position.GetLegalMoves();
+        var moves = _position.GetLegalMoves(isQuiescence);
 
         if (isQuiescence && moves.Length == 0)
             return staticEvaluation;

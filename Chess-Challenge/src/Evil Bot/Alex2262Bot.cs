@@ -86,7 +86,7 @@ public class Alex2262Bot : IChessBot
             //Console.WriteLine("info depth " + depth.ToString() + " score cp " + returnEval.ToString() + " nodes " + nodes.ToString() + " nps " + (nodes / Math.Max(timer.MillisecondsElapsedThisTurn, 1) * 1000).ToString());
         }
 
-        return bestMoveRoot;
+        return bestMoveRoot.IsNull ? board.GetLegalMoves()[0] : bestMoveRoot;
     }
 
     public int Negamax(Board board, Timer timer, int alpha, int beta, int depth, int ply)
