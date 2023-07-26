@@ -47,7 +47,7 @@ namespace ChessChallenge.Application
                 {
                     return baseTimeMS;
                 }
-                return (int)Math.Round(Math.Max(0, baseTimeMS - secondsElapsed * 1000.0));
+                return (int)Math.Ceiling(Math.Max(0, baseTimeMS - secondsElapsed * 1000.0));
             }
         }
 

@@ -25,9 +25,23 @@ namespace ChessChallenge.API
         /// Create a new board. Note: this should not be used in the challenge,
         /// use the board provided in the Think method instead.
         /// </summary>
-        public Board(Chess.Board board)
+        public Board(Chess.Board boardSource)
 		{
-			this.board = board;
+			// Clone board and create game move history
+			board = new Chess.Board();
+			board.LoadPosition(boardSource.StartPositionInfo);
+			GameMoveHistory = new Move[boardSource.AllGameMoves.Count];
+
+			for (int i = 0; i < boardSource.AllGameMoves.Count; i ++)
+			{
+				Chess.Move move = boardSource.AllGameMoves[i];
+				int movePieceType = PieceHelper.PieceType(board.Square[move.StartSquareIndex]);
+				int capturePieceType = move.IsEnPassant ? PieceHelper.Pawn : PieceHelper.PieceType(board.Square[move.TargetSquareIndex]);
+				GameMoveHistory[i] = new Move(move, movePieceType, capturePieceType);
+				board.MakeMove(move, false);
+			}
+
+			// Init move gen
 			moveGen = new APIMoveGen();
 			cachedLegalMoves = Array.Empty<Move>();
 			cachedLegalCaptureMoves = Array.Empty<Move>();
@@ -49,11 +63,7 @@ namespace ChessChallenge.API
 			// Init rep history
 			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
 			GameRepetitionHistory = repetitionHistory.ToArray();
-			GameRepetitionHistory.Reverse();
 			repetitionHistory.Remove(board.ZobristKey);
-
-			// Init game moves history
-			GameMoveHistory = board.AllGameMoves.Select(m => new Move(MoveUtility.GetMoveNameUCI(m), this)).ToArray();
         }
 
 		/// <summary>
@@ -87,9 +97,10 @@ namespace ChessChallenge.API
 		}
 
 		/// <summary>
-		/// Try skip the current turn
-		/// This will fail and return false if in check
-		/// Note: skipping a turn is not allowed in the game, but it can be used as a search technique
+		/// Try skip the current turn.
+		/// This will fail and return false if in check.
+		/// Note: skipping a turn is not allowed in the game, but it can be used as a search technique.
+		/// Skipped turns can be undone with UndoSkipTurn()
 		/// </summary>
 		public bool TrySkipTurn()
 		{
@@ -103,10 +114,25 @@ namespace ChessChallenge.API
 			return true;
 		}
 
-		/// <summary>
-		/// Undo a turn that was succesfully skipped with the TrySkipTurn method
-		/// </summary>
-		public void UndoSkipTurn()
+        /// <summary>
+        /// Forcibly skips the current turn.
+		/// Unlike TrySkipTurn(), this will work even when in check, which has some dangerous side-effects if done:
+		/// 1) Generating 'legal' moves will now include the illegal capture of the king.
+		/// 2) If the skipped turn is undone, the board will now incorrectly report that the position is not check.
+        /// Note: skipping a turn is not allowed in the game, but it can be used as a search technique.
+		/// Skipped turns can be undone with UndoSkipTurn()
+        /// </summary>
+        public void ForceSkipTurn()
+        {
+            hasCachedMoves = false;
+            hasCachedCaptureMoves = false;
+            board.MakeNullMove();
+        }
+
+        /// <summary>
+        /// Undo a turn that was succesfully skipped with TrySkipTurn() or ForceSkipTurn()
+        /// </summary>
+        public void UndoSkipTurn()
 		{
 			hasCachedMoves = false;
 			hasCachedCaptureMoves = false;
