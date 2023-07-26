@@ -6,7 +6,7 @@ on:
     - cron:  '1 0 * * 1'    # Mondays at 00:01
 
 env:
-    DOTNET_VERSION: 6.0.x
+    DOTNET_VERSION: 8.x
     PROJECT_NAME: Chess-Challenge
     DOTNET_CLI_TELEMETRY_OPTOUT: 1
 

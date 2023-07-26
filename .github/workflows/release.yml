@@ -25,7 +25,8 @@ on:
         required: false
 
 env:
-  DOTNET_VERSION: 7.0.x
+  DOTNET_VERSION: 8.x
+  BOT_NAME: TeenyLynx
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
@@ -59,13 +60,14 @@ jobs:
     - name: Test
       run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" -v normal
 
-    - name: Upload TeenyLynx-${{ github.event.inputs.new_engine_version }} artifact
+    - name: Upload ${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }} artifact
       if: github.event.inputs.new_engine_version != ''
       uses: actions/upload-artifact@v3
       with:
-        name: TeenyLynx-${{ github.event.inputs.new_engine_version }}
+        name: ${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }}
         path: |
-          Chess-Challenge/src/MyBot/MyBot.cs
+          Chess-Challenge/src/My Bot/*.cs
+        if-no-files-found: error
 
   release:
     needs: publish-artifacts
@@ -84,6 +86,15 @@ jobs:
     - name: Inject slug/short variables
       uses: rlespinasse/github-slug-action@v3.x
 
+    - name: Commit and push version increment
+      if: github.event.inputs.should_commit_new_version == 'true'
+      continue-on-error: true
+      run: |
+        git switch ${{ env.GITHUB_REF_SLUG }}
+        git status
+        git commit --allow-empty -am "🚀 Release v${{ github.event.inputs.new_engine_version }}"
+        git push
+
     - name: Create git tag
       if: github.event.inputs.should_tag_new_version == 'true'
       run: |
@@ -96,10 +107,6 @@ jobs:
       with:
         path: artifacts/
 
-    - name: Compress artifacts again
-      if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
-      run: for i in artifacts/*[!-nuget]; do zip -0 -r -q -j "${i%/}.zip" "$i" & done; wait
-
     - name: Create GitHub release and upload assets
       if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
       env:
@@ -107,7 +114,7 @@ jobs:
       run: |
         set -x
         assets=()
-        for asset in artifacts/; do
+        for asset in artifacts/${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }}/*; do
           assets+=("-a" "$asset")
         done
         tag_name="v${{ github.event.inputs.new_engine_version }}"
