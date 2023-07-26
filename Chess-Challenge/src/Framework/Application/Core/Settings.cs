@@ -9,7 +9,7 @@ namespace ChessChallenge.Application
         // Game settings
         public const int GameDurationMilliseconds = 60 * 1000;
         public const float MinMoveDelay = 0;
-        public static readonly bool RunBotsOnSeparateThread = false; // IF NOT IN FAST FORWARD, TURN THIS ON
+        public static bool RunBotsOnSeparateThread = false; // IF NOT IN FAST FORWARD, TURN THIS ON - It's no longer readonly
 
         // Display settings
         public const bool DisplayBoardCoordinates = true;
