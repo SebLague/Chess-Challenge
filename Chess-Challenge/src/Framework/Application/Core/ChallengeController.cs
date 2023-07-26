@@ -282,6 +282,29 @@ namespace ChessChallenge.Application
                     Log("Game Over: " + result, false, ConsoleColor.Blue);
                 }
 
+                if (PlayerWhite.IsBot || PlayerBlack.IsBot)
+                {
+                    // Call optional end-of-game method for training convenience
+                    try
+                    {
+                        if (PlayerWhite.IsBot)
+                        {
+                            API.Board botBoard = new(board);
+                            PlayerWhite.Bot.GameOver(botBoard);  
+                        }
+                        if (PlayerBlack.IsBot)
+                        {
+                            API.Board botBoard = new(board);
+                            PlayerBlack.Bot.GameOver(botBoard);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        Log("An error occurred while invoking the GameOver method\n" + e.ToString(), true, ConsoleColor.Red);
+                    }
+                }
+                
+
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));
                 pgns.AppendLine(pgn);
 
