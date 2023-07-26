@@ -184,6 +184,12 @@ namespace ChessChallenge.Application
             {
                 PlayerToMove.Human.SetPosition(FenUtility.CurrentFen(board));
                 PlayerToMove.Human.NotifyTurnToMove();
+
+                if (PlayerNotOnMove.IsHuman)
+                {
+                    // for the case of a human vs human match when a manual undo fires
+                    PlayerNotOnMove.Human.CancelTurnToMove();
+                }
             }
             else
             {
