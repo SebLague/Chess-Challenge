@@ -1,3 +1,20 @@
+# TeenyLynx
+
+[Lynx](https://github.com/lynx-chess/Lynx) small brother - just 1024 'tokens' 😄
+
+Implementation based on its older brother.
+
+List of other cool 🤖:
+
+- [Moonwalker316/Chess-Challenge-Better-UI](https://github.com/Moonwalker316/Chess-Challenge-Better-UI): Advance GUI stats
+- [GheorgheMorari/Chess-Challenge](https://github.com/GheorgheMorari/Chess-Challenge): Fast forward implementation
+- [cj5716/Chess-Challenge](https://github.com/cj5716/Chess-Challenge): UCI implementation
+- [jacquesrw/Chess-Challenge](https://github.com/jacquesrw/Chess-Challenge): Example bot with basic features implemented
+- [joshuajeschek/Chess-Challenge](https://github.com/joshuajeschek/Chess-Challenge): Stockfish.NET integration, GitHub actions parallel usage
+- [Alex2262/Chess-Challenge](https://github.com/Alex2262/Chess-Challenge): strong engine
+
+-----
+
 # Chess Coding Challenge (C#)
 Welcome to the [chess coding challenge](https://youtu.be/iScy18pVR58)! This is a friendly competition in which your goal is to create a small chess bot (in C#) using the framework provided in this repository.
 Once submissions close, these bots will battle it out to discover which bot is best!

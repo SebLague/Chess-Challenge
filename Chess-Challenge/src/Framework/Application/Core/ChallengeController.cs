@@ -27,8 +27,11 @@ namespace ChessChallenge.Application
         int gameID;
         bool isPlaying;
         Board board;
+        int totalMovesPlayed = 0;
+        public int trueTotalMovesPlayed = 0;
+
         public ChessPlayer PlayerWhite { get; private set; }
-        public ChessPlayer PlayerBlack {get;private set;}
+        public ChessPlayer PlayerBlack { get; private set; }
 
         float lastMoveMadeTime;
         bool isWaitingToPlayMove;
@@ -40,7 +43,7 @@ namespace ChessChallenge.Application
         readonly string[] botMatchStartFens;
         int botMatchGameIndex;
         public BotMatchStats BotStatsA { get; private set; }
-        public BotMatchStats BotStatsB {get;private set;}
+        public BotMatchStats BotStatsB { get; private set; }
         bool botAPlaysWhite;
 
 
@@ -110,6 +113,8 @@ namespace ChessChallenge.Application
             // Start
             isPlaying = true;
             NotifyTurnToMove();
+
+            trueTotalMovesPlayed += totalMovesPlayed;
         }
 
         void BotThinkerThread()
@@ -147,6 +152,7 @@ namespace ChessChallenge.Application
             {
                 API.Timer timer = new(PlayerToMove.TimeRemainingMs, PlayerNotOnMove.TimeRemainingMs, GameDurationMilliseconds);
                 API.Move move = PlayerToMove.Bot.Think(botBoard, timer);
+                totalMovesPlayed++;
                 return new Move(move.RawValue);
             }
             catch (Exception e)
@@ -208,7 +214,7 @@ namespace ChessChallenge.Application
             return type switch
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
-                PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
+                PlayerType.EvilBot => new ChessPlayer(new NegaMaxAndQuiescenceUnified(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
         }
