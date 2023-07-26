@@ -207,7 +207,7 @@ jobs:
 
     - name: Compress artifacts again
       if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
-      run: for i in artifacts/${{ env.BOT_NAME }}-${{ env.GITHUB_REF_SLUG }}-*[!.cs]; do zip -0 -r -q -j "${i%/}.zip" "$i" & done; wait
+      run: for i in artifacts/*[!${{ env.BOT_NAME }}-${{ github.event.inputs.new_engine_version }}]; do zip -0 -r -q -j "${i%/}.zip" "$i" & done; wait
 
     - name: Create GitHub release and upload assets
       if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
