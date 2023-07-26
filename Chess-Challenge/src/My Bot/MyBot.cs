@@ -1,28 +1,58 @@
 ﻿using ChessChallenge.API;
 using System;
 using System.Linq;
+using System.Data;
+using static ChessChallenge.Application.ConsoleHelper;
 
 public class MyBot : IChessBot
 {
-
     //                             .  P   K   B   R   Q   K
     private int[] _pieceValues = { 0, 10, 30, 30, 50, 90, 2000 };
+    private Move bestMove = Move.NullMove;
 
     public Move Think(Board board, Timer timer)
     {
-        Move[] moves = board.GetLegalMoves();
-        Move bestMove = Move.NullMove;
-        int bestScore = Int32.MinValue;
-        foreach (Move move in moves) {
-          board.MakeMove(move);
-          int score = -Evaluate(board);
-          board.UndoMove(move);
-          if (score > bestScore) {
-            bestScore = score;
-            bestMove = move;
-          }
-        }
+        int depth = 0;
+        int maxdepth = 3;
+        int bestScore = Search(board, depth, maxdepth);
         return bestMove;
+    }
+
+    int Search(Board board, int depth, int maxdepth)
+        /*  Input
+         *
+         *  board: Board, Current board
+         *  depth: int, Current search depth
+         *  maxdepth: int, maximal depth to be searches + the depth at which the boards are ultimately evaluated
+         *
+         *  Output
+         *
+         *  bestscore: int, the score of the board at depth=maxdepth with the best score obtained
+        */
+    {
+        if (depth == maxdepth)
+        /*
+         *Evaluate returns int score, scored in respect to the next moving player. The board it is evaluating is the
+         *end board of one branch and scores will be handed back to the next node (*-1, since the black moves that creates a bad setting for white will be made and
+         *a white move that creates a bad setting for black is our right move)
+        */
+            return Evaluate(board);
+
+        int bestScore = int.MinValue ;
+        Move[] moves = board.GetLegalMoves();
+        foreach (Move move in moves)
+        {
+            board.MakeMove(move);
+            int score = -Search(board, depth+1, maxdepth);
+            if (score > bestScore)
+            {
+                bestScore = score;
+                if (depth == 0)
+                    this.bestMove = move;
+            }
+            board.UndoMove(move);
+        }
+        return bestScore;
     }
 
     private int Evaluate(Board board)
@@ -46,3 +76,5 @@ public class MyBot : IChessBot
       return (myMobility - theirMobility) + pieceScore;
     }
 }
+
+
