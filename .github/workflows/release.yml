@@ -1,0 +1,114 @@
+name: Release
+
+on:
+
+  workflow_dispatch:
+    inputs:
+      new_engine_version:
+        description: 'New engine version. If empty, run number will be used and no commit/tag/release will be created'
+        default: ''
+        required: false
+      should_commit_new_version:
+        description: 'Commit and push version increment. If true, this new commit will be the one tagged (in case Tag version release is also set to true)'
+        type: boolean
+        default: true
+        required: false
+      should_tag_new_version:
+        description: 'Tag version release. If false, no release will be created either'
+        type: boolean
+        default: true
+        required: false
+      should_create_github_release:
+        description: 'Create GitHub Release'
+        type: boolean
+        default: true
+        required: false
+
+env:
+  DOTNET_VERSION: 7.0.x
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  publish-artifacts:
+
+    runs-on:  windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Inject slug/short variables
+      uses: rlespinasse/github-slug-action@v3.x
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Nuget cache
+      uses: actions/cache@v3
+      with:
+        path:
+          ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Build
+      run: dotnet build -c Release
+
+    - name: Test
+      run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" -v normal
+
+    - name: Upload TeenyLynx-${{ github.event.inputs.new_engine_version }} artifact
+      if: github.event.inputs.new_engine_version != ''
+      uses: actions/upload-artifact@v3
+      with:
+        name: TeenyLynx-${{ github.event.inputs.new_engine_version }}
+        path: |
+          Chess-Challenge/src/MyBot/MyBot.cs
+
+  release:
+    needs: publish-artifacts
+    if: github.event.inputs.new_engine_version != ''
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Configure git user
+      run: |
+        git config --global user.name 'GitHub Actions'
+        git config --global user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+    - name: Inject slug/short variables
+      uses: rlespinasse/github-slug-action@v3.x
+
+    - name: Create git tag
+      if: github.event.inputs.should_tag_new_version == 'true'
+      run: |
+        git switch ${{ env.GITHUB_REF_SLUG }}
+        git status
+        git tag -a v${{ github.event.inputs.new_engine_version }} -m "v${{ github.event.inputs.new_engine_version }}"
+        git push --tags
+
+    - uses: actions/download-artifact@v3
+      with:
+        path: artifacts/
+
+    - name: Compress artifacts again
+      if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
+      run: for i in artifacts/*[!-nuget]; do zip -0 -r -q -j "${i%/}.zip" "$i" & done; wait
+
+    - name: Create GitHub release and upload assets
+      if: github.event.inputs.should_create_github_release == 'true' && github.event.inputs.should_tag_new_version == 'true'
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        set -x
+        assets=()
+        for asset in artifacts/; do
+          assets+=("-a" "$asset")
+        done
+        tag_name="v${{ github.event.inputs.new_engine_version }}"
+        hub release create "${assets[@]}" --draft --message "$tag_name" "$tag_name"

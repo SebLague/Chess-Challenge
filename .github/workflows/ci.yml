@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+  schedule:
+    - cron:  '1 0 * * 1'    # Mondays at 00:01
+
+env:
+    DOTNET_VERSION: 6.0.x
+    PROJECT_NAME: Chess-Challenge
+    DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macOS-latest]
+        include:
+          - os: ubuntu-latest
+            runtime-identifier: linux-x64
+          - os: windows-latest
+            runtime-identifier: win-x64
+          - os: macOS-latest
+            runtime-identifier: osx-x64
+      fail-fast: false
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Inject slug/short variables
+      uses: rlespinasse/github-slug-action@v3.x
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Nuget cache
+      uses: actions/cache@v3
+      with:
+        path:
+          ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Build
+      run: dotnet build -c Release
+
+    - name: Test
+      run: dotnet test -c Release --no-build --collect:"XPlat Code Coverage" -v normal
