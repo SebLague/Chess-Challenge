@@ -19,7 +19,8 @@ namespace ChessChallenge.Application
         {
             Human,
             MyBot,
-            EvilBot
+            EvilBot,
+            Stockfish
         }
 
         // Game state
@@ -39,6 +40,7 @@ namespace ChessChallenge.Application
         // Bot match state
         readonly string[] botMatchStartFens;
         int botMatchGameIndex;
+        int fenIndex = 0;
         public BotMatchStats BotStatsA { get; private set; }
         public BotMatchStats BotStatsB {get;private set;}
         bool botAPlaysWhite;
@@ -69,7 +71,21 @@ namespace ChessChallenge.Application
 
             BotStatsA = new BotMatchStats("IBot");
             BotStatsB = new BotMatchStats("IBot");
-            botMatchStartFens = FileHelper.ReadResourceFile("Fens.txt").Split('\n').Where(fen => fen.Length > 0).ToArray();
+            var fensStartRaw = Environment.GetEnvironmentVariable("FENS_START");
+            var fensEndRaw = Environment.GetEnvironmentVariable("FENS_END");
+            int fensStart = Int32.MinValue;
+            int fensEnd = Int32.MaxValue;
+            if (fensStartRaw != null) {
+              fensStart = Int32.Parse(fensStartRaw);
+            }
+            if (fensEndRaw != null) {
+              fensEnd = Int32.Parse(fensEndRaw);
+            }
+
+            botMatchStartFens = FileHelper.ReadResourceFile("Fens.txt").Split('\n')
+              .Where((_, index) => index >= fensStart && index <= fensEnd)
+              .Where(fen => fen.Length > 0)
+              .ToArray();
             botTaskWaitHandle = new AutoResetEvent(false);
 
             StartNewGame(PlayerType.Human, PlayerType.MyBot);
@@ -93,7 +109,7 @@ namespace ChessChallenge.Application
             // Board Setup
             board = new Board();
             bool isGameWithHuman = whiteType is PlayerType.Human || blackType is PlayerType.Human;
-            int fenIndex = isGameWithHuman ? 0 : botMatchGameIndex / 2;
+            fenIndex = isGameWithHuman ? 0 : botMatchGameIndex / 2;
             board.LoadPosition(botMatchStartFens[fenIndex]);
 
             // Player Setup
@@ -209,6 +225,7 @@ namespace ChessChallenge.Application
             {
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
+                PlayerType.Stockfish => new ChessPlayer(new Stockfish(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
         }
@@ -277,9 +294,18 @@ namespace ChessChallenge.Application
                 isWaitingToPlayMove = false;
                 gameID = -1;
 
+                string resultIndicator = "|";
+                if (Arbiter.IsDrawResult(result)) {
+                  resultIndicator = "=";
+                } else if (botAPlaysWhite && Arbiter.IsWhiteWinsResult(result) || !botAPlaysWhite && Arbiter.IsBlackWinsResult(result)) {
+                  resultIndicator = "+";
+                } else if (botAPlaysWhite && PlayerWhite.IsBot || !botAPlaysWhite && PlayerBlack.IsBot ){
+                  resultIndicator = "-";
+                }
+
                 if (log)
                 {
-                    Log("Game Over: " + result, false, ConsoleColor.Blue);
+                    Log($"{resultIndicator} Game Over: {result} :: {botMatchStartFens[fenIndex]}", false, ConsoleColor.Blue);
                 }
 
                 string pgn = PGNCreator.CreatePGN(board, result, GetPlayerName(PlayerWhite), GetPlayerName(PlayerBlack));

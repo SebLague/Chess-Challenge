@@ -1,0 +1,117 @@
+name: Benchmark & Publish
+
+on:
+  workflow_call:
+    inputs:
+      opponent:
+        required: true
+        type: string
+      opponent_long:
+        required: false
+        type: string
+      threads:
+        required: true
+        type: number
+      jobs:
+        required: false
+        type: number
+      fens:
+        required: false
+        type: number
+      run:
+        required: false
+        type: string
+
+jobs:
+  benchmark:
+    uses: ./.github/workflows/benchmark.yaml
+    with:
+      opponent: ${{ inputs.opponent }}
+      opponent_long: ${{ inputs.opponent_long }}
+      threads: ${{ inputs.threads }}
+      run: ${{ inputs.run }}
+      jobs: ${{ inputs.jobs }}
+      fens: ${{ inputs.fens }}
+
+  notice:
+    runs-on: ubuntu-latest
+    needs: benchmark
+    env:
+      WINS: ${{ needs.benchmark.outputs.wins }}
+      DRAWS: ${{ needs.benchmark.outputs.draws }}
+      LOSSES: ${{ needs.benchmark.outputs.losses }}
+      OPPONENT: ${{ inputs.opponent_long || inputs.opponent }}
+    steps:
+      - run: |
+          echo "::notice title=Results against $OPPONENT::$WINS wins, $DRAWS draws, $LOSSES losses"
+
+  publish:
+    needs: benchmark
+    if: ${{ github.event_name == 'pull_request' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Calculate and export context
+        id: prepare
+        run: |
+          LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha }}
+          SHORT_SHA=$(echo $LAST_COMMIT_SHA | cut -c 1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Comment PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const opponent = '${{ inputs.opponent_long || inputs.opponent }}';
+            const wins = '${{ needs.benchmark.outputs.wins }}';
+            const draws = '${{ needs.benchmark.outputs.draws }}';
+            const losses = '${{ needs.benchmark.outputs.losses }}';
+            const shortSha = '${{ steps.prepare.outputs.short_sha }}';
+            const pull_number = ${{ github.event.pull_request.number }};
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pull_number
+            });
+
+            const existingDescription = pr.data.body || '';
+            let prDescription = existingDescription;
+            let benchmarkIndexStart = existingDescription.indexOf('<!-- benchmark start -->');
+            let benchmarkIndexEnd = existingDescription.indexOf('<!-- benchmark end -->');
+            let benchmarkSection = '';
+
+            const newLine = `| ${opponent} | ${wins} | ${draws} | ${losses} | ${shortSha} |\n`;
+
+            if (benchmarkIndexStart === -1) {
+              // Benchmark section does not exist. Add it.
+              benchmarkSection = `\n<!-- benchmark start -->\n| Opponent | Wins | Draws | Losses | Commit |\n| --- | --- | --- | --- | --- |\n${newLine}<!-- benchmark end -->\n`;
+              prDescription += benchmarkSection;
+            } else {
+              // Benchmark section exists. Update it.
+              benchmarkSection = existingDescription.slice(benchmarkIndexStart + 23, benchmarkIndexEnd);
+              let opponentIndex = benchmarkSection.indexOf(`| ${opponent} |`);
+
+              if (opponentIndex === -1) {
+                // Opponent row does not exist. Add it.
+                benchmarkSection += newLine;
+              } else {
+                // Opponent row exists. Update it.
+                const opponentIndexEnd = benchmarkSection.indexOf('\n', opponentIndex);
+                benchmarkSection = benchmarkSection.slice(0, opponentIndex) + newLine + benchmarkSection.slice(opponentIndexEnd+1);
+              }
+
+              prDescription = existingDescription.slice(0, benchmarkIndexStart + 23) + benchmarkSection + existingDescription.slice(benchmarkIndexEnd);
+            }
+
+            github.rest.pulls.update({
+              pull_number: pull_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: prDescription
+            });
