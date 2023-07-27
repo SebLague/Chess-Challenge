@@ -1,5 +1,6 @@
 ﻿using ChessChallenge.API;
 using System;
+using static ChessChallenge.Application.ConsoleHelper;
 
 public class MyBot : IChessBot
 {
@@ -149,7 +150,9 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         Search(board, DEPTH);
-        BitboardHelper.StopVisualizingBitboard();
+        /* Evaluate(board); */
+        /* System.Threading.Thread.Sleep(500); */
+        /* BitboardHelper.StopVisualizingBitboard(); */
         return bestMove;
     }
 
@@ -214,23 +217,29 @@ public class MyBot : IChessBot
         {
             Piece piece = board.GetPiece(
                               new Square(BitboardHelper.ClearAndGetIndexOfLSB(ref pieces)));
-            int factor = piece.IsWhite ? 1 : -1;
+            int factor = piece.IsWhite==board.IsWhiteToMove ? 1 : -1;
+            /* ulong piece_bitboard = 0; */
+            /* BitboardHelper.SetSquare(ref piece_bitboard, piece.Square); */
+            /* BitboardHelper.VisualizeBitboard(piece_bitboard); */
+            /* System.Threading.Thread.Sleep(500); */
             int type = (int)piece.PieceType;
             materialScore += PIECE_VALUES[type] * factor;
+            /* Log($"{materialScore} {mobilityScore}"); */
             // -1 because non is not in psts.
             // since we use AllPiecesBitboard, we know that there is a piece there
             int index = piece.IsWhite ? piece.Square.Index ^ 56 : piece.Square.Index;
             positionScore += PSTS[type - 1][index] * factor;
             int piecePositionScore = PSTS[type - 1][index];
         }
-        return 5 * mobilityScore + 10 * materialScore + positionScore;
+        return 5 * mobilityScore + 20 * materialScore;
     }
 
     private int CalculateMobilityScore(Board board)
     {
-        board.MakeMove(Move.NullMove);
-        int theirMobility = -board.GetLegalMoves().Length;
-        board.UndoMove(Move.NullMove);
-        return theirMobility + board.GetLegalMoves().Length;
+        // beware of effect on isInCheck
+        board.ForceSkipTurn();
+        int theirMobility = board.GetLegalMoves().Length;
+        board.UndoSkipTurn();
+        return -theirMobility + board.GetLegalMoves().Length;
     }
 }
