@@ -131,7 +131,7 @@ public class MyBot : IChessBot
 
     public /*internal */int NegaMax(int ply, int alpha, int beta, bool isQuiescence)
     {
-        if (_position.IsDraw()) //  IsFiftyMoveDraw() || IsInsufficientMaterial() || IsRepeatedPosition(), no need to check for stalemate
+        if (_position.FiftyMoveCounter >= 100 || _position.IsRepeatedPosition() || _position.IsInsufficientMaterial())
             return 0;
 
         if (!isQuiescence && _timer.MillisecondsElapsedThisTurn > _timePerMove)
