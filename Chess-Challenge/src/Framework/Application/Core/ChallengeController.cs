@@ -55,6 +55,7 @@ namespace ChessChallenge.Application
         readonly int tokenCount;
         readonly StringBuilder pgns;
 
+        public ChallengeController Instance { get; private set; }
         public ChallengeController()
         {
             Log($"Launching Chess-Challenge version {Settings.Version}");
@@ -67,6 +68,8 @@ namespace ChessChallenge.Application
             board = new Board();
             pgns = new();
 
+            Instance = this;
+            
             BotStatsA = new BotMatchStats("IBot");
             BotStatsB = new BotMatchStats("IBot");
             botMatchStartFens = FileHelper.ReadResourceFile("Fens.txt").Split('\n').Where(fen => fen.Length > 0).ToArray();
