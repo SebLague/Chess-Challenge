@@ -399,3 +399,6 @@ FodyWeavers.xsd
 
 # Ignores the whole .vscode folder
 .vscode/
+
+# Ignores the whole .idea folder
+.idea/
