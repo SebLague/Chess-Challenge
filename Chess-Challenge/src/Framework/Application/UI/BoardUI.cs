@@ -3,12 +3,16 @@ using Raylib_cs;
 using System;
 using System.Collections.Generic;
 using System.Numerics;
+using System.IO;
 using static ChessChallenge.Application.UIHelper;
+using ChessChallenge.Application.APIHelpers;
 
 namespace ChessChallenge.Application
 {
     public class BoardUI
     {
+      
+        // Board settings
         const int squareSize = 100;
         const double moveAnimDuration = 0.15;
         bool whitePerspective = true;
@@ -17,6 +21,10 @@ namespace ChessChallenge.Application
         static readonly Color activeTextCol = new(200, 200, 200, 255);
         static readonly Color inactiveTextCol = new(100, 100, 100, 255);
         static readonly Color nameCol = new(67, 204, 101, 255);
+
+        // Bitboard debug mode
+        static readonly Color bitboardColZERO = new(61, 121, 217, 200);
+        static readonly Color bitboardColONE = new(252, 43, 92, 200);
 
         // Colour state
         Color topTextCol;
@@ -53,10 +61,8 @@ namespace ChessChallenge.Application
         public BoardUI()
         {
             theme = new BoardTheme();
-            piecesTexture = Raylib.LoadTexture(UIHelper.GetResourcePath("Pieces.png"));
-            Raylib.GenTextureMipmaps(ref piecesTexture);
-            Raylib.SetTextureWrap(piecesTexture, TextureWrap.TEXTURE_WRAP_CLAMP);
-            Raylib.SetTextureFilter(piecesTexture, TextureFilter.TEXTURE_FILTER_BILINEAR);
+
+            LoadPieceTexture();
 
             board = new Board();
             board.LoadStartPosition();
@@ -196,32 +202,48 @@ namespace ChessChallenge.Application
             }
 
             DrawBorder();
-            for (int y = 0; y < 8; y++)
+            ForEachSquare(DrawSquare);
+            
+            if (isAnimatingMove)
             {
-                for (int x = 0; x < 8; x++)
-                {
-                    DrawSquare(x, y);
-                }
+                UpdateMoveAnimation(animT);
+            }
+
+            if (BitboardDebugState.BitboardDebugVisualizationRequested)
+            {
+                ForEachSquare(DrawBitboardDebugOverlaySquare);
             }
 
             if (isDraggingPiece)
             {
                 DrawPiece(board.Square[dragSquare], dragPos - new Vector2(squareSize * 0.5f, squareSize * 0.5f));
             }
-            if (isAnimatingMove)
-            {
-                Coord startCoord = new Coord(moveToAnimate.StartSquareIndex);
-                Coord targetCoord = new Coord(moveToAnimate.TargetSquareIndex);
-                Vector2 startPos = GetSquarePos(startCoord.fileIndex, startCoord.rankIndex, whitePerspective);
-                Vector2 targetPos = GetSquarePos(targetCoord.fileIndex, targetCoord.rankIndex, whitePerspective);
 
-                Vector2 animPos = Vector2.Lerp(startPos, targetPos, (float)animT);
-                DrawPiece(board.Square[moveToAnimate.StartSquareIndex], animPos);
-
-            }
 
             // Reset state
             isDraggingPiece = false;
+        }
+
+        static void ForEachSquare(Action<int, int> action)
+        {
+            for (int y = 0; y < 8; y++)
+            {
+                for (int x = 0; x < 8; x++)
+                {
+                    action(x, y);
+                }
+            }
+        }
+
+        void UpdateMoveAnimation(double animT)
+        {
+            Coord startCoord = new Coord(moveToAnimate.StartSquareIndex);
+            Coord targetCoord = new Coord(moveToAnimate.TargetSquareIndex);
+            Vector2 startPos = GetSquarePos(startCoord.fileIndex, startCoord.rankIndex, whitePerspective);
+            Vector2 targetPos = GetSquarePos(targetCoord.fileIndex, targetCoord.rankIndex, whitePerspective);
+
+            Vector2 animPos = Vector2.Lerp(startPos, targetPos, (float)animT);
+            DrawPiece(board.Square[moveToAnimate.StartSquareIndex], animPos);
         }
 
         public void DrawPlayerNames(string nameWhite, string nameBlack, int timeWhite, int timeBlack, bool isPlaying)
@@ -339,7 +361,19 @@ namespace ChessChallenge.Application
             }
         }
 
-        Vector2 GetSquarePos(int file, int rank, bool whitePerspective)
+        void DrawBitboardDebugOverlaySquare(int file, int rank)
+        {
+            ulong bitboard = BitboardDebugState.BitboardToVisualize;
+            bool isSet = BitBoardUtility.ContainsSquare(bitboard, new Coord(file,rank).SquareIndex);
+            Color col = isSet ? bitboardColONE : bitboardColZERO;
+
+            Vector2 squarePos = GetSquarePos(file, rank, whitePerspective);
+            Raylib.DrawRectangle((int)squarePos.X, (int)squarePos.Y, squareSize, squareSize, col);
+            Vector2 textPos = squarePos + new Vector2(squareSize, squareSize) / 2;
+            DrawText(isSet ? "1" : "0", textPos, 50, 0, Color.WHITE, AlignH.Centre);
+        }
+
+        static Vector2 GetSquarePos(int file, int rank, bool whitePerspective)
         {
             const int boardStartX = -squareSize * 4;
             const int boardStartY = -squareSize * 4;
@@ -382,6 +416,19 @@ namespace ChessChallenge.Application
                 t = Math.Min(1, Math.Max(t, 0));
                 return a + (b - a) * t;
             }
+        }
+
+        void LoadPieceTexture()
+        {
+            // Workaround for Raylib.LoadTexture() not working when path contains non-ascii chars
+            byte[] pieceImgBytes = File.ReadAllBytes(GetResourcePath("Pieces.png"));
+            Image pieceImg = Raylib.LoadImageFromMemory(".png", pieceImgBytes);
+            piecesTexture = Raylib.LoadTextureFromImage(pieceImg);
+            Raylib.UnloadImage(pieceImg);
+
+            Raylib.GenTextureMipmaps(ref piecesTexture);
+            Raylib.SetTextureWrap(piecesTexture, TextureWrap.TEXTURE_WRAP_CLAMP);
+            Raylib.SetTextureFilter(piecesTexture, TextureFilter.TEXTURE_FILTER_BILINEAR);
         }
 
         public void Release()

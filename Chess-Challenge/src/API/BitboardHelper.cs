@@ -1,6 +1,7 @@
 
 namespace ChessChallenge.API
 {
+    using ChessChallenge.Application.APIHelpers;
     using ChessChallenge.Chess;
 
     /// <summary>
@@ -99,6 +100,23 @@ namespace ChessChallenge.API
         {
             return isWhite ? Bits.WhitePawnAttacks[square.Index] : Bits.BlackPawnAttacks[square.Index];
         }
+
+        /// <summary>
+        /// A debug function for visualizing bitboards.
+        /// Highlights the squares that are set to 1 in the given bitboard with a red colour.
+        /// Highlights the squares that are set to 0 in the given bitboard with a blue colour.
+        /// </summary>
+        public static void VisualizeBitboard(ulong bitboard)
+        {
+            BitboardDebugState.BitboardDebugVisualizationRequested = true;
+            BitboardDebugState.BitboardToVisualize = bitboard;
+        }
+
+        /// <summary>
+        /// Clears the bitboard debug visualization
+        /// </summary>
+        public static void StopVisualizingBitboard() => BitboardDebugState.BitboardDebugVisualizationRequested = false;
+
         static ulong GetRookAttacks(Square square, ulong blockers)
         {
             ulong mask = Magic.RookMask[square.Index];
