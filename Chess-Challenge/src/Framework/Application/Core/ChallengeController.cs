@@ -52,7 +52,7 @@ namespace ChessChallenge.Application
         // Other
         readonly BoardUI boardUI;
         readonly MoveGenerator moveGenerator;
-        readonly int tokenCount;
+        readonly TokenCount tokenCount;
         readonly StringBuilder pgns;
 
         public ChallengeController()
@@ -213,7 +213,7 @@ namespace ChessChallenge.Application
             };
         }
 
-        static int GetTokenCount()
+        static TokenCount GetTokenCount()
         {
             string path = Path.Combine(Directory.GetCurrentDirectory(), "src", "My Bot", "MyBot.cs");
 

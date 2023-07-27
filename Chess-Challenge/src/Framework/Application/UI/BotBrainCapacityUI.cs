@@ -10,7 +10,7 @@ namespace ChessChallenge.Application
         static readonly Color red = new(219, 9, 9, 255);
         static readonly Color background = new Color(40, 40, 40, 255);
 
-        public static void Draw(int numTokens, int tokenLimit)
+        public static void Draw(TokenCount tokenCount, int tokenLimit)
         {
 
             int screenWidth = Raylib.GetScreenWidth();
@@ -20,7 +20,7 @@ namespace ChessChallenge.Application
             // Bg
             Raylib.DrawRectangle(0, screenHeight - height, screenWidth, height, background);
             // Bar
-            double t = (double)numTokens / tokenLimit;
+            double t = (double)tokenCount.total / tokenLimit;
 
             Color col;
             if (t <= 0.7)
@@ -34,8 +34,11 @@ namespace ChessChallenge.Application
             Raylib.DrawRectangle(0, screenHeight - height, (int)(screenWidth * t), height, col);
 
             var textPos = new System.Numerics.Vector2(screenWidth / 2, screenHeight - height / 2);
-            string text = $"Bot Brain Capacity: {numTokens}/{tokenLimit}";
-            if (numTokens > tokenLimit)
+            string text = $"Bot Brain Capacity: {tokenCount.total}/{tokenLimit}";
+            if (tokenCount.total != tokenCount.excludingLogs) {
+                text += $" (Excluding Logs: {tokenCount.excludingLogs})";
+            }
+            if (tokenCount.total > tokenLimit)
             {
                 text += " [LIMIT EXCEEDED]";
             }
