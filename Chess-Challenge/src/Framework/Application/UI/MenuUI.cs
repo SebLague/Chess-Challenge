@@ -2,6 +2,9 @@
 using System.Numerics;
 using System;
 using System.IO;
+using System.Linq;
+using ChessChallenge.Application.NetworkHelpers;
+using ChessChallenge.Example;
 
 namespace ChessChallenge.Application
 {
@@ -30,6 +33,29 @@ namespace ChessChallenge.Application
                 controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.EvilBot);
             }
 
+            if(!string.IsNullOrWhiteSpace(NetworkedBot.ROOM_ID))
+            {
+                // Page buttons
+                buttonPos.Y += breakSpacing;
+                var roomIdDisplay = NetworkedBot.ROOM_ID;
+
+                if (roomIdDisplay.Length > 14)
+                    roomIdDisplay = new string(roomIdDisplay.Take(12).ToArray()) + "..";
+
+                if (NextButtonInRow($"Join {roomIdDisplay}", ref buttonPos, spacing, buttonSize))
+                {
+                    ServerConnectionHelper.ConnectToServerAsync(NetworkedBot.SERVER_HOSTNAME, NetworkedBot.SERVER_PORT,
+                        NetworkedBot.ROOM_ID, NetworkedBot.PROTOCOL_VERSION).Wait();
+                    if (ServerConnectionHelper.StartsOffWhite)
+                        controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot,
+                            ChallengeController.PlayerType.NetworkedBot);
+                    else
+                    {
+                        controller.StartNewBotMatch(ChallengeController.PlayerType.NetworkedBot,
+                            ChallengeController.PlayerType.MyBot);
+                    }
+                }
+            }
             // Page buttons
             buttonPos.Y += breakSpacing;
 
