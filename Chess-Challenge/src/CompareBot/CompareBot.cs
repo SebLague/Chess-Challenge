@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using static ChessChallenge.Application.ConsoleHelper;
 
-public class MyBot : IChessBot
+public class CompareBot : IChessBot
 {
     //                                    .  P    K    B    R    Q    K
     private static int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
@@ -141,7 +141,7 @@ public class MyBot : IChessBot
 
     private float progress = 0;
 
-    public MyBot()
+    public CompareBot()
     {
 
         PSTS = new int[][] {
@@ -235,9 +235,9 @@ public class MyBot : IChessBot
 
             int piecePositionScore = PSTS[type - 1][index];
         }
-        return 50 * materialScore //
-           + 25 * mobilityScore //
-          + 25 * positionScore;
+        return 80 * materialScore //
+           + 15 * mobilityScore //
+          + 5 * positionScore;
     }
 
     private int CalculateMobilityScore(Board board)

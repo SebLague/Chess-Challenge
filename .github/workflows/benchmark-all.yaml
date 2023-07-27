@@ -39,3 +39,10 @@ jobs:
         tar -xf stockfish-ubuntu-x86-64-avx2.tar
         echo "STOCKFISH_BIN=stockfish/stockfish-ubuntu-x86-64-avx2" >> $GITHUB_ENV
         echo "STOCKFISH_LEVEL=${{ matrix.level }}" >> $GITHUB_ENV
+
+  comparebot:
+    uses: ./.github/workflows/benchmark-publish.yaml
+    with:
+      opponent: CompareBot
+      threads: 5
+      jobs: 20
