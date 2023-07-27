@@ -204,11 +204,18 @@ namespace ChessChallenge.API
         public bool IsDraw()
 		{
 			return IsFiftyMoveDraw() || IsInsufficientMaterial() || IsInStalemate() || IsRepeatedPosition();
-
-			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
-			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
 		}
 
+        	/// <summary>
+        	/// Test if the current position is a draw due to 50-move rule.
+        	/// </summary>
+        	public bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
+
+        	/// <summary>
+       	 	/// Test if the current position is a draw due to stalemate.
+        	/// </summary>
+       	 	public bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
+		
 		/// <summary>
 		/// Test if the current position has occurred at least once before on the board.
 		/// This includes both positions in the actual game, and positions reached by
