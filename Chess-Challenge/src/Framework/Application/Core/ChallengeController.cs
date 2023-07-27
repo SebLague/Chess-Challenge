@@ -55,7 +55,7 @@ namespace ChessChallenge.Application
         readonly int tokenCount;
         readonly StringBuilder pgns;
 
-        public ChallengeController Instance { get; private set; }
+        public static ChallengeController Instance { get; private set; }
         public ChallengeController()
         {
             Log($"Launching Chess-Challenge version {Settings.Version}");
