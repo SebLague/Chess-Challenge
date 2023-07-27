@@ -230,14 +230,14 @@ public class MyBot : IChessBot
             materialScore += PIECE_VALUES[type] * factor;
             // -1 because non is not in psts.
             // since we use AllPiecesBitboard, we know that there is a piece there
-            int index = piece.IsWhite ? piece.Square.Index ^ 56 : piece.Square.Index;
+            int index = piece.Square.Index ^ (piece.IsWhite ? 56 : 0);
             positionScore += Lerp(PSTS[type - 1][index], PSTS[type + 5][index], progress) * factor;
 
             int piecePositionScore = PSTS[type - 1][index];
         }
         return 5 * mobilityScore //
           + 20 * materialScore //
-          + 10 * positionScore;
+          + 15 * positionScore;
     }
 
     private int CalculateMobilityScore(Board board)
