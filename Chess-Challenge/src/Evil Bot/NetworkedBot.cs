@@ -12,7 +12,7 @@ namespace ChessChallenge.Example;
 
 public class NetworkedBot : IChessBot
 {
-    public const string ROOM_ID = "Test Room";
+    public const string ROOM_ID = "";
     
     
     public const string PROTOCOL_VERSION = "0.1";
