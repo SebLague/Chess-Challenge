@@ -27,24 +27,26 @@ namespace ChessChallenge.Application
         {
             public readonly PlayerType Type;
 
-            private Type _bot;
+            public readonly Type Bot;
 
             public PlayerArgs(PlayerType type, Type bot)
             {
                 Type = type;
-                _bot = bot;
+                Bot = bot;
             }
             public PlayerArgs(PlayerType type) : this(type, typeof(MyBot)) {}
             public PlayerArgs(Type bot) : this(PlayerType.Bot, bot) {}
 
             public bool IsBot => Type is PlayerType.Bot;
 
-            public string Name =>
-                IsBot ? _bot.ToString() : "Human";
+            public override string ToString()
+            {
+                return IsBot ? Bot.ToString() : "Human";
+            }
 
             public object? GetBotInstance()
             {
-                return Activator.CreateInstance(_bot);
+                return Activator.CreateInstance(Bot);
             }
         }
 
@@ -102,11 +104,16 @@ namespace ChessChallenge.Application
             StartNewGame(new PlayerArgs(PlayerType.Human), new PlayerArgs(PlayerType.Bot));
         }
 
-        public IEnumerable<Type> GetBotTypes()
-        {
-            return Assembly.GetExecutingAssembly().GetTypes()
-                .Where(t => t.Namespace == "AllBots");
-        }
+        public IEnumerable<Type> BotTypes =>
+            Assembly.GetExecutingAssembly().GetTypes()
+                .Where(t => t.Namespace == "Bots");
+
+        public IEnumerable<PlayerArgs> AllPlayerArgs =>
+            new List<PlayerArgs>() { new PlayerArgs(PlayerType.Human) }
+                .Concat(BotTypes.Select(x => new PlayerArgs(x)));
+
+        public bool GameHasHuman =>
+            !PlayerWhite.PlayerArgs.IsBot || !PlayerBlack.PlayerArgs.IsBot;
 
         public void StartNewGame(PlayerArgs white, PlayerArgs black)
         {
@@ -180,7 +187,7 @@ namespace ChessChallenge.Application
 
             void ELOThread()
             {
-                var bots = GetBotTypes();
+                var bots = BotTypes;
                 var eloScores = new Dictionary<Type,double>();
 
                 foreach (var bot in bots) {
@@ -496,7 +503,7 @@ namespace ChessChallenge.Application
         }
 
         static string GetPlayerName(ChessPlayer player) => GetPlayerName(player.PlayerArgs);
-        static string GetPlayerName(PlayerArgs args) => args.Name;
+        static string GetPlayerName(PlayerArgs args) => args.ToString();
 
         public void StartNewBotMatch(Type botTypeA, Type botTypeB)
         {

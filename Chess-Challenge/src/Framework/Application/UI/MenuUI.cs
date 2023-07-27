@@ -2,11 +2,15 @@
 using System.Numerics;
 using System;
 using System.IO;
+using System.Collections.Generic;
 
 namespace ChessChallenge.Application
 {
     public static class MenuUI
     {
+        public static bool PersistWhiteDropdown;
+        public static bool PersistBlackDropdown;
+
         public static void DrawButtons(ChallengeController controller)
         {
             Vector2 buttonPos = UIHelper.Scale(new Vector2(260, 210));
@@ -15,19 +19,39 @@ namespace ChessChallenge.Application
             float breakSpacing = spacing * 0.6f;
 
             // Game Buttons
-            if (NextButtonInRow("Human vs MyBot", ref buttonPos, spacing, buttonSize))
+            //if (NextButtonInRow("Human vs MyBot", ref buttonPos, spacing, buttonSize))
+            //{
+            //    var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.Bot : ChallengeController.PlayerType.Human;
+            //    var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.Bot : ChallengeController.PlayerType.Human;
+            //    controller.StartNewGame(new ChallengeController.PlayerArgs(whiteType), new ChallengeController.PlayerArgs(blackType));
+            //}
+            //if (NextButtonInRow("MyBot vs MyBot", ref buttonPos, spacing, buttonSize))
+            //{
+            //    controller.StartNewBotMatch(typeof(Bots.MyBot), typeof(Bots.MyBot));
+            //}
+            //if (NextButtonInRow("MyBot vs EvilBot", ref buttonPos, spacing, buttonSize))
+            //{
+            //    controller.StartNewBotMatch(typeof(Bots.MyBot), typeof(Bots.EvilBot));
+            //}
+
+            ChallengeController.PlayerArgs? result;
+            if ((result = NextDropdownInRow<ChallengeController.PlayerArgs>(controller.AllPlayerArgs,
+                controller.PlayerWhite.PlayerArgs,
+                ref buttonPos,
+                spacing,
+                buttonSize,
+                ref PersistWhiteDropdown)) != null)
             {
-                var whiteType = controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.Bot : ChallengeController.PlayerType.Human;
-                var blackType = !controller.HumanWasWhiteLastGame ? ChallengeController.PlayerType.Bot : ChallengeController.PlayerType.Human;
-                controller.StartNewGame(new ChallengeController.PlayerArgs(whiteType), new ChallengeController.PlayerArgs(blackType));
+                controller.StartNewGame(result, controller.PlayerBlack.PlayerArgs);
             }
-            if (NextButtonInRow("MyBot vs MyBot", ref buttonPos, spacing, buttonSize))
+            if ((result = NextDropdownInRow<ChallengeController.PlayerArgs>(controller.AllPlayerArgs,
+                controller.PlayerBlack.PlayerArgs,
+                ref buttonPos,
+                spacing,
+                buttonSize,
+                ref PersistBlackDropdown)) != null)
             {
-                controller.StartNewBotMatch(typeof(Bots.MyBot), typeof(Bots.MyBot));
-            }
-            if (NextButtonInRow("MyBot vs EvilBot", ref buttonPos, spacing, buttonSize))
-            {
-                controller.StartNewBotMatch(typeof(Bots.MyBot), typeof(Bots.EvilBot));
+                controller.StartNewGame(controller.PlayerWhite.PlayerArgs, result);
             }
 
             if (NextButtonInRow("ELO Tourney", ref buttonPos, spacing, buttonSize))
@@ -80,6 +104,13 @@ namespace ChessChallenge.Application
                 bool pressed = UIHelper.Button(name, pos, size);
                 pos.Y += spacingY;
                 return pressed;
+            }
+
+            T? NextDropdownInRow<T>(IEnumerable<T> values, T selected, ref Vector2 pos, float spacingY, Vector2 size, ref bool persist)
+            {
+                var chosen = UIHelper.Dropdown<T>(values, selected, pos, size, ref persist);
+                pos.Y += spacingY;
+                return chosen;
             }
         }
     }
