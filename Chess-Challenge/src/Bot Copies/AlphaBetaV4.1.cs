@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
 
-public class MyBot : IChessBot
+public class AlphaBetaV41 : IChessBot
 {
     public Move Think(Board board, Timer timer)
     {
@@ -203,14 +203,6 @@ public class MyBot : IChessBot
         whiteEval += whiteMaterial;
         blackEval += blackMaterial;
 
-        //Mobility
-        int mobility = GetMobilityBonus(board);
-        if (board.TrySkipTurn())
-        {
-            mobility -= GetMobilityBonus(board);
-            board.UndoSkipTurn();
-        } else mobility = 0; // ignore mobility if we can't get it for both sides
-
         // King Safety
         int whiteKingRelativeIndex = board.GetKingSquare(true).Index;
         int blackKingRelativeIndex = new Square(board.GetKingSquare(false).File, 7 - board.GetKingSquare(false).Rank).Index;
@@ -222,7 +214,7 @@ public class MyBot : IChessBot
         blackEval += GetEndgameBonus(board, whiteEndgamePhaseWeight, false);
 
 
-        return (whiteEval - blackEval) * ((board.IsWhiteToMove) ? 1 : -1) + mobility;
+        return (whiteEval - blackEval) * ((board.IsWhiteToMove) ? 1 : -1);
     }
 
     float Lerp(float a, float b, float t)
@@ -233,30 +225,6 @@ public class MyBot : IChessBot
     float EndgamePhaseWeight(int materialCountWithoutPawns)
     {
         return 1 - Math.Min(1, materialCountWithoutPawns / endgameMaterialStart);
-    }
-
-    int GetMobilityBonus(Board board)
-    {
-        int mobility = 0;
-        foreach (Move move in board.GetLegalMoves())
-        {
-            switch (move.MovePieceType)
-            {
-                case PieceType.Knight:
-                    mobility -= 100; // More points for knight since it has a smaller maximum of possible moves
-                    break;
-                case PieceType.Bishop:
-                    mobility -= 5;
-                    break;
-                case PieceType.Rook:
-                    mobility -= 6;
-                    break;
-                case PieceType.Queen:
-                    mobility -= 4;
-                    break;
-            }
-        }
-        return mobility;
     }
 
 
@@ -282,7 +250,7 @@ public class MyBot : IChessBot
             {
                 case PieceType.Pawn:
                     // Encourage pawns to move forward
-                    endgameBonus += 20 - 5 * ((isWhite) ? 7 - pieceSquare.Rank : pieceSquare.Rank);
+                    endgameBonus += 50 - 10 * ((isWhite) ? 7 - pieceSquare.Rank : pieceSquare.Rank);
                     break;
                 case PieceType.Rook:
                     //Encourage rooks to get close to the same rank/file as the king
