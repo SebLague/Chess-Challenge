@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Metrics;
 using System.Linq;
+using static System.Formats.Asn1.AsnWriter;
 
 public class MyBot : IChessBot
 {
@@ -36,7 +37,7 @@ public class MyBot : IChessBot
             bestMovesByDepth.Add(Move.NullMove);
             Search(board, timer, searchDepth, 0, negativeInfinity, positiveInfinity);
 
-            if (isSearchCancelled || IsMateScore(bestEval)) break;
+            if (isSearchCancelled || Math.Abs(bestEval) > immediateMateScore - 1000) break;
         }
     }
 
@@ -66,16 +67,12 @@ public class MyBot : IChessBot
             int eval = -Search(board, timer, plyRemaining - 1, plyFromRoot + 1, -beta, -alpha);
             board.UndoMove(move);
 
-            Console.WriteLine("-------");
-            Console.WriteLine("Board FEN String: " + board.GetFenString());
-            Console.WriteLine("Depth: " + plyFromRoot);
-            Console.WriteLine("Eval: " + eval + ", Alpha: " + alpha + ", Beta: " + beta);
-
             if (eval >= beta) return beta;
             if (eval > alpha)
             {
                 alpha = eval;
                 bestMovesByDepth[plyFromRoot] = move;
+                bestEval = (plyFromRoot == 0) ? eval : bestEval;
             }
         }
 
@@ -132,6 +129,58 @@ public class MyBot : IChessBot
 
     }
 
+
+    #region Evalution
+
+    const float endgameMaterialStart = 1750;
+
+    //Represent the rank scores as a 64-bit int. Last couple rows are all copies
+    ulong[] kingMidgameTable = new ulong[]
+    {
+        0b_00010100_00011110_00001010_00000000_00000000_00001010_00011110_00010100L,
+        0b_00010100_00010100_00000000_00000000_00000000_00000000_00010100_00010100L,
+        0b_11110110_11101100_11101100_11101100_11101100_11101100_11101100_11110110L,
+        0b_11101100_11100010_11100010_11011000_11011000_11100010_11100010_11101100L,
+        0b_11100010_11011000_11011000_11001110_11001110_11011000_11011000_11100010L
+    };
+
+    ulong[] kingEndgameTable = new ulong[]
+    {
+        0b_11100010_11110110_00011110_00101000_00101000_00011110_11110110_11100010L,
+        0b_11100010_11110110_00010100_00011110_00011110_00010100_11110110_11100010L,
+        0b_11100010_11100010_00000000_00000000_00000000_00000000_11100010_11100010L,
+        0b_11001110_11100010_11100010_11100010_11100010_11100010_11100010_11001110L,
+    };
+
+    // Performs static evaluation of the current position.
+    // The position is assumed to be 'quiet', i.e no captures are available that could drastically affect the evaluation.
+    // The score that's returned is given from the perspective of whoever's turn it is to move.
+    // So a positive score means the player who's turn it is to move has an advantage, while a negative score indicates a disadvantage.
+    public int Evaluate(Board board)
+    {
+        Square whiteKingSquare = board.GetKingSquare(true);
+        Square blackKingSquare = board.GetKingSquare(false);
+
+        //Mobility
+        int mobility = GetMobilityBonus(board);
+        if (board.TrySkipTurn())
+        {
+            mobility -= GetMobilityBonus(board);
+            board.UndoSkipTurn();
+        }
+        else mobility = 0; // ignore mobility if we can't get it for both sides
+
+
+        return (CountMaterial(board, true) - CountMaterial(board, false)
+            + GetKingSafetyScores(whiteKingSquare.File, whiteKingSquare.Rank, EndgamePhaseWeight(board, true))
+            - GetKingSafetyScores(blackKingSquare.File, 7 - blackKingSquare.Rank, EndgamePhaseWeight(board, false))
+            + GetEndgameBonus(board, true)
+            - GetEndgameBonus(board, false)) 
+            * ((board.IsWhiteToMove) ? 1 : -1) 
+            + mobility;
+    }
+
+    
     int[] POINT_VALUES = { 100, 350, 350, 525, 1000 };
     int GetPointValue(PieceType type)
     {
@@ -143,96 +192,9 @@ public class MyBot : IChessBot
         }
     }
 
-    bool IsMateScore(int score)
+    float EndgamePhaseWeight(Board board, bool isWhite)
     {
-        return Math.Abs(score) > immediateMateScore - 1000;
-    }
-
-    #region Evalution
-
-    const float endgameMaterialStart = 1750;
-
-    int[] kingMidgameTable = new int[]
-    {
-        20, 30, 10,  0,  0, 10, 30, 20,
-        20, 20,  0,  0,  0,  0, 20, 20,
-        -10,-20,-20,-20,-20,-20,-20,-10,
-        -20,-30,-30,-40,-40,-30,-30,-20,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-        -30,-40,-40,-50,-50,-40,-40,-30,
-    };
-
-    //Represent the rank scores as a 64-bit int. NEED TO FINISH
-    ulong[] kingMidgameTable_v2 = new ulong[]
-    {
-        0b0001010000011110000010100000000000000000000010100001111000010100L,
-        0b0001010000010100000000000000000000000000000000000001010000010100L,
-    };
-    int[] kingEndgameTable = new int[]
-    {
-        -50,-30,-30,-30,-30,-30,-30,-50,
-        -30,-30,  0,  0,  0,  0,-30,-30,
-        -30,-10, 20, 30, 30, 20,-10,-30,
-        -30,-10, 30, 40, 40, 30,-10,-30,
-        -30,-10, 30, 40, 40, 30,-10,-30,
-        -30,-10, 20, 30, 30, 20,-10,-30,
-        -30,-20,-10,  0,  0,-10,-20,-30,
-        -50,-40,-30,-20,-20,-30,-40,-50,
-    };
-
-    // Performs static evaluation of the current position.
-    // The position is assumed to be 'quiet', i.e no captures are available that could drastically affect the evaluation.
-    // The score that's returned is given from the perspective of whoever's turn it is to move.
-    // So a positive score means the player who's turn it is to move has an advantage, while a negative score indicates a disadvantage.
-    public int Evaluate(Board board)
-    {
-        int whiteEval = 0;
-        int blackEval = 0;
-
-        int whiteMaterial = CountMaterial(board, true);
-        int blackMaterial = CountMaterial(board, false);
-
-        int whiteMaterialWithoutPawns = whiteMaterial - board.GetPieceList(PieceType.Pawn, true).Count * POINT_VALUES[0];
-        int blackMaterialWithoutPawns = blackMaterial - board.GetPieceList(PieceType.Pawn, false).Count * POINT_VALUES[0];
-        float whiteEndgamePhaseWeight = EndgamePhaseWeight(whiteMaterialWithoutPawns);
-        float blackEndgamePhaseWeight = EndgamePhaseWeight(blackMaterialWithoutPawns);
-
-        // Material
-        whiteEval += whiteMaterial;
-        blackEval += blackMaterial;
-
-        //Mobility
-        int mobility = GetMobilityBonus(board);
-        if (board.TrySkipTurn())
-        {
-            mobility -= GetMobilityBonus(board);
-            board.UndoSkipTurn();
-        } else mobility = 0; // ignore mobility if we can't get it for both sides
-
-        // King Safety
-        int whiteKingRelativeIndex = board.GetKingSquare(true).Index;
-        int blackKingRelativeIndex = new Square(board.GetKingSquare(false).File, 7 - board.GetKingSquare(false).Rank).Index;
-        whiteEval += (int)Lerp(kingMidgameTable[whiteKingRelativeIndex], kingEndgameTable[whiteKingRelativeIndex], whiteEndgamePhaseWeight);
-        blackEval += (int)Lerp(kingMidgameTable[blackKingRelativeIndex], kingEndgameTable[blackKingRelativeIndex], blackEndgamePhaseWeight);
-
-        // Endgame Bonuses
-        whiteEval += GetEndgameBonus(board, blackEndgamePhaseWeight, true);
-        blackEval += GetEndgameBonus(board, whiteEndgamePhaseWeight, false);
-
-
-        return (whiteEval - blackEval) * ((board.IsWhiteToMove) ? 1 : -1) + mobility;
-    }
-
-    float Lerp(float a, float b, float t)
-    {
-        return a + (b - a) * t;
-    }
-
-    float EndgamePhaseWeight(int materialCountWithoutPawns)
-    {
-        return 1 - Math.Min(1, materialCountWithoutPawns / endgameMaterialStart);
+        return 1 - Math.Min(1, (CountMaterial(board, isWhite) - board.GetPieceList(PieceType.Pawn, isWhite).Count * 100) / 1750);
     }
 
     int GetMobilityBonus(Board board)
@@ -243,34 +205,41 @@ public class MyBot : IChessBot
             switch (move.MovePieceType)
             {
                 case PieceType.Knight:
-                    mobility -= 100; // More points for knight since it has a smaller maximum of possible moves
+                    mobility += 100; // More points for knight since it has a smaller maximum of possible moves
                     break;
                 case PieceType.Bishop:
-                    mobility -= 5;
+                    mobility += 5;
                     break;
                 case PieceType.Rook:
-                    mobility -= 6;
+                    mobility += 6;
                     break;
                 case PieceType.Queen:
-                    mobility -= 4;
+                    mobility += 4;
                     break;
             }
         }
         return mobility;
     }
 
+    int GetKingSafetyScores(int file, int relativeRank, float endgameWeight)
+    {
+        sbyte midgameScore = (sbyte)((kingMidgameTable[Math.Min(relativeRank, 4)] >> file * 8) % 256);
+        return (int)(midgameScore + (  midgameScore - (sbyte)( (kingEndgameTable[(int)Math.Abs(3.5 - relativeRank)] >> file * 8) % 256 )  ) * endgameWeight);
+    }
+
 
     int CountMaterial(Board board, bool isWhite)
     {
-        return board.GetPieceList(PieceType.Pawn, isWhite).Count * POINT_VALUES[0]
-            + board.GetPieceList(PieceType.Knight, isWhite).Count * POINT_VALUES[1]
-            + board.GetPieceList(PieceType.Bishop, isWhite).Count * POINT_VALUES[2]
-            + board.GetPieceList(PieceType.Rook, isWhite).Count * POINT_VALUES[3]
-            + board.GetPieceList(PieceType.Queen, isWhite).Count * POINT_VALUES[4];
+        return board.GetPieceList(PieceType.Pawn, isWhite).Count * 100
+            + board.GetPieceList(PieceType.Knight, isWhite).Count * 350
+            + board.GetPieceList(PieceType.Bishop, isWhite).Count * 350
+            + board.GetPieceList(PieceType.Rook, isWhite).Count * 525
+            + board.GetPieceList(PieceType.Queen, isWhite).Count * 1000;
     }
 
-    int GetEndgameBonus(Board board, float enemyEndgameWeight, bool isWhite)
+    int GetEndgameBonus(Board board, bool isWhite)
     {
+        float enemyEndgameWeight = EndgamePhaseWeight(board, !isWhite);
         if (enemyEndgameWeight <= 0) return 0;
         ulong ourBB = (isWhite) ? board.WhitePiecesBitboard : board.BlackPiecesBitboard;
         Square enemyKingSquare = board.GetKingSquare(!isWhite);
@@ -282,7 +251,7 @@ public class MyBot : IChessBot
             {
                 case PieceType.Pawn:
                     // Encourage pawns to move forward
-                    endgameBonus += 20 - 5 * ((isWhite) ? 7 - pieceSquare.Rank : pieceSquare.Rank);
+                    endgameBonus += 50 - 10 * ((isWhite) ? 7 - pieceSquare.Rank : pieceSquare.Rank);
                     break;
                 case PieceType.Rook:
                     //Encourage rooks to get close to the same rank/file as the king
