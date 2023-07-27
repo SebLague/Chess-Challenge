@@ -1,6 +1,7 @@
 ﻿using Raylib_cs;
 using System;
 using System.IO;
+using System.Linq;
 using System.Numerics;
 
 namespace ChessChallenge.Application
@@ -111,12 +112,14 @@ namespace ChessChallenge.Application
 
         public static float Scale(float val, int referenceResolution = referenceResolution)
         {
-            return Raylib.GetScreenWidth() / (float)referenceResolution * val;
+            int[] normalizedScreenDimensions = {(int)(Raylib.GetScreenHeight() * 1.777), Raylib.GetScreenWidth()};
+            return normalizedScreenDimensions.Min() / (float)referenceResolution * val;
         }
 
         public static int ScaleInt(int val, int referenceResolution = referenceResolution)
         {
-            return (int)Math.Round(Raylib.GetScreenWidth() / (float)referenceResolution * val);
+            int[] normalizedScreenDimensions = {(int)(Raylib.GetScreenHeight() * 1.777), Raylib.GetScreenWidth()};
+            return (int)Math.Round(normalizedScreenDimensions.Min() / (float)referenceResolution * val);
         }
 
         public static Vector2 Scale(Vector2 vec, int referenceResolution = referenceResolution)
