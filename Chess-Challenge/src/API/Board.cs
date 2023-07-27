@@ -73,11 +73,10 @@ namespace ChessChallenge.API
 		/// </summary>
 		public void MakeMove(Move move)
 		{
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
 			if (!move.IsNull)
 			{
 				repetitionHistory.Add(board.ZobristKey);
+				OnPositionChanged();
 				board.MakeMove(new Chess.Move(move.RawValue), inSearch: true);
 			}
 		}
@@ -87,12 +86,11 @@ namespace ChessChallenge.API
 		/// </summary>
 		public void UndoMove(Move move)
 		{
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
 			if (!move.IsNull)
 			{
 				board.UndoMove(new Chess.Move(move.RawValue), inSearch: true);
-				repetitionHistory.Remove(board.ZobristKey);
+                OnPositionChanged();
+                repetitionHistory.Remove(board.ZobristKey);
 			}
 		}
 
@@ -108,10 +106,9 @@ namespace ChessChallenge.API
 			{
 				return false;
 			}
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
 			board.MakeNullMove();
-			return true;
+            OnPositionChanged();
+            return true;
 		}
 
         /// <summary>
@@ -124,9 +121,8 @@ namespace ChessChallenge.API
         /// </summary>
         public void ForceSkipTurn()
         {
-            hasCachedMoves = false;
-            hasCachedCaptureMoves = false;
             board.MakeNullMove();
+            OnPositionChanged();
         }
 
         /// <summary>
@@ -134,10 +130,9 @@ namespace ChessChallenge.API
         /// </summary>
         public void UndoSkipTurn()
 		{
-			hasCachedMoves = false;
-			hasCachedCaptureMoves = false;
 			board.UnmakeNullMove();
-		}
+            OnPositionChanged();
+        }
 
 		/// <summary>
 		/// Gets an array of the legal moves in the current position.
@@ -278,11 +273,7 @@ namespace ChessChallenge.API
 		/// </summary>
 		public bool SquareIsAttackedByOpponent(Square square)
 		{
-			if (!hasCachedMoves)
-			{
-				GetLegalMoves();
-			}
-			return BitboardHelper.SquareIsSet(moveGen.opponentAttackMap, square);
+			return BitboardHelper.SquareIsSet(moveGen.GetOpponentAttackMap(board), square);
 		}
 
 
@@ -361,6 +352,13 @@ namespace ChessChallenge.API
             Chess.Board boardCore = new Chess.Board();
             boardCore.LoadPosition(fen);
             return new Board(boardCore);
+        }
+
+        void OnPositionChanged()
+        {
+            moveGen.NotifyPositionChanged();
+            hasCachedMoves = false;
+            hasCachedCaptureMoves = false;
         }
 
     }
