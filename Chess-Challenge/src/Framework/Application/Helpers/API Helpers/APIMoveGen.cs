@@ -45,20 +45,32 @@ namespace ChessChallenge.Application.APIHelpers
         // If only captures should be generated, this will have 1s only in positions of enemy pieces.
         // Otherwise it will have 1s everywhere.
         ulong moveTypeMask;
+        bool hasInitializedCurrentPosition;
 
         public APIMoveGen()
         {
             board = new Board();
+        }
+        
+        // Movegen needs to know when position has changed to allow for some caching optims in api
+        public void NotifyPositionChanged()
+        {
+            hasInitializedCurrentPosition = false;
+        }
+
+        public ulong GetOpponentAttackMap(Board board)
+        {
+            Init(board);
+            return opponentAttackMap;
         }
 
         // Generates list of legal moves in current position.
         // Quiet moves (non captures) can optionally be excluded. This is used in quiescence search.
         public void GenerateMoves(ref Span<API.Move> moves, Board board, bool includeQuietMoves = true)
         {
-            this.board = board;
             generateNonCapture = includeQuietMoves;
 
-            Init();
+            Init(board);
 
             GenerateKingMoves(moves);
 
@@ -79,10 +91,22 @@ namespace ChessChallenge.Application.APIHelpers
             return inCheck;
         }
 
-        void Init()
+        public void Init(Board board)
         {
-            // Reset state
+            this.board = board;
             currMoveIndex = 0;
+
+            
+            if (hasInitializedCurrentPosition)
+            {
+                moveTypeMask = generateNonCapture ? ulong.MaxValue : enemyPieces;
+                return;
+            }
+            
+            hasInitializedCurrentPosition = true;
+
+            // Reset state
+           
             inCheck = false;
             inDoubleCheck = false;
             checkRayBitmask = 0;
@@ -103,7 +127,11 @@ namespace ChessChallenge.Application.APIHelpers
             emptyOrEnemySquares = emptySquares | enemyPieces;
             moveTypeMask = generateNonCapture ? ulong.MaxValue : enemyPieces;
 
+
+
             CalculateAttackData();
+
+           
         }
 
         API.Move CreateAPIMove(int startSquare, int targetSquare, int flag)
@@ -532,7 +560,6 @@ namespace ChessChallenge.Application.APIHelpers
             }
 
             // Pawn attacks
-            PieceList opponentPawns = board.pawns[enemyIndex];
             opponentPawnAttackMap = 0;
 
             ulong opponentPawnsBoard = board.pieceBitboards[PieceHelper.MakePiece(PieceHelper.Pawn, board.OpponentColour)];
