@@ -1,4 +1,6 @@
 ﻿using ChessChallenge.API;
+using ChessChallenge.Application; //DELETE
+using System;
 
 namespace Bots;
 
@@ -8,21 +10,26 @@ public class MyBot3 : IChessBot //Nik I want to change this class name >:(
     {
         Move[] moves = board.GetLegalMoves();
 
-        //FOR EVERY MOVE check the affect it would have on the board. (This obviously needs to be streamlined).
-        float best_eval = -200;
-        Move best_move = new Move();
+        //FOR EVERY MOVE check the affect it would have on the board. (This obviously needs to be optimised).
+        float best_eval = 0;
+        Move best_move = moves[0];
         foreach(Move m in moves)
         {
             board.MakeMove(m);
             float e = Eval(board);
+            float abs_e = Math.Abs(e);
 
-            if(e > best_eval)
+            if(abs_e > best_eval)
             {
-                best_eval = e; best_move = m;
+                best_eval = abs_e; 
+                best_move = m;
             }
+            //ConsoleHelper.Log(m.ToString() + " gives eval: " + e.ToString());
+
             board.UndoMove(m);//This is daft
         }
-        
+        ConsoleHelper.Log(best_move.ToString() + " was the best move found with eval: " + Math.Abs(best_eval).ToString());
+
         return best_move;
     }
 
