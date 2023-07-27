@@ -32,12 +32,12 @@ public class MyBot : IChessBot
         bestEval = 0;
         isSearchCancelled = false;
 
-        for (int searchDepth = 1; searchDepth < int.MaxValue; searchDepth++)
+        for (int searchDepth = 1; !isSearchCancelled; searchDepth++)
         {
             bestMovesByDepth.Add(Move.NullMove);
             Search(board, timer, searchDepth, 0, negativeInfinity, positiveInfinity);
 
-            if (isSearchCancelled || Math.Abs(bestEval) > immediateMateScore - 1000) break;
+            if (Math.Abs(bestEval) > immediateMateScore - 1000) break;
         }
     }
 
@@ -72,7 +72,7 @@ public class MyBot : IChessBot
             {
                 alpha = eval;
                 bestMovesByDepth[plyFromRoot] = move;
-                bestEval = (plyFromRoot == 0) ? eval : bestEval;
+                bestEval = plyFromRoot == 0 ? eval : bestEval;
             }
         }
 
@@ -132,8 +132,6 @@ public class MyBot : IChessBot
 
     #region Evalution
 
-    const float endgameMaterialStart = 1750;
-
     //Represent the rank scores as a 64-bit int. Last couple rows are all copies
     ulong[] kingMidgameTable = new ulong[]
     {
@@ -176,7 +174,7 @@ public class MyBot : IChessBot
             - GetKingSafetyScores(blackKingSquare.File, 7 - blackKingSquare.Rank, EndgamePhaseWeight(board, false))
             + GetEndgameBonus(board, true)
             - GetEndgameBonus(board, false)) 
-            * ((board.IsWhiteToMove) ? 1 : -1) 
+            * (board.IsWhiteToMove ? 1 : -1) 
             + mobility;
     }
 
@@ -241,7 +239,7 @@ public class MyBot : IChessBot
     {
         float enemyEndgameWeight = EndgamePhaseWeight(board, !isWhite);
         if (enemyEndgameWeight <= 0) return 0;
-        ulong ourBB = (isWhite) ? board.WhitePiecesBitboard : board.BlackPiecesBitboard;
+        ulong ourBB = isWhite ? board.WhitePiecesBitboard : board.BlackPiecesBitboard;
         Square enemyKingSquare = board.GetKingSquare(!isWhite);
 
         int endgameBonus = 0;
@@ -251,7 +249,7 @@ public class MyBot : IChessBot
             {
                 case PieceType.Pawn:
                     // Encourage pawns to move forward
-                    endgameBonus += 50 - 10 * ((isWhite) ? 7 - pieceSquare.Rank : pieceSquare.Rank);
+                    endgameBonus += 50 - 10 * (isWhite ? 7 - pieceSquare.Rank : pieceSquare.Rank);
                     break;
                 case PieceType.Rook:
                     //Encourage rooks to get close to the same rank/file as the king
