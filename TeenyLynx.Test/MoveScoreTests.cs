@@ -25,7 +25,7 @@ public class MoveScoreTest : BaseTest
     {
         var bot = GetBot(fen);
 
-        var allMoves = bot._position.GetLegalMoves().OrderByDescending(move => bot.Score(move, default)).ToList();
+        var allMoves = bot._position.GetLegalMoves().OrderByDescending(move => bot.Score(move, default, default)).ToList();
 
         Assert.AreEqual("e2a6", allMoves[0].ToString()[7..^1]);     // BxB
         Assert.AreEqual("f3f6", allMoves[1].ToString()[7..^1]);     // QxN
@@ -38,7 +38,7 @@ public class MoveScoreTest : BaseTest
 
         foreach (var move in allMoves.Where(move => !move.IsCapture && !move.IsCastles))
         {
-            Assert.AreEqual(0, bot.Score(move, default));
+            Assert.AreEqual(0, bot.Score(move, default, default));
         }
     }
 
@@ -62,9 +62,9 @@ public class MoveScoreTest : BaseTest
     {
         var bot = GetBot(fen);
 
-        var allMoves = bot._position.GetLegalMoves().OrderByDescending(move => bot.Score(move, default)).ToList();
+        var allMoves = bot._position.GetLegalMoves().OrderByDescending(move => bot.Score(move, default, default)).ToList();
 
         Assert.AreEqual(moveWithHighestScore, allMoves[0].ToString()[7..^1]);
-        Assert.AreEqual(100_000 + new MyBot().Magic[441 + (int)PieceType.Pawn + 6 * (int)PieceType.Pawn], bot.Score(allMoves[0], default));
+        Assert.AreEqual(100_000 + new MyBot().Magic[441 + (int)PieceType.Pawn + 6 * (int)PieceType.Pawn], bot.Score(allMoves[0], default, default));
     }
 }
