@@ -51,6 +51,46 @@ namespace ChessChallenge.API
             return BitBoardUtility.PopCount(bitboard);
         }
 
+
+
+        /// <summary>
+        /// Returns a bitboard where each bit that is set to 1 represents a square that the given
+        /// piece type is able to attack. These attacks are calculated from the given square,
+        /// and take the given board state into account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// </summary>
+        public static ulong GetPieceAttacks(PieceType pieceType, Square square, Board board, bool isWhite)
+        {
+            return pieceType switch
+            {
+                PieceType.Pawn => GetPawnAttacks(square, isWhite),
+                PieceType.Knight => GetKnightAttacks(square),
+                PieceType.Bishop => GetBishopAttacks(square, board.AllPiecesBitboard),
+                PieceType.Rook => GetRookAttacks(square, board.AllPiecesBitboard),
+                PieceType.Queen => GetQueenAttacks(square, board.AllPiecesBitboard),
+                PieceType.King => GetKingAttacks(square),
+                _ => 0
+            };
+        }
+
+        /// <summary>
+        /// Returns a bitboard where each bit that is set to 1 represents a square that the given
+        /// piece type is able to attack. These attacks are calculated from the given square,
+        /// and take the given board state into account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// </summary>
+        public static ulong GetPieceAttacks(PieceType pieceType, Square square, ulong blockers, bool isWhite)
+        {
+            return pieceType switch
+            {
+                PieceType.Pawn => GetPawnAttacks(square, isWhite),
+                PieceType.Knight => GetKnightAttacks(square),
+                PieceType.Bishop => GetBishopAttacks(square, blockers),
+                PieceType.Rook => GetRookAttacks(square, blockers),
+                PieceType.Queen => GetQueenAttacks(square, blockers),
+                PieceType.King => GetKingAttacks(square),
+                _ => 0
+            };
+        }
+
         /// <summary>
         /// Returns a bitboard where each bit that is set to 1 represents a square that the given
         /// sliding piece type is able to attack. These attacks are calculated from the given square,
