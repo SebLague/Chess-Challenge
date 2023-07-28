@@ -1,8 +1,9 @@
 ﻿using ChessChallenge.API;
 using System;
-using System.Linq;
-using System.Data;
-using static ChessChallenge.Application.ConsoleHelper;
+/* using System.Linq; */
+/* using System.Data; */
+/* using static ChessChallenge.Application.ConsoleHelper; */
+using static ChessChallenge.DriedCod.PieceSquareTables;
 
 public class MyBot : IChessBot
 {
@@ -11,7 +12,7 @@ public class MyBot : IChessBot
     private static int[][] PSTS;
 
     private static int WORST_SCORE = -Int32.MaxValue;
-    
+
     /// <summary>the depth to which the bot searches</summary>
     private int DEPTH = 4;
     private Move bestMove = Move.NullMove;
@@ -153,6 +154,7 @@ public class MyBot : IChessBot
             QUEEN_PST_START, KING_PST_START,   PAWN_PST_END,     KNIGHT_PST_END,
             BISHOP_PST_END,  ROOK_PST_END,     QUEEN_PST_END,    KING_PST_END,
         };
+        GeneratePieceSquareTables();
     }
 
     private float Lerp(float a, float b, float t)
@@ -164,7 +166,8 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         progress = Math.Min(board.GameMoveHistory.Length / 40f, 1);
-        Search(board, DEPTH, alpha,beta);
+        Search(board, DEPTH, alpha, beta);
+        System.Threading.Thread.Sleep(60 * 1000);
         return bestMove;
     }
 
@@ -203,7 +206,7 @@ public class MyBot : IChessBot
             }
             if (bestScore > alpha)
             {
-                alpha=bestScore;
+                alpha = bestScore;
             }
             if (alpha >= beta)
             {
@@ -260,4 +263,19 @@ public class MyBot : IChessBot
         board.UndoSkipTurn();
         return -theirMobility + board.GetLegalMoves().Length;
     }
+
+    static ulong[] PIECE_SQUARE_TABLES = {
+        0x0000000000000000, 0xf5227e445f3d8662, 0xec1938411f1a07fa, 0xe9110c1715060df2, 0xe70a06110cfbfee5, 0xf4210303f6fcfce6, 0xea2618f1e9ecffdd, 0x0000000000000000, //
+        0x0000000000000000, 0xbba58493869eadb2, 0x545235384355645e, 0x111104fe050d1820, 0xff03f8f9f9fd090d, 0xf8fffb0001fa0704, 0xf902000d0a08080d, 0x0000000000000000, //
+        0x95f19f3dcfdea759, 0xef073e172448d7b7, 0x2c49815441253cd1, 0x16124525351311f7, 0xf815131c0d1004f3, 0xf01911130a0cf7e9, 0xedf212fffdf4cbe3, 0xe9ede4efdfc6eb97, //
+        0x9dc1e5e1e4f3dac6, 0xcce8e7f7fee7f8e7, 0xd7edf7ff090aece8, 0xee080b16161603ef, 0xee0411101910faee, 0xeaecfd0a0ffffde9, 0xd4e9ecfefbf6ecd6, 0xc0ceeeeaf1e9cde3, //
+        0xf807d6e7dbae04e3, 0xd1123b1ef3ee10e6, 0xfe253223282b25f0, 0xfe072525321305fc, 0x040a0c221a0d0dfa, 0x0a121b0e0f0f0f00, 0x0121150700100f04, 0xebd9f4f3ebf2fddf, //
+        0xe8eff7f9f8f5ebf2, 0xf2fcf3fdf407fcf8, 0x040006feff00f802, 0x02030a0e090c09fd, 0xf7fd0a07130d03fa, 0xf1f9030d0a08fdf4, 0xe5f1f704fff9eef2, 0xeffbf0f7fbe9f7e9, //
+        0x2b1f093f33202a20, 0x2c1a43503e3a201b, 0x103d2d11241a13fb, 0xecf823181a07f5e8, 0xe906f909fff4e6dc, 0xdffb0003eff0e7d3, 0xb9fa0bfff7ecf0d4, 0xe6db07101101f3ed, //
+        0x05080c0c0f120a0d, 0x030803fd0b0d0d0b, 0xfdfbfd0405070707, 0x02ff0102010d0304, 0xf5f8fafb04080503, 0xf0f8f4f9fffb00fc, 0xfdf5f7f70200fafa, 0xec04f3fbff0302f7, //
+        0x2d2b2c3b0c1d00e4, 0x361c39f001fbd9e8, 0x392f381d0807eff3, 0x01fe11fff0f0e5e5, 0xfd03fcfef6f7e6f7, 0x050e02fbfef502f2, 0x01fd0f08020bf8dd, 0xcee1e7f10af7eeff, //
+        0x140a131b1b1616f7, 0x001e193a292014ef, 0x0913232f310906ec, 0x243928392d181603, 0x1727221f2f131cee, 0x050a1109060fe5f0, 0xe0dce9f0f0e2e9ea, 0xd7ece0fbd5eae4df, //
+        0x0d02dec8f11017bf, 0xe3dafcf8f9ecff1d, 0xea1606ecf00218f7, 0xdcf2e7e2e5f4ecef, 0xcddfd4d2d9e5ffcf, 0xe5f1e2d4d2eaf2f2, 0x0809f0d5c0f80701, 0x0e18e408ca0c24f1, //
+        0xef040ff5eeeeddb6, 0x0b172611110e11f4, 0x0d2c2d140f17110a, 0x031a211a1b1816f8, 0xf509171b1815fcee, 0xf7071017150bfded, 0xeffb040e0d04f5e5, 0xd5e8f2e4f5ebdecb, //
+    };
 }
