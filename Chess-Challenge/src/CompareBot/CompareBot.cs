@@ -46,7 +46,7 @@ public class CompareBot: IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        progress = Math.Min(board.GameMoveHistory.Length / 40f, 1);
+        progress = Math.Min(board.GameMoveHistory.Length / 65f, 1);
         Search(board, DEPTH, alpha, beta);
         return bestMove;
     }

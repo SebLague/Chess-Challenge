@@ -8,11 +8,15 @@ public class MyBot : IChessBot
     private static int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
     private static int WORST_SCORE = -Int32.MaxValue;
     /// <summary>the depth to which the bot searches</summary>
-    private int DEPTH = 4;
+    private int DEPTH = 5;
     private Move bestMove = Move.NullMove;
     private double alpha = -Int32.MaxValue;
     private double beta = Int32.MaxValue;
+    private int whiteCastlingScore = 0;
+    private int blackCastlingScore = 0;
     private float progress = 0;
+    private int lastThinkTime = 0;
+
     int[] PIECE_SQUARE_TABLE;
 
     public MyBot()
@@ -29,25 +33,16 @@ public class MyBot : IChessBot
               });
     }
 
-    private float Lerp(float a, float b, float t)
-    {
-        t = Math.Min(1, Math.Max(t, 0));
-        return a + (b - a) * t;
-    }
-
-    private float GetPieceSquareValue(Piece piece)
-    {
-        int index = piece.Square.Index ^ (piece.IsWhite ? 0 : 56);
-        return Lerp( //
-            PIECE_SQUARE_TABLE[((int)piece.PieceType - 1) * 64 + index],
-            PIECE_SQUARE_TABLE[(int)piece.PieceType * 64 + index],
-            progress);
-    }
-
     public Move Think(Board board, Timer timer)
     {
-        progress = Math.Min(board.GameMoveHistory.Length / 40f, 1);
+        progress = Math.Min(board.GameMoveHistory.Length / 65f, 1);
         Search(board, DEPTH, alpha, beta);
+        lastThinkTime = timer.MillisecondsElapsedThisTurn;
+        double diff = lastThinkTime - 1234 * Math.Exp(-Math.Pow((board.GameMoveHistory.Length - 25.42) / 60, 2));
+        if (diff > 0)
+            DEPTH = Math.Max(DEPTH - 1, 2);
+        else
+            DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 5 : 4);
         return bestMove;
     }
 
@@ -61,8 +56,12 @@ public class MyBot : IChessBot
     /// <returns>score of the board at depth=0 with the best score obtained</returns>
     double Search(Board board, int depth, double alpha, double beta)
     {
-        //Log("alpha" + alpha);
-        //Log("Beta" + beta);
+        if (board.IsInCheckmate())
+            return WORST_SCORE;
+        if (board.IsRepeatedPosition())
+            return WORST_SCORE / 4;
+        if (board.IsDraw())
+            return 0;
         // we have reached the depth - evaluate the board for the current color
         if (depth == 0)
             return Evaluate(board);
@@ -73,11 +72,19 @@ public class MyBot : IChessBot
             bestMove = moves[0];
         foreach (Move move in moves)
         {
+            if (move.IsCastles && board.IsWhiteToMove)
+                whiteCastlingScore += 1;
+            else if (move.IsCastles && !board.IsWhiteToMove)
+                blackCastlingScore += 1;
             board.MakeMove(move);
             // negate the score because after making a move,
             // we are looking at the board from the other player's perspective
             double score = -Search(board, depth - 1, -beta, -alpha);
             board.UndoMove(move);
+            if (move.IsCastles && board.IsWhiteToMove)
+                whiteCastlingScore -= 1;
+            else if (move.IsCastles && !board.IsWhiteToMove)
+                blackCastlingScore -= 1;
             if (score > bestScore)
             {
                 bestScore = score;
@@ -100,17 +107,10 @@ public class MyBot : IChessBot
     /// <returns>score of the board</returns>
     private double Evaluate(Board board)
     {
-        if (board.IsInCheckmate())
-            return WORST_SCORE;
-        if (board.IsRepeatedPosition())
-            return WORST_SCORE / 4;
-        if (board.IsDraw())
-            return 0;
-
         int mobilityScore = CalculateMobilityScore(board);
-
         int materialScore = 0;
         float positionScore = 0;
+
         ulong pieces = board.AllPiecesBitboard;
         while (pieces > 0)
         {
@@ -120,9 +120,12 @@ public class MyBot : IChessBot
             materialScore += PIECE_VALUES[(int)piece.PieceType] * factor;
             positionScore += GetPieceSquareValue(piece) * factor;
         }
+
         return 50 * materialScore //
            + 25 * mobilityScore //
-          + 25 * positionScore;
+           + (whiteCastlingScore - blackCastlingScore) * (board.IsWhiteToMove ? 500 : -500) //
+           + Math.Min(progress * 2, 1) * 25 * positionScore
+           + 50 * ( board.IsInCheck() ? progress : 0 );
     }
 
     private int CalculateMobilityScore(Board board)
@@ -133,6 +136,18 @@ public class MyBot : IChessBot
         board.UndoSkipTurn();
         return -theirMobility + board.GetLegalMoves().Length;
     }
+
+    private float Lerp(float a, float b, float t) => a + (b - a) * t;
+
+    private float GetPieceSquareValue(Piece piece)
+    {
+        int index = piece.Square.Index ^ (piece.IsWhite ? 0 : 56);
+        return Lerp( //
+            PIECE_SQUARE_TABLE[((int)piece.PieceType - 1) * 64 + index],
+            PIECE_SQUARE_TABLE[(int)piece.PieceType * 64 + index],
+            progress);
+    }
+
 
     ulong[] PIECE_SQUARE_TABLE_RAW = {
         0x0000000000000000, 0xf11a10f6f0f2ffe8, 0xf8160202f9fdfdee, 0xef07040c08fdffee, 0xf00c08100e0409f6, 0xf211262c151205fc, 0xf917562e41295b43, 0x0000000000000000, //
