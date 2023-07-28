@@ -24,11 +24,10 @@ jobs:
       jobs: 40
 
   stockfish:
-    if: false
     uses: ./.github/workflows/benchmark-publish.yaml
     strategy:
       matrix:
-        level: [0, 2, 5]
+        level: [2]
     with:
       opponent: Stockfish
       opponent_long: Stockfish (${{ matrix.level }})
@@ -43,7 +42,7 @@ jobs:
         echo "STOCKFISH_LEVEL=${{ matrix.level }}" >> $GITHUB_ENV
 
   comparebot:
-    if: true
+    if: false
     uses: ./.github/workflows/benchmark-publish.yaml
     with:
       opponent: CompareBot
