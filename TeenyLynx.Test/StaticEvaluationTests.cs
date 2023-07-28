@@ -42,7 +42,7 @@ public class StaticEvaluationTests : BaseTest
         var teenyLynx = GetBot(fen);
 
         // Act
-        var staticEval = teenyLynx.NegaMax(0, int.MinValue, beta: int.MinValue, isQuiescence: true);    // Causing beta cutoff and getting static eval back
+        var staticEval = teenyLynx.NegaMax(1, 0, int.MinValue, beta: int.MinValue, isQuiescence: true);    // Causing beta cutoff and getting static eval back
 
         // Assert
         Assert.AreEqual(expectedEval, staticEval);
