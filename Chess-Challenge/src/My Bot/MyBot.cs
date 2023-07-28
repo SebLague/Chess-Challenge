@@ -9,13 +9,16 @@ public class MyBot : IChessBot
     //                                    .  P   K   B   R   Q   K
     private static int[] PIECE_VALUES = { 0, 10, 30, 30, 50, 90, 2000 };
     private static int WORST_SCORE = -Int32.MaxValue;
+    
     /// <summary>the depth to which the bot searches</summary>
-    private static int DEPTH = 3;
+    private static int DEPTH = 4;
     private Move bestMove = Move.NullMove;
+    private double alpha = -Int32.MaxValue;
+    private double beta = Int32.MaxValue;
 
     public Move Think(Board board, Timer timer)
     {
-        Search(board, DEPTH);
+        Search(board, DEPTH, alpha,beta);
         return bestMove;
     }
 
@@ -27,8 +30,10 @@ public class MyBot : IChessBot
     /// <remarks>the depth is decreased by 1 for each recursive call</remarks>
     /// <param name="maxDepth">maximal depth to be searched + the depth at which the boards are ultimately evaluated</param>
     /// <returns>score of the board at depth=0 with the best score obtained</returns>
-    double Search(Board board, int depth)
+    double Search(Board board, int depth, double alpha, double beta)
     {
+        //Log("alpha" + alpha);
+        //Log("Beta" + beta);
         // we have reached the depth - evaluate the board for the current color
         if (depth == 0)
             return Evaluate(board);
@@ -42,14 +47,24 @@ public class MyBot : IChessBot
             board.MakeMove(move);
             // negate the score because after making a move,
             // we are looking at the board from the other player's perspective
-            double score = -Search(board, depth - 1);
+            double score = -Search(board, depth - 1, -beta, -alpha);
+            board.UndoMove(move);
             if (score > bestScore)
             {
                 bestScore = score;
                 if (depth == DEPTH)
                     this.bestMove = move;
             }
-            board.UndoMove(move);
+            if (bestScore > alpha)
+            {
+                alpha=bestScore;
+            }
+            if (alpha >= beta)
+            {
+                return alpha;
+            }
+            
+            
         }
         return bestScore;
     }
