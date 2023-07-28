@@ -16,6 +16,9 @@ public class MyBot : IChessBot
     private int blackCastlingScore = 0;
     private float progress = 0;
     private int lastThinkTime = 0;
+    private float timeForMove = 6_000;
+    private Timer? timer;
+    private bool aborted = false;
 
     int[] PIECE_SQUARE_TABLE;
 
@@ -23,23 +26,30 @@ public class MyBot : IChessBot
     {
 
         PIECE_SQUARE_TABLE = PIECE_SQUARE_TABLE_RAW.Aggregate(new int[0], (decoded, rank) =>
-              {
-                  return decoded.Concat(
-                      Enumerable.Range(0, 8).Select(file =>
-                          {
-                              return (int)(sbyte)((rank & (255UL << 8 * file)) >> 8 * file);
-                          })
-                  ).ToArray();
-              });
+             {
+                 return decoded.Concat(
+                     Enumerable.Range(0, 8).Select(file =>
+                         {
+                             return (int)(sbyte)((rank & (255UL << 8 * file)) >> 8 * file);
+                         })
+                 ).ToArray();
+             });
     }
 
     public Move Think(Board board, Timer timer)
     {
-        progress = Math.Min(board.GameMoveHistory.Length / 65f, 1);
+        aborted = false;
+        this.timer = timer;
+        int movesDone = board.GameMoveHistory.Length;
+        progress = Math.Min(movesDone / 65f, 1);
+        if (movesDone > 60)
+            timeForMove = timer.MillisecondsRemaining / 40f;
+
         Search(board, DEPTH, alpha, beta);
+
         lastThinkTime = timer.MillisecondsElapsedThisTurn;
-        double diff = lastThinkTime - 1234 * Math.Exp(-Math.Pow((board.GameMoveHistory.Length - 25.42) / 60, 2));
-        if (diff > 0)
+        double diff = lastThinkTime - 1200 * Math.Exp(-Math.Pow((movesDone - 25) / 55, 2));
+        if (diff > 0 || aborted)
             DEPTH = Math.Max(DEPTH - 1, 2);
         else
             DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 5 : 4);
@@ -72,6 +82,12 @@ public class MyBot : IChessBot
             bestMove = moves[0];
         foreach (Move move in moves)
         {
+            if (timer.MillisecondsElapsedThisTurn > timeForMove)
+            {
+                aborted = true;
+                break;
+            }
+
             if (move.IsCastles && board.IsWhiteToMove)
                 whiteCastlingScore += 1;
             else if (move.IsCastles && !board.IsWhiteToMove)
@@ -125,7 +141,7 @@ public class MyBot : IChessBot
            + 25 * mobilityScore //
            + (whiteCastlingScore - blackCastlingScore) * (board.IsWhiteToMove ? 500 : -500) //
            + Math.Min(progress * 2, 1) * 25 * positionScore
-           + 50 * ( board.IsInCheck() ? progress : 0 );
+           + 50 * (board.IsInCheck() ? progress : 0);
     }
 
     private int CalculateMobilityScore(Board board)
