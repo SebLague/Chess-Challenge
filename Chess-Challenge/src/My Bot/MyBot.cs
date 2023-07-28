@@ -15,7 +15,7 @@ public class MyBot : IChessBot
 {
     public /*internal*/ Board _position;
     Timer _timer;
-    int _timePerMove, _targetDepth
+    int _timePerMove
 #if DEBUG || UCI
     , _nodes
 #endif
@@ -36,7 +36,7 @@ public class MyBot : IChessBot
     {
         int previousPVIndex = _indexes[0] = 0;
 
-        for (int i = -1; ++i < _indexes.Length - 1;)
+        for (int i = -1; ++i < 128;)    // 128 = _indexes.Length - 1
             previousPVIndex = _indexes[i + 1] = previousPVIndex + 128 - i;
     }
 
@@ -44,13 +44,13 @@ public class MyBot : IChessBot
     {
         _position = board;
         _timer = timer;
-        _targetDepth = 1;
         _isScoringPV = false;
         Array.Clear(_pVTable);
         Array.Clear(_killerMoves);
         //Array.Clear(_historyMoves);
 
         int movesToGo = 100 - board.PlyCount >> 1,
+            targetDepth = 1,
             alpha = short.MinValue,
             beta = short.MaxValue
 #if DEBUG
@@ -83,9 +83,9 @@ public class MyBot : IChessBot
                 AspirationWindows_SearchAgain:
                 _isFollowingPV = true;
 #if DEBUG
-                bestEvaluation = NegaMax(0, alpha, beta, false);
+                bestEvaluation = NegaMax(targetDepth, 0, alpha, beta, false);
 #else
-                int bestEvaluation = NegaMax(0, alpha, beta, false);
+                int bestEvaluation = NegaMax(targetDepth, 0, alpha, beta, false);
 #endif
                 isMateDetected = Abs(bestEvaluation) > 27_000;
 
@@ -99,7 +99,7 @@ public class MyBot : IChessBot
 
                 bestMove = _pVTable[0];
 #if DEBUG || UCI
-                Console.WriteLine($"info depth {_targetDepth} score {(isMateDetected ? "mate 99" : $"cp {bestEvaluation}")} nodes {_nodes} nps {Convert.ToInt64(Clamp(_nodes / ((0.001 * _timer.MillisecondsElapsedThisTurn) + 1), 0, long.MaxValue))} time {_timer.MillisecondsElapsedThisTurn} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
+                Console.WriteLine($"info depth {targetDepth} score {(isMateDetected ? "mate 99" : $"cp {bestEvaluation}")} nodes {_nodes} nps {Convert.ToInt64(Clamp(_nodes / ((0.001 * _timer.MillisecondsElapsedThisTurn) + 1), 0, long.MaxValue))} time {_timer.MillisecondsElapsedThisTurn} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
 #endif
                 alpha = bestEvaluation - 50;
                 beta = bestEvaluation + 50;
@@ -107,7 +107,7 @@ public class MyBot : IChessBot
                 Array.Copy(_killerMoves, _previousKillerMoves, _killerMoves.Length);
 
                 msSpentPerDepth = timer.MillisecondsElapsedThisTurn - msSpentPerDepth;
-                ++_targetDepth;
+                ++targetDepth;
             }
             while (!isMateDetected && msSpentPerDepth < _timePerMove * 0.5);
         }
@@ -127,12 +127,12 @@ public class MyBot : IChessBot
         }
 
 #if DEBUG
-        Console.WriteLine($"bestmove {bestMove.ToString()[7..^1]} score cp {bestEvaluation} depth {_targetDepth - 1} time {timer.MillisecondsElapsedThisTurn} nodes {_nodes} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
+        Console.WriteLine($"bestmove {bestMove.ToString()[7..^1]} score cp {bestEvaluation} depth {targetDepth - 1} time {timer.MillisecondsElapsedThisTurn} nodes {_nodes} pv {string.Join(' ', _pVTable.TakeWhile(m => !m.IsNull).Select(m => m.ToString()[7..^1]))}");
 #endif
         return bestMove.IsNull ? board.GetLegalMoves()[0] : bestMove;
     }
 
-    public /*internal */int NegaMax(int ply, int alpha, int beta, bool isQuiescence)
+    public /*internal */int NegaMax(int targetDepth, int ply, int alpha, int beta, bool isQuiescence)
     {
         if (_position.FiftyMoveCounter >= 100 || _position.IsRepeatedPosition() || _position.IsInsufficientMaterial())
             return 0;
@@ -140,12 +140,13 @@ public class MyBot : IChessBot
         if (!isQuiescence)
             if (_timer.MillisecondsElapsedThisTurn > _timePerMove)
                 throw new();
-            else if (ply > _targetDepth)
-                return _position.GetLegalMoves().Any()//.Length > 0
-                 ? NegaMax(ply, alpha, beta, true)  // Quiescence
-                 : EvaluateFinalPosition(ply);
-        //else if (_position.IsInCheck())           // TODO investigate, this makes the bot suggest null moves either other move
-        //    ++_targetDepth;
+            else if (ply > targetDepth)
+                if (_position.IsInCheck())
+                    ++targetDepth;
+                else
+                    return _position.GetLegalMoves().Any()//.Length > 0
+                            ? NegaMax(targetDepth, ply, alpha, beta, true)  // Quiescence
+                            : EvaluateFinalPosition(ply);
 
         // TODO: GetLegalMovesNonAlloc
         //Span<Move> spanLegalMoves = stackalloc Move[256];
@@ -236,7 +237,7 @@ public class MyBot : IChessBot
         foreach (var move in moves.OrderByDescending(move => Score(move, ply, isQuiescence)))
         {
             _position.MakeMove(move);
-            var evaluation = -NegaMax(ply + 1, -beta, -alpha, isQuiescence); // Invokes itself, either Negamax or Quiescence
+            var evaluation = -NegaMax(targetDepth, ply + 1, -beta, -alpha, isQuiescence); // Invokes itself, either Negamax or Quiescence
             _position.UndoMove(move);
 
             // Fail-hard beta-cutoff - refutation found, no need to keep searching this line
@@ -258,7 +259,7 @@ public class MyBot : IChessBot
                 #region CopyPVTableMoves
 
                 if (_pVTable[nextPvIndex].IsNull)
-                    Array.Clear(_pVTable, pvIndex + 1, _pVTable.Length - pvIndex - 1);
+                    Array.Clear(_pVTable, pvIndex + 1, 8_255 - pvIndex);  // 8_255 = _pVTable.Length - pvIndex - 1
                 else
                     Array.Copy(_pVTable, nextPvIndex, _pVTable, pvIndex + 1, 127 - ply);    // 128 - ply - 1
 
