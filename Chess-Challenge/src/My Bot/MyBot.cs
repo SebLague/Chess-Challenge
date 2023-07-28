@@ -47,16 +47,6 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         progress = Math.Min(board.GameMoveHistory.Length / 40f, 1);
-        int[] pst = Enumerable.Range(0, 64).ToArray();
-        for (int rank = 0; rank < 8; rank++)
-        {
-            for (int file = 0; file < 8; file++)
-            {
-                Piece piece = new Piece(PieceType.Pawn, board.IsWhiteToMove, new Square(file, rank));
-                pst[rank * 8 + file] = (int)GetPieceSquareValue(piece);
-            }
-        }
-        SquareTableHelper.VisualizeSquareTable(pst);
         Search(board, DEPTH, alpha, beta);
         return bestMove;
     }
