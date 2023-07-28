@@ -33,7 +33,7 @@ namespace ChessChallenge.Application
                 controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot, ChallengeController.PlayerType.EvilBot);
             }
 
-            if(!string.IsNullOrWhiteSpace(NetworkedBot.ROOM_ID))
+            if(!string.IsNullOrWhiteSpace(NetworkedBot.ROOM_ID) && !(ServerConnectionHelper.TcpClient?.Connected ?? false))
             {
                 // Page buttons
                 buttonPos.Y += breakSpacing;
@@ -47,12 +47,12 @@ namespace ChessChallenge.Application
                     ServerConnectionHelper.ConnectToServerAsync(NetworkedBot.SERVER_HOSTNAME, NetworkedBot.SERVER_PORT,
                         NetworkedBot.ROOM_ID, NetworkedBot.PROTOCOL_VERSION).Wait();
                     if (ServerConnectionHelper.StartsOffWhite)
-                        controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot,
-                            ChallengeController.PlayerType.NetworkedBot);
-                    else
-                    {
                         controller.StartNewBotMatch(ChallengeController.PlayerType.NetworkedBot,
                             ChallengeController.PlayerType.MyBot);
+                    else
+                    {
+                        controller.StartNewBotMatch(ChallengeController.PlayerType.MyBot,
+                            ChallengeController.PlayerType.NetworkedBot);
                     }
                 }
             }
