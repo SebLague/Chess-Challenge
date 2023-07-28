@@ -11,6 +11,7 @@ public class MyBot : IChessBot
     private static int[][] PSTS;
 
     private static int WORST_SCORE = -Int32.MaxValue;
+    
     /// <summary>the depth to which the bot searches</summary>
     private int DEPTH = 4;
     private Move bestMove = Move.NullMove;
@@ -208,8 +209,6 @@ public class MyBot : IChessBot
             {
                 return alpha;
             }
-
-
         }
         return bestScore;
     }
