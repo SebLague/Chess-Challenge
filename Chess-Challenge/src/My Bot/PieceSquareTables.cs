@@ -146,7 +146,8 @@ namespace ChessChallenge.DriedCod
               .Concat(KING_END)
               .ToArray();
 
-            ulong[] encodedPieceSquareTables = EncodeTable(PIECE_SQUARE_TABLE);
+            int[] normalizedPieceSquareTable = NormalizeTable(PIECE_SQUARE_TABLE, PIECE_SQUARE_TABLE.Min(), PIECE_SQUARE_TABLE.Max());
+            ulong[] encodedPieceSquareTables = EncodeTable(normalizedPieceSquareTable, 56);
             string[] hexStrings = encodedPieceSquareTables
               .Select(x => GetHexString(x) + ", ") //
               .Select((x, i) => ((i + 1) % 8 == 0) ? $"{x}//\n" : x)
