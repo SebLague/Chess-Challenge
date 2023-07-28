@@ -120,9 +120,9 @@ public class MyBot : IChessBot
             materialScore += PIECE_VALUES[(int)piece.PieceType] * factor;
             positionScore += GetPieceSquareValue(piece) * factor;
         }
-        return 45 * materialScore //
+        return 50 * materialScore //
            + 25 * mobilityScore //
-          + 30 * positionScore;
+          + 25 * positionScore;
     }
 
     private int CalculateMobilityScore(Board board)

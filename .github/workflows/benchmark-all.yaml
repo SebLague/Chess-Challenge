@@ -24,6 +24,7 @@ jobs:
       jobs: 40
 
   stockfish:
+    if: false
     uses: ./.github/workflows/benchmark-publish.yaml
     strategy:
       matrix:
@@ -42,7 +43,7 @@ jobs:
         echo "STOCKFISH_LEVEL=${{ matrix.level }}" >> $GITHUB_ENV
 
   comparebot:
-    if: false
+    if: true
     uses: ./.github/workflows/benchmark-publish.yaml
     with:
       opponent: CompareBot
