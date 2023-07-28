@@ -2,7 +2,7 @@
 using System;
 using System.Linq;
 
-public class MyBot : IChessBot
+public class CompareBot: IChessBot
 {
     //                                    .  P    K    B    R    Q    K
     private static int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
@@ -15,7 +15,7 @@ public class MyBot : IChessBot
     private float progress = 0;
     int[] PIECE_SQUARE_TABLE;
 
-    public MyBot()
+    public CompareBot()
     {
 
         PIECE_SQUARE_TABLE = PIECE_SQUARE_TABLE_RAW.Aggregate(new int[0], (decoded, rank) =>
