@@ -17,7 +17,7 @@ public class NetworkedBot : IChessBot
     
     public const string PROTOCOL_VERSION = "0.1";
 
-    public const string SERVER_HOSTNAME = "127.0.0.1";
+    public const string SERVER_HOSTNAME = "chess.britto.tech";
     public const int SERVER_PORT = 4578;
 
 
@@ -30,7 +30,11 @@ public class NetworkedBot : IChessBot
     public void StartGame(Board board)
     {
         var cancelSource = new CancellationTokenSource();
-        
+
+        if (!(ServerConnectionHelper.TcpClient?.Connected ?? false))
+        {
+            return;
+        }
         // Reset time until other player joins
         Task.Run(() =>
         {
@@ -38,7 +42,6 @@ public class NetworkedBot : IChessBot
             {
                 if(cancelSource.IsCancellationRequested)
                     break;
-                Console.WriteLine("ReSET");
                 SetSecondsElapsed();
                 Task.Delay(2000, cancelSource.Token).Wait(cancelSource.Token);
             }
@@ -81,7 +84,8 @@ public class NetworkedBot : IChessBot
 
         if (!_inGame)
         {
-            throw new Exception("Failed to start game!");
+            ConsoleHelper.Log("Failed to start game!");
+            return Move.NullMove;
         }
         
         if (board.GameMoveHistory.Length > 0)
