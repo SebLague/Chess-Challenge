@@ -3,11 +3,12 @@ using static TeenyLynx.Encoder.MVVLVAEncoder;
 using Lynx;
 using TeenyLynx.Encoder;
 
-TestGenerator();
-
-EncodePositionScoreLynxDataDecimal();
+//TestGenerator();
+//EncodeUlongLynxData();
+//EncodePositionScoreLynxDataDecimal();
 
 TeenyLynxEncoder.EncodeLynxData();
+TeenyLynxEncoder.EncodeLynxDataOptimized();
 
 static void TestGenerator()
 {

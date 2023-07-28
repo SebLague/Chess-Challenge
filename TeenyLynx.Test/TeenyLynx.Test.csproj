@@ -24,6 +24,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Chess-Challenge\Chess-Challenge.csproj" />
+    <ProjectReference Include="..\TeenyLynx.Encoder\TeenyLynx.Encoder.csproj" />
   </ItemGroup>
 
 </Project>
