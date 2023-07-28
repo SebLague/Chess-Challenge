@@ -119,7 +119,10 @@ public class MyBot : IChessBot
         {
 #if DEBUG
             ;
-            //Console.WriteLine($"Exception: {e.Message}\n{e.StackTrace}");
+            if (!e.Message.StartsWith("Exception of type 'System.Exception' was thrown"))
+            {
+                Console.WriteLine($"Exception: {e.Message}\n{e.StackTrace}");
+            }
 #endif
         }
 
