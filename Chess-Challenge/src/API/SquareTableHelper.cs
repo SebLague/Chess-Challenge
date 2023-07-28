@@ -43,11 +43,6 @@ namespace ChessChallenge.API
 
         }
 
-        public static ulong EncodeRow(int[] row)
-        {
-            return row.Select(square => (ulong)square & 255UL).Aggregate(0UL, (acc, square) => (acc << 8) | (ulong)square);
-        }
-
         public static ulong[] EncodeTable(int[] table, int XORValue = 0)
         {
             ulong[] encodedTable = new ulong[table.Length / 8];
@@ -67,14 +62,6 @@ namespace ChessChallenge.API
 
         public static int[] DecodeTable(ulong[] table)
         {
-            /* int[] decodedTable = new int[table.Length * 8]; */
-            /* for (int rank = 0; rank < table.Length; rank++) { */
-            /*   ulong encodedRank = table[rank]; */
-            /*   for (int file = 0; file < 8; file++) { */
-            /*     decodedTable[rank * 8 + file] = (int)(sbyte)((encodedRank & (255UL << 8*file)) >> 8*file ); */
-            /*   } */
-            /* } */
-            /* return decodedTable; */
             return table
               .Aggregate(new int[0], (decoded, rank) =>
               {

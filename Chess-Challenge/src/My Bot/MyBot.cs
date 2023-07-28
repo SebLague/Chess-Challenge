@@ -154,7 +154,6 @@ public class MyBot : IChessBot
             QUEEN_PST_START, KING_PST_START,   PAWN_PST_END,     KNIGHT_PST_END,
             BISHOP_PST_END,  ROOK_PST_END,     QUEEN_PST_END,    KING_PST_END,
         };
-        GeneratePieceSquareTables();
     }
 
     private float Lerp(float a, float b, float t)
@@ -167,7 +166,6 @@ public class MyBot : IChessBot
     {
         progress = Math.Min(board.GameMoveHistory.Length / 40f, 1);
         Search(board, DEPTH, alpha, beta);
-        System.Threading.Thread.Sleep(60 * 1000);
         return bestMove;
     }
 
@@ -264,7 +262,7 @@ public class MyBot : IChessBot
         return -theirMobility + board.GetLegalMoves().Length;
     }
 
-    static ulong[] PIECE_SQUARE_TABLES = {
+    ulong[] PIECE_SQUARE_TABLES = {
         0x0000000000000000, 0xf5227e445f3d8662, 0xec1938411f1a07fa, 0xe9110c1715060df2, 0xe70a06110cfbfee5, 0xf4210303f6fcfce6, 0xea2618f1e9ecffdd, 0x0000000000000000, //
         0x0000000000000000, 0xbba58493869eadb2, 0x545235384355645e, 0x111104fe050d1820, 0xff03f8f9f9fd090d, 0xf8fffb0001fa0704, 0xf902000d0a08080d, 0x0000000000000000, //
         0x95f19f3dcfdea759, 0xef073e172448d7b7, 0x2c49815441253cd1, 0x16124525351311f7, 0xf815131c0d1004f3, 0xf01911130a0cf7e9, 0xedf212fffdf4cbe3, 0xe9ede4efdfc6eb97, //
