@@ -16,22 +16,23 @@ concurrency:
 
 jobs:
   evilbot:
+    if: false
     uses: ./.github/workflows/benchmark-publish.yaml
     with:
       opponent: EvilBot
-      threads: 5
-      jobs: 10
+      threads: 1
+      jobs: 20
 
   stockfish:
     uses: ./.github/workflows/benchmark-publish.yaml
     strategy:
       matrix:
-        level: [0, 2, 5]
+        level: [2]
     with:
       opponent: Stockfish
       opponent_long: Stockfish (${{ matrix.level }})
-      threads: 5
-      jobs: 10
+      threads: 1
+      jobs: 30
       fens: 250
       run: |
         cd Chess-Challenge
@@ -41,8 +42,9 @@ jobs:
         echo "STOCKFISH_LEVEL=${{ matrix.level }}" >> $GITHUB_ENV
 
   comparebot:
+    if: false
     uses: ./.github/workflows/benchmark-publish.yaml
     with:
       opponent: CompareBot
-      threads: 5
+      threads: 1
       jobs: 20

@@ -1,6 +1,7 @@
 ﻿using ChessChallenge.API;
 using System;
 using System.Linq;
+using System.Data;
 using static ChessChallenge.Application.ConsoleHelper;
 
 public class MyBot : IChessBot
@@ -11,8 +12,10 @@ public class MyBot : IChessBot
 
     private static int WORST_SCORE = -Int32.MaxValue;
     /// <summary>the depth to which the bot searches</summary>
-    private int DEPTH = 3;
+    private int DEPTH = 4;
     private Move bestMove = Move.NullMove;
+    private double alpha = -Int32.MaxValue;
+    private double beta = Int32.MaxValue;
 
     // two for each piece type (beginning and end game)
     int[] PAWN_PST_START = {
@@ -160,22 +163,22 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         progress = Math.Min(board.GameMoveHistory.Length / 40f, 1);
-        Search(board, DEPTH);
+        Search(board, DEPTH, alpha,beta);
         return bestMove;
     }
 
     /// <summary>
-    /// Search is a recursive function that searches for the best move at a given
-    /// depth.
+    /// Search is a recursive function that searches for the best move at a given depth.
     /// </summary>
     /// <param name="board">current board</param>
     /// <param name="depth">current search depth</param>
     /// <remarks>the depth is decreased by 1 for each recursive call</remarks>
-    /// <param name="maxDepth">maximal depth to be searched + the depth at which
-    /// the boards are ultimately evaluated</param> <returns>score of the board at
-    /// depth=0 with the best score obtained</returns>
-    double Search(Board board, int depth)
+    /// <param name="maxDepth">maximal depth to be searched + the depth at which the boards are ultimately evaluated</param>
+    /// <returns>score of the board at depth=0 with the best score obtained</returns>
+    double Search(Board board, int depth, double alpha, double beta)
     {
+        //Log("alpha" + alpha);
+        //Log("Beta" + beta);
         // we have reached the depth - evaluate the board for the current color
         if (depth == 0)
             return Evaluate(board);
@@ -189,14 +192,24 @@ public class MyBot : IChessBot
             board.MakeMove(move);
             // negate the score because after making a move,
             // we are looking at the board from the other player's perspective
-            double score = -Search(board, depth - 1);
+            double score = -Search(board, depth - 1, -beta, -alpha);
+            board.UndoMove(move);
             if (score > bestScore)
             {
                 bestScore = score;
                 if (depth == DEPTH)
                     this.bestMove = move;
             }
-            board.UndoMove(move);
+            if (bestScore > alpha)
+            {
+                alpha=bestScore;
+            }
+            if (alpha >= beta)
+            {
+                return alpha;
+            }
+
+
         }
         return bestScore;
     }
