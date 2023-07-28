@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   evilbot:
+    if: false
     uses: ./.github/workflows/benchmark-publish.yaml
     with:
       opponent: EvilBot
