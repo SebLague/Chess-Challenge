@@ -278,7 +278,6 @@ public class MyBot : IChessBot
         {
             int targetPiece = (int)PieceType.Pawn;    // Important to initialize to P or p, due to en-passant captures
             for (int pieceIndex = 0; ++pieceIndex < 7;)
-            {
                 if (SquareIsSet(
                     _position.GetPieceBitboard((PieceType)pieceIndex, !_position.IsWhiteToMove),
                     move.TargetSquare))
@@ -286,7 +285,6 @@ public class MyBot : IChessBot
                     targetPiece = pieceIndex;
                     break;
                 }
-            }
 
             return 100_000 +
                 Magic[441 + targetPiece + 6 * (int)move.MovePieceType];      // MVVLVATest.cs, current expression as a simplification of
