@@ -1,100 +1,149 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using ChessChallenge.Application;
+using Timer = ChessChallenge.API.Timer;
+using System.Xml.Linq;
 
 //using static ChessChallenge.Application.ConsoleHelper;
 
+public class Edge : IComparable<Edge>
+{
+    public Move move;
+    public Node node;
+
+    public Edge(Move move, Node node)
+    {
+        this.move = move;
+        this.node = node;
+    }
+    public int CompareTo(Edge? other)
+    {
+        return other.node.moveStrength.CompareTo(this.node.moveStrength);
+    }
+}
+public class Node
+{
+    public int moveStrength { get; set; }
+    //public ulong? position { get; set; } = null;
+    public List<Edge>? edges { get; set; } = null;
+
+    public Node(int moveStrength)
+    {
+        this.moveStrength = moveStrength;
+    }
+}
+
 public class MyBot : IChessBot
 {
-    double[] pieceValues = { 0, 1, 3.2, 3, 5, 0, 500 };
+    private readonly int[] _pieceValues = { 0, 100, 320, 300, 500, 900, 50000 };
+
+    private Node? _root = null;
+
+    private bool _isWhite = false;
+
+    private int _bigNumber = Int32.MaxValue / 10;
 
     public Move Think(Board board, Timer timer)
     {
-        int moveTime = 500;
-
-        //ConsoleHelper.Log("Thinking");
-
-        Move[] allMoves = board.GetLegalMoves();
-
-        Move bestMove = allMoves[0];
-        double bestMoveEval = 1000000;
-        foreach (var move in allMoves)
+        //_root = new Node();
+        if (_root == null)
         {
-            board.MakeMove(move);
-            var eval = Search(board, 3);
-            if (eval < bestMoveEval)
+            _isWhite = board.IsWhiteToMove;
+            _root = new Node(_isWhite ? -_bigNumber : _bigNumber);
+        }
+        else
+        {
+            var lastMove = board.GameMoveHistory[^1];
+            var chosenEdge = _root.edges?.Where(edge => edge.move.Equals(lastMove))?.First();
+            if (chosenEdge != null)
             {
-                bestMoveEval = eval;
-                bestMove = move;
+                _root = chosenEdge.node;
             }
-            board.UndoMove(move);
+            else
+            {
+                _root = new Node(_isWhite ? -_bigNumber : _bigNumber);
+            }
         }
 
-        return bestMove;
+        
+        Search(board, _root, 4);
+
+        ConsoleHelper.Log(_root.moveStrength.ToString());
+        var ourMove = _isWhite ? _root.edges.First() : _root.edges.Last();
+        _root = ourMove.node;
+        return ourMove.move;
     }
 
-    // Test if this move gives checkmate
-    bool MoveIsCheckmate(Board board, Move move)
-    {
-        board.MakeMove(move);
-        bool isMate = board.IsInCheckmate();
-        board.UndoMove(move);
-        return isMate;
-    }
-
-    double Search(Board board, int depth)
+    void Search(Board board, Node node, int depth)
     {
         if (depth == 0)
         {
-            return EvaluatePosition(board);
+            node.moveStrength = EvaluatePosition(board);
+            return;
         }
 
-        Move[] allMoves = board.GetLegalMoves();
-        if (allMoves.Length == 0)
+        if (node.edges == null)
         {
-            return EvaluatePosition(board);
+            node.edges = board.GetLegalMoves().Select(move => new Edge(move, new Node(!board.IsWhiteToMove ? -_bigNumber : _bigNumber))).ToList();
         }
-        Move moveToPlay = allMoves[0];
-        var opponentsEvaluation = 1000000.0;
 
-        foreach (Move move in allMoves)
+        if (node.edges.Count == 0)
         {
-            board.MakeMove(move);
-            var evaluation = Search(board, depth - 1);
-            if (evaluation < opponentsEvaluation)
-            {
-                opponentsEvaluation = evaluation;
-            }
-            board.UndoMove(move);
+            node.moveStrength = EvaluatePosition(board);
+            return;
         }
 
-        return -opponentsEvaluation;
+        foreach (var edge in node.edges)
+        {
+            board.MakeMove(edge.move);
+            Search(board, edge.node, depth - 1);
+            board.UndoMove(edge.move);
+        }
+
+        if (depth == 4)
+        {
+            ConsoleHelper.Log(String.Join(',', node.edges.Select(edge => edge.node.moveStrength)));
+            node.edges.Sort();
+            ConsoleHelper.Log(String.Join(',', node.edges.Select(edge => edge.node.moveStrength)));
+        }
+        else
+        {
+            node.edges.Sort();
+        }
+
+        node.moveStrength = board.IsWhiteToMove ? node.edges.First().node.moveStrength : node.edges.Last().node.moveStrength;
     }
 
 
-    double EvaluatePosition(Board board)
+    int EvaluatePosition(Board board)
     {
-        if (board.IsInCheckmate()) { return -100000; }
-
-        var allPieceLists = board.GetAllPieceLists();
-
-        var evaluation = 0.0;
-
-        foreach (var pieceList in allPieceLists)
+        int evaluation = 0;
+        if (board.IsInCheckmate())
         {
-            double pieceListValue = pieceList.Count * pieceValues[(int)pieceList.TypeOfPieceInList];
-
-            if (!pieceList.IsWhitePieceList)
-            {
-                pieceListValue *= -1;
-            }
-
-            evaluation += pieceListValue;
+            evaluation = board.IsWhiteToMove ? -_bigNumber : _bigNumber;
         }
-
-        if (!board.IsWhiteToMove)
+        else if (board.IsDraw())
         {
-            evaluation *= -1;
+            evaluation = 0;
+        }
+        else
+        {
+            var allPieceLists = board.GetAllPieceLists();
+
+            foreach (var pieceList in allPieceLists)
+            {
+                int pieceListValue = pieceList.Count * _pieceValues[(int)pieceList.TypeOfPieceInList];
+
+                if (!pieceList.IsWhitePieceList)
+                {
+                    pieceListValue *= -1;
+                }
+
+                evaluation += pieceListValue;
+            }
         }
 
         return evaluation;
