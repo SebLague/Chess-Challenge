@@ -9,7 +9,7 @@ public class MyBot : IChessBot
     private static int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
     private static int WORST_SCORE = -Int32.MaxValue;
     /// <summary>the depth to which the bot searches</summary>
-    private int DEPTH = 6;
+    private int DEPTH = 5;
     private Move bestMove = Move.NullMove;
     private double alpha = -Int32.MaxValue;
     private double beta = Int32.MaxValue;
@@ -53,11 +53,10 @@ public class MyBot : IChessBot
         if (diff > 0 || aborted)
             DEPTH = Math.Max(DEPTH - 1, 2);
         else
-            DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 5 : 4);
-
+            DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 6 : 5);
+        //Console.WriteLine("Depth" + DEPTH);
         return bestMove;
     }
-
     /// <summary>
     /// Search is a recursive function that searches for the best move at a given depth.
     /// </summary>
@@ -172,7 +171,6 @@ public class MyBot : IChessBot
         int[] heuristicScores = new int[legalMoves.Length];
         for (int i=0;i<legalMoves.Length;i++)
         {
-
             if (legalMoves[i].IsCapture)
                 heuristicScores[i] += 50;
             if (legalMoves[i].IsCastles)
