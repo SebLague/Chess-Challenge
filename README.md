@@ -5,19 +5,24 @@ Once submissions close, these bots will battle it out to discover which bot is b
 I will then create a video exploring the implementations of the best and most unique/interesting bots.
 I also plan to make a small game that features these most interesting/challenging entries, so that everyone can try playing against them.
 
+## Submission Due Date
+October 1st 2023.<br>
+Entries can be submitted over [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).<br>
+You are free to edit your entry at any point up to the due date.
+
 ## Change Log
-I unfortunately missed a serious bug in the API and have had to update the project. Please keep an eye on the change log here in case I've made any other horrifying mistakes. Some additions and improvements may also be made to the API in the first few weeks of the challenge, but breaking changes will be strictly avoided. The version you are currently using will be printed to the console when running the program (unless you are using v1.0, in which case nothing will be printed).
+It has been necessary to make some bug fixes to the original project, and I've also been tempted (by some great suggestions from the community) into making a few non-breaking improvements/additions to the API. I realize that changes can be frustrating during a challenge though, and so will commit to freezing the API from August 1st.
+
 * <b>V1.1</b> Fixed major bug affecting `board.GetPiece()` and `PieceList` functions. Added `Board.CreateBoardFromFEN()`.
 * <b>V1.11</b> UI changes: Added coordinate names to board UI and fixed human player input bug.
 * <b>V1.12</b> Small fixes to `board.IsDraw()`: Fifty move counter is now updated properly during search, and insufficient material is now detected for lone bishops on the same square colour.
 * <b>V1.13</b> Fixed issue with `board.ZobristKey` where value would sometimes be different after making and undoing a move. Added an alternative function for getting moves `board.GetLegalMovesNonAlloc()` (see docs for more info).
 * <b>V1.14</b> A handful of additions to the Board API: `board.IsInsufficientMaterial()`, `board.IsRepeatedPosition()`, `board.GameRepetitionHistory`, `board.FiftyMoveCounter`, `board.GameMoveHistory`, `board.GameStartFenString`.
 * <b>V1.15</b> Fixed incorrect `move.CapturePieceType` for en-passant moves and moves in `board.GameMoveHistory`. Added `BitboardHelper.VisualizeBitboard()` to help with debugging bitboards.
-* <b>V1.16</b> Added `timer.GameStartTimeMilliseconds`, `timer.OpponentMillisecondsRemaining`, and `board.ForceSkipTurn()`.
+* <b>V1.16</b> Added `timer.GameStartTimeMilliseconds`, `timer.OpponentMillisecondsRemaining`, `board.ForceSkipTurn()`.
+* <b>V1.17</b> Added `BitboardHelper.GetPieceAttacks()` and optimized `board.SquareIsAttackedByOponent()`. Writing `#DEBUG` in a comment will now exclude code in that line from counting towards the token limit (for testing only of course).
 
-## Submission Due Date
-October 1st 2023.<br>
-You can submit your entry [here](https://forms.gle/6jjj8jxNQ5Ln53ie6).
+[There will be no API changes after August 1]
 
 ## How to Participate
 * Install an IDE such as [Visual Studio](https://visualstudio.microsoft.com/downloads/).
