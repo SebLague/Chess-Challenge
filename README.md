@@ -71,15 +71,20 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
 ## FAQ and Troubleshooting
+* Unable to resolve [package name]
+  * nuget.org is not included as a package source by default, you will have to add it.
+  * Run `dotnet nuget add source https://api.nuget.org/v3/index.json -n "nuget.org"`
+  * Run `dotnet restore`
+  * See [#2](https://github.com/SebLague/Chess-Challenge/issues/2) for more details.
 * Will the final tournament games be played from the standard starting position, or from custom positions?
   * Games will be played from the standard starting position. If tiebreak games are required, custom positions will be used.
+* [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
 * [Unable to build/run the project from my IDE/Code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
   * After downloading the project and installing .Net 6.0, open a terminal / command prompt window.
   * Navigate to the folder where Chess-Challenge.csproj is located using the `cd` command.
     * For example: `cd C:\Users\MyName\Desktop\Chess-Challenge\Chess-Challenge`
   * Now use the command: `dotnet run`
   * This should launch the project. If not, open an issue with any error messages and relevant info.
-*  [Running on Linux](https://github.com/SebLague/Chess-Challenge/discussions/3)
 * Issues with illegal moves or errors when making/undoing a move
   * Make sure that you are making and undoing moves in the correct order, and that you don't forget to undo a move when exiting early from a function for example.
 * How to tell what colour MyBot is playing
