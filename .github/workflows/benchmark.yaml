@@ -90,6 +90,7 @@ jobs:
 
     - name: Run Benchmark
       id: benchmark
+      timeout-minutes: 30
       run: |
         START_LINE=$(( ${{ matrix.chunk }} * ${{ needs.prepare.outputs.offset }} + 1 ))
         END_LINE=$(( $START_LINE + ${{ needs.prepare.outputs.offset }} - 1 ))
@@ -100,6 +101,7 @@ jobs:
         echo "=== benchmark.yaml FENS ==="
 
         cd Chess-Challenge
+        touch output.log
         dotnet run ${{ inputs.opponent }}> >(tee output.log)
         PID=$!
         while ! grep -q "Match finished:" output.log; do sleep 1; done
