@@ -102,7 +102,7 @@ jobs:
 
         cd Chess-Challenge
         touch output.log
-        dotnet run ${{ inputs.opponent }}> >(tee output.log)
+        dotnet run ${{ inputs.opponent }}> >(tee output.log) &
         PID=$!
         while ! grep -q "Match finished:" output.log; do sleep 1; done
         kill $PID
