@@ -41,22 +41,29 @@ namespace ChessChallenge.API
             return ((bitboard >> square.Index) & 1) != 0;
         }
 
+
+        /// <summary>
+        /// Returns index of the first bit that is set to 1. The bit will also be cleared to zero.
+        /// This can be useful for efficiently iterating over all the set squares in a bitboard.
+        /// </summary>
         public static int ClearAndGetIndexOfLSB(ref ulong bitboard)
         {
             return BitBoardUtility.PopLSB(ref bitboard);
         }
 
+        /// <summary>
+        /// Returns the number of bits that set to 1 in the given bitboard.
+        /// </summary>
         public static int GetNumberOfSetBits(ulong bitboard)
         {
             return BitBoardUtility.PopCount(bitboard);
         }
 
-
-
         /// <summary>
-        /// Returns a bitboard where each bit that is set to 1 represents a square that the given
-        /// piece type is able to attack. These attacks are calculated from the given square,
-        /// and take the given board state into account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// Returns a bitboard where each bit that is set to 1 represents a square that the given piece type is
+        /// able to attack. These attacks are calculated from the given square, and take the given board state into
+        /// account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// The isWhite parameter determines the direction of pawn captures.
         /// </summary>
         public static ulong GetPieceAttacks(PieceType pieceType, Square square, Board board, bool isWhite)
         {
@@ -73,9 +80,10 @@ namespace ChessChallenge.API
         }
 
         /// <summary>
-        /// Returns a bitboard where each bit that is set to 1 represents a square that the given
-        /// piece type is able to attack. These attacks are calculated from the given square,
-        /// and take the given board state into account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// Returns a bitboard where each bit that is set to 1 represents a square that the given piece type is
+        /// able to attack. These attacks are calculated from the given square, and take the given blockers into
+        /// account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// The isWhite parameter determines the direction of pawn captures.
         /// </summary>
         public static ulong GetPieceAttacks(PieceType pieceType, Square square, ulong blockers, bool isWhite)
         {
