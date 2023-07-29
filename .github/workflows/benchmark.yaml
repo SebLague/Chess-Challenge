@@ -90,6 +90,7 @@ jobs:
 
     - name: Run Benchmark
       id: benchmark
+      timeout-minutes: 30
       run: |
         START_LINE=$(( ${{ matrix.chunk }} * ${{ needs.prepare.outputs.offset }} + 1 ))
         END_LINE=$(( $START_LINE + ${{ needs.prepare.outputs.offset }} - 1 ))
@@ -99,12 +100,17 @@ jobs:
         cat Chess-Challenge/resources/Fens.txt
         echo "=== benchmark.yaml FENS ==="
 
-        ./scripts/benchmark.sh ${{ inputs.threads }} ${{ inputs.opponent }}> >(tee output.log)
-
-        WINS=$(grep -oP 'Benchmark finished: \+\K\d+' output.log)
-        DRAWS=$(grep -oP 'Benchmark finished: \+\d+ =\K\d+' output.log)
-        LOSSES=$(grep -oP 'Benchmark finished: \+\d+ =\d+ -\K\d+' output.log)
-        mv output.log ${{ matrix.chunk }}.log
+        cd Chess-Challenge
+        touch output.log
+        dotnet run ${{ inputs.opponent }}> >(tee output.log) &
+        PID=$!
+        while ! grep -q "Match finished:" output.log; do sleep 1; done
+        kill $PID
+        WINS=$(grep -oP 'Match finished: \+\K\d+' output.log)
+        DRAWS=$(grep -oP 'Match finished: \+\d+ =\K\d+' output.log)
+        LOSSES=$(grep -oP 'Match finished: \+\d+ =\d+ -\K\d+' output.log)
+        cd ..
+        mv Chess-Challenge/output.log ${{ matrix.chunk }}.log
         echo "+$WINS =$DRAWS -$LOSSES" >> res_${{ matrix.chunk }}.txt
 
     - name: Upload Results
