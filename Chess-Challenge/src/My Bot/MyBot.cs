@@ -1,5 +1,6 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 public class MyBot : IChessBot
@@ -8,7 +9,7 @@ public class MyBot : IChessBot
     private static int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
     private static int WORST_SCORE = -Int32.MaxValue;
     /// <summary>the depth to which the bot searches</summary>
-    private int DEPTH = 5;
+    private int DEPTH = 6;
     private Move bestMove = Move.NullMove;
     private double alpha = -Int32.MaxValue;
     private double beta = Int32.MaxValue;
@@ -53,6 +54,7 @@ public class MyBot : IChessBot
             DEPTH = Math.Max(DEPTH - 1, 2);
         else
             DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 5 : 4);
+
         return bestMove;
     }
 
@@ -78,9 +80,10 @@ public class MyBot : IChessBot
 
         double bestScore = WORST_SCORE;
         Move[] moves = board.GetLegalMoves();
+        Move[] orderedMoves = MoveOrderingHeuristics(moves);
         if (depth == DEPTH)
             bestMove = moves[0];
-        foreach (Move move in moves)
+        foreach (Move move in orderedMoves)
         {
             if (timer.MillisecondsElapsedThisTurn > timeForMove)
             {
@@ -164,6 +167,24 @@ public class MyBot : IChessBot
             progress);
     }
 
+    private Move[] MoveOrderingHeuristics(Move[] legalMoves)
+    {
+        int[] heuristicScores = new int[legalMoves.Length];
+        for (int i=0;i<legalMoves.Length;i++)
+        {
+
+            if (legalMoves[i].IsCapture)
+                heuristicScores[i] += 50;
+            if (legalMoves[i].IsCastles)
+                heuristicScores[i] += 50;
+            if (legalMoves[i].IsPromotion)
+                heuristicScores[i] += 100;
+        }
+        Array.Sort(heuristicScores, legalMoves);
+        Array.Reverse(legalMoves);
+        return legalMoves ;
+
+    }
 
     ulong[] PIECE_SQUARE_TABLE_RAW = {
         0x0000000000000000, 0xf11a10f6f0f2ffe8, 0xf8160202f9fdfdee, 0xef07040c08fdffee, 0xf00c08100e0409f6, 0xf211262c151205fc, 0xf917562e41295b43, 0x0000000000000000, //
