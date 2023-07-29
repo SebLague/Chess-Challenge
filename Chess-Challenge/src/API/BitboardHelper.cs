@@ -1,6 +1,7 @@
 
 namespace ChessChallenge.API
 {
+    using ChessChallenge.Application.APIHelpers;
     using ChessChallenge.Chess;
 
     /// <summary>
@@ -40,14 +41,62 @@ namespace ChessChallenge.API
             return ((bitboard >> square.Index) & 1) != 0;
         }
 
+
+        /// <summary>
+        /// Returns index of the first bit that is set to 1. The bit will also be cleared to zero.
+        /// This can be useful for efficiently iterating over all the set squares in a bitboard.
+        /// </summary>
         public static int ClearAndGetIndexOfLSB(ref ulong bitboard)
         {
             return BitBoardUtility.PopLSB(ref bitboard);
         }
 
+        /// <summary>
+        /// Returns the number of bits that set to 1 in the given bitboard.
+        /// </summary>
         public static int GetNumberOfSetBits(ulong bitboard)
         {
             return BitBoardUtility.PopCount(bitboard);
+        }
+
+        /// <summary>
+        /// Returns a bitboard where each bit that is set to 1 represents a square that the given piece type is
+        /// able to attack. These attacks are calculated from the given square, and take the given board state into
+        /// account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// The isWhite parameter determines the direction of pawn captures.
+        /// </summary>
+        public static ulong GetPieceAttacks(PieceType pieceType, Square square, Board board, bool isWhite)
+        {
+            return pieceType switch
+            {
+                PieceType.Pawn => GetPawnAttacks(square, isWhite),
+                PieceType.Knight => GetKnightAttacks(square),
+                PieceType.Bishop => GetBishopAttacks(square, board.AllPiecesBitboard),
+                PieceType.Rook => GetRookAttacks(square, board.AllPiecesBitboard),
+                PieceType.Queen => GetQueenAttacks(square, board.AllPiecesBitboard),
+                PieceType.King => GetKingAttacks(square),
+                _ => 0
+            };
+        }
+
+        /// <summary>
+        /// Returns a bitboard where each bit that is set to 1 represents a square that the given piece type is
+        /// able to attack. These attacks are calculated from the given square, and take the given blockers into
+        /// account (so queen, rook, and bishop attacks will be blocked by pieces that are in the way).
+        /// The isWhite parameter determines the direction of pawn captures.
+        /// </summary>
+        public static ulong GetPieceAttacks(PieceType pieceType, Square square, ulong blockers, bool isWhite)
+        {
+            return pieceType switch
+            {
+                PieceType.Pawn => GetPawnAttacks(square, isWhite),
+                PieceType.Knight => GetKnightAttacks(square),
+                PieceType.Bishop => GetBishopAttacks(square, blockers),
+                PieceType.Rook => GetRookAttacks(square, blockers),
+                PieceType.Queen => GetQueenAttacks(square, blockers),
+                PieceType.King => GetKingAttacks(square),
+                _ => 0
+            };
         }
 
         /// <summary>
@@ -99,6 +148,23 @@ namespace ChessChallenge.API
         {
             return isWhite ? Bits.WhitePawnAttacks[square.Index] : Bits.BlackPawnAttacks[square.Index];
         }
+
+        /// <summary>
+        /// A debug function for visualizing bitboards.
+        /// Highlights the squares that are set to 1 in the given bitboard with a red colour.
+        /// Highlights the squares that are set to 0 in the given bitboard with a blue colour.
+        /// </summary>
+        public static void VisualizeBitboard(ulong bitboard)
+        {
+            BitboardDebugState.BitboardDebugVisualizationRequested = true;
+            BitboardDebugState.BitboardToVisualize = bitboard;
+        }
+
+        /// <summary>
+        /// Clears the bitboard debug visualization
+        /// </summary>
+        public static void StopVisualizingBitboard() => BitboardDebugState.BitboardDebugVisualizationRequested = false;
+
         static ulong GetRookAttacks(Square square, ulong blockers)
         {
             ulong mask = Magic.RookMask[square.Index];

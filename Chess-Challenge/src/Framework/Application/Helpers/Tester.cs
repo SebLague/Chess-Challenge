@@ -1,4 +1,5 @@
 ﻿using ChessChallenge.API;
+using ChessChallenge.Application.APIHelpers;
 using ChessChallenge.Chess;
 using System;
 
@@ -6,11 +7,17 @@ namespace ChessChallenge.Application
 {
     public static class Tester
     {
+        const bool throwOnAssertFail = false;
+
         static MoveGenerator moveGen;
         static API.Board boardAPI;
 
-        public static void Run()
+        static bool anyFailed;
+
+        public static void Run(bool runPerft)
         {
+            anyFailed = false;
+
             MoveGenTest();
             PieceListTest();
             DrawTest();
@@ -18,29 +25,57 @@ namespace ChessChallenge.Application
             MiscTest();
             TestBitboards();
             TestMoveCreate();
-            Console.WriteLine("Tests Finished");
+            new SearchTest().Run(false);
+            new SearchTest().Run(true);
+          
+
+            if (runPerft)
+            {
+                RunPerft(true);
+                RunPerft(false);
+            }
+
+            if (anyFailed)
+            {
+                WriteWithCol("TEST FAILED");
+            }
+            else
+            {
+                WriteWithCol("ALL TESTS PASSED", ConsoleColor.Green);
+            }    
         }
 
-        public static void RunPerft()
+        public static void RunPerft(bool useStackalloc = true)
         {
             Warmer.Warm();
             int[] depths = { 5, 5, 6, 5, 5, 4, 5, 4, 6, 6, 6, 7, 4, 5, 6, 5, 6, 6, 10, 7, 6, 5, 4, 5, 4, 6, 6, 9, 4, 5 };
             ulong[] expectedNodes = { 4865609, 5617302, 11030083, 15587335, 89941194, 3894594, 193690690, 497787, 1134888, 1440467, 661072, 15594314, 1274206, 58773923, 3821001, 1004658, 217342, 92683, 5966690, 567584, 3114998, 42761834, 3050662, 10574719, 6871272, 71179139, 28859283, 7618365, 28181, 6323457 };
             string[] fens = { "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", "2b1b3/1r1P4/3K3p/1p6/2p5/6k1/1P3p2/4B3 w - - 0 42", "8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -", "r3k2r/pp3pp1/PN1pr1p1/4p1P1/4P3/3P4/P1P2PP1/R3K2R w KQkq - 4 4", "rnbq1k1r/pp1Pbppp/2p5/8/2B5/8/PPP1NnPP/RNBQK2R w KQ - 1 8", "r4rk1/1pp1qppp/p1np1n2/2b1p1B1/2B1P1b1/P1NP1N2/1PP1QPPP/R4RK1 w - - 0 10", "r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -", "r3k1nr/p2pp1pp/b1n1P1P1/1BK1Pp1q/8/8/2PP1PPP/6N1 w kq - 0 1", "3k4/3p4/8/K1P4r/8/8/8/8 b - - 0 1", "8/8/1k6/2b5/2pP4/8/5K2/8 b - d3 0 1", "5k2/8/8/8/8/8/8/4K2R w K - 0 1", "3k4/8/8/8/8/8/8/R3K3 w Q - 0 1", "r3k2r/1b4bq/8/8/8/8/7B/R3K2R w KQkq - 0 1", "r3k2r/8/3Q4/8/8/5q2/8/R3K2R b KQkq - 0 1", "2K2r2/4P3/8/8/8/8/8/3k4 w - - 0 1", "8/8/1P2K3/8/2n5/1q6/8/5k2 b - - 0 1", "4k3/1P6/8/8/8/8/K7/8 w - - 0 1", "8/P1k5/K7/8/8/8/8/8 w - - 0 1", "K1k5/8/P7/8/8/8/8/8 w - - 0 1", "8/k1P5/8/1K6/8/8/8/8 w - - 0 1", "8/8/2k5/5q2/5n2/8/5K2/8 b - - 0 1", "r1bq2r1/1pppkppp/1b3n2/pP1PP3/2n5/2P5/P3QPPP/RNB1K2R w KQ a6 0 12", "r3k2r/pppqbppp/3p1n1B/1N2p3/1nB1P3/3P3b/PPPQNPPP/R3K2R w KQkq - 11 10", "4k2r/1pp1n2p/6N1/1K1P2r1/4P3/P5P1/1Pp4P/R7 w k - 0 6", "1Bb3BN/R2Pk2r/1Q5B/4q2R/2bN4/4Q1BK/1p6/1bq1R1rb w - - 0 1", "n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", "8/PPPk4/8/8/8/8/4Kppp/8 b - - 0 1", "8/2k1p3/3pP3/3P2K1/8/8/8/8 w - - 0 1", "3r4/2p1p3/8/1P1P1P2/3K4/5k2/8/8 b - - 0 1", "8/1p4p1/8/q1PK1P1r/3p1k2/8/4P3/4Q3 b - - 0 1" };
-            Console.WriteLine("Running perft...");
+            Console.WriteLine($"Running perft (useStackalloc={useStackalloc})");
 
             var board = new Chess.Board();
             long timeTotal = 0;
+
             for (int i = 0; i < fens.Length; i++)
             {
                 board.LoadPosition(fens[i]);
                 boardAPI = new(board);
                 System.Diagnostics.Stopwatch sw = System.Diagnostics.Stopwatch.StartNew();
 
-                ulong result = SearchStackalloc(depths[i]);
+                ulong result;
+                if (useStackalloc)
+                {
+                    result = SearchStackalloc(depths[i]);
+                }
+                else
+                {
+                    result = Search(depths[i]);
+                }
+
                 if (result != expectedNodes[i])
                 {
                     Console.WriteLine("Error");
+                    anyFailed = true;
                     break;
                 }
                 else
@@ -96,13 +131,43 @@ namespace ChessChallenge.Application
 
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("a6")), "Square attacked wrong");
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("f3")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("c5")), "Square attacked wrong");
             Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("c3")), "Square attacked wrong");
             Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("h4")), "Square attacked wrong");
-            boardAPI.MakeMove(new API.Move("b5b7", boardAPI));
+            var m1 = new API.Move("b5b7", boardAPI);
+            boardAPI.MakeMove(m1);
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("e7")), "Square attacked wrong");
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("b8")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("d4")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("h6")), "Square attacked wrong");
             Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("a5")), "Square attacked wrong");
-            Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("e8")), "Square attacked wrong");
+            Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("b7")), "Square attacked wrong");
+            var m2 = new API.Move("f6e4", boardAPI);
+            boardAPI.MakeMove(m2);
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("f2")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("c3")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("h6")), "Square attacked wrong");
+            Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("h4")), "Square attacked wrong");
+ 
+            boardAPI.ForceSkipTurn();
+
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("f7")), "Square attacked wrong");
+            Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("d5")), "Square attacked wrong");
+
+            boardAPI.UndoSkipTurn();
+
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("c5")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("c3")), "Square attacked wrong");
+            Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("h5")), "Square attacked wrong");
+
+            boardAPI.UndoMove(m2);
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("b1")), "Square attacked wrong");
+            Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("a5")), "Square attacked wrong");
+
+            boardAPI.UndoMove(m1);
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("a5")), "Square attacked wrong");
+            Assert(boardAPI.SquareIsAttackedByOpponent(new Square("f8")), "Square attacked wrong");
+
         }
 
         static void CheckTest()
@@ -238,12 +303,13 @@ namespace ChessChallenge.Application
         static void MiscTest()
         {
             Console.WriteLine("Running Misc Tests");
+
+            // Captures
             var board = new Chess.Board();
             board.LoadPosition("1q3rk1/P5p1/4p2p/2ppP1N1/5Qb1/1PP5/7P/2R2RK1 w - - 0 28");
             boardAPI = new(board);
             Assert(boardAPI.IsWhiteToMove, "Colour to move wrong");
 
-            //var moves = boardAPI.GetLegalMoves();
             var captures = boardAPI.GetLegalMoves(true);
             Assert(captures.Length == 4, "Captures wrong");
             int numTested = 0;
@@ -278,12 +344,51 @@ namespace ChessChallenge.Application
                 }
             }
             Assert(numTested == 4, "Target square wrong");
+
+            // Game moves
+            string startPos = "r1bqkbnr/pppppppp/2n5/8/4P3/8/PPPP1PPP/RNBQKBNR w KQkq - 1 2";
+            board.LoadPosition(startPos);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("e4e5", board), false);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("c6e5", board), false);
+            var b = new Chess.Board(board);
+            boardAPI = new(b);
+            Assert(boardAPI.GameMoveHistory[0].MovePieceType is PieceType.Pawn, "Wrong game move history");
+            Assert(boardAPI.GameMoveHistory[0].CapturePieceType is PieceType.None, "Wrong game move history");
+            Assert(boardAPI.GameMoveHistory[1].MovePieceType is PieceType.Knight, "Wrong game move history");
+            Assert(boardAPI.GameMoveHistory[1].CapturePieceType is PieceType.Pawn, "Wrong game move history");
+            Assert(boardAPI.GameStartFenString == startPos, "Wrong game start fen");
+            Assert(boardAPI.GetFenString() == "r1bqkbnr/pppppppp/8/4n3/8/8/PPPP1PPP/RNBQKBNR w KQkq - 0 3", "Wrong game fen");
+
+            // Test for bug: Invalid target piece in capture when en passant is available
+            string[] invalidCaptureFens =
+            {
+                "r1b1r1k1/ppp2pp1/7p/2Pp4/4q3/PQ6/4PPPP/3RKB1R w K d6 0 16", // c5d6
+                "8/8/4k3/8/5PpP/6P1/7K/8 b - f3 0 73" // g4f3
+            };
+            foreach (var fen in invalidCaptureFens)
+            {
+                board.LoadPosition(fen);
+                boardAPI = new(board);
+                captures = boardAPI.GetLegalMoves(true);
+                foreach (var c in captures)
+                {
+                    Assert(c.MovePieceType != PieceType.None, $"Move piece type wrong for move {c}");
+                    Assert(c.CapturePieceType != PieceType.None, $"Capture piece type wrong for move {c}");
+                }
+            }
+
+            board.LoadPosition(invalidCaptureFens[0]);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("c5d6", board), false);
+            boardAPI = new(board);
+            Assert(boardAPI.GameMoveHistory[0].CapturePieceType == PieceType.Pawn, "Wrong capture type: game history");
+            Assert(boardAPI.GameMoveHistory[0].IsEnPassant, "Wrong move flag: move history");
+
         }
 
         static void MoveGenTest()
         {
             Console.WriteLine("Running move gen tests");
-            ChessChallenge.Chess.Board board = new();
+            Chess.Board board = new();
             moveGen = new();
 
             string[] testFens =
@@ -303,7 +408,63 @@ namespace ChessChallenge.Application
                 board.LoadPosition(testFens[i]);
                 boardAPI = new API.Board(board);
                 ulong result = Search(testDepths[i]);
-                Assert(result == testResults[i], "TEST FAILED");
+                Assert(result == testResults[i], "Movegen test failed");
+            }
+
+            board.LoadPosition("r2q2k1/pp2rppp/3p1n2/1R1Pn3/8/2PB1Q1P/P4PP1/2B2RK1 w - - 7 16");
+            boardAPI = new(board);
+
+            API.Move m1 = new("f3f6", boardAPI);
+            Assert(RecreateOpponentAttackMap() == 18446743649919696896ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 43, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 3, "Wrong capture count");
+           
+            boardAPI.MakeMove(m1);
+            Assert(RecreateOpponentAttackMap() == 68361585683595006ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 31, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 2, "Wrong capture count");
+            boardAPI.ForceSkipTurn();
+            Assert(RecreateOpponentAttackMap() == 18446743065535709184ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 48, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 7, "Wrong capture count");
+            boardAPI.ForceSkipTurn();
+            Assert(RecreateOpponentAttackMap() == 68361585683595006ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 31, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 2, "Wrong capture count");
+            boardAPI.UndoSkipTurn();
+            Assert(RecreateOpponentAttackMap() == 18446743065535709184ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 48, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 7, "Wrong capture count");
+            boardAPI.UndoSkipTurn();
+            Assert(RecreateOpponentAttackMap() == 68361585683595006ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 31, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 2, "Wrong capture count");
+            boardAPI.UndoMove(m1);
+            Assert(RecreateOpponentAttackMap() == 18446743649919696896ul, "Wrong attack map");
+            Assert(boardAPI.GetLegalMoves().Length == 43, "Wrong move count");
+            Assert(boardAPI.GetLegalMoves(true).Length == 3, "Wrong capture count");
+
+            Span<API.Move> moveList = stackalloc API.Move[218];
+            boardAPI.GetLegalMovesNonAlloc(ref moveList);
+            Span<API.Move> moveListDupe = stackalloc API.Move[218];
+            boardAPI.GetLegalMovesNonAlloc(ref moveListDupe);
+            Assert(moveList.Length == 43 && moveListDupe.Length == 43, "Move gen wrong");
+            Span<API.Move> moveListAtk = stackalloc API.Move[218];
+            boardAPI.GetLegalMovesNonAlloc(ref moveListAtk, true);
+            Assert(moveListAtk.Length == 3, "Move gen wrong");
+            Assert(RecreateOpponentAttackMap() == 18446743649919696896ul, "Wrong attack map");
+
+            ulong RecreateOpponentAttackMap()
+            {
+                ulong bb = 0;
+                for (int i = 0; i < 64; i ++)
+                {
+                    if (boardAPI.SquareIsAttackedByOpponent(new Square(i)))
+                    {
+                        BitboardHelper.SetSquare(ref bb, new Square(i));
+                    }
+                }
+                return bb;
             }
 
         }
@@ -360,17 +521,103 @@ namespace ChessChallenge.Application
         {
             if (!condition)
             {
-                LogError(msg);
+                WriteWithCol(msg);
+                anyFailed = true;
+                if (throwOnAssertFail)
+                {
+                    throw new Exception();
+                }
             }
         }
 
 
-        static void LogError(string msg)
+        static void WriteWithCol(string msg, ConsoleColor col = ConsoleColor.Red)
         {
-            Console.ForegroundColor = ConsoleColor.Red;
+            Console.ForegroundColor = col;
             Console.WriteLine(msg);
             Console.ResetColor();
         }
 
+        public class SearchTest
+        {
+            API.Board board;
+            bool useStackalloc;
+            int numLeafNodes;
+            int numCalls;
+            long miscSumTest;
+
+            public void Run(bool useStackalloc)
+            {
+                this.useStackalloc = useStackalloc;
+                Console.WriteLine("Running misc search test | stackalloc = " + useStackalloc);
+                Chess.Board b = new();
+                b.LoadPosition("1r4k1/2P1r1pp/3p4/4n1Q1/1p6/2PB3P/P3pPP1/2B3K1 w - - 7 16");
+                board = new API.Board(b);
+                Search(4);
+
+                Assert(miscSumTest == 101146355, "Misc search test failed");
+            }
+
+            void Search(int plyRemaining)
+            {
+               
+   
+                numCalls++;
+                var square = new Square(numCalls % 64);
+                miscSumTest += (int)boardAPI.GetPiece(square).PieceType;
+                miscSumTest += boardAPI.GetAllPieceLists()[numCalls % 12].Count;
+                miscSumTest += (long)(boardAPI.ZobristKey % 100);
+                miscSumTest += boardAPI.IsInCheckmate() ? 1 : 0;
+
+                if (numCalls % 6 == 0)
+                {
+                    miscSumTest += boardAPI.IsInCheck() ? 1 : 0;
+                }
+
+                if (numCalls % 18 == 0)
+                {
+                    miscSumTest += boardAPI.SquareIsAttackedByOpponent(square) ? 1 : 0;
+                }
+
+                if (plyRemaining == 0)
+                {
+                    numLeafNodes++;
+                    return;
+                }
+
+                if (numCalls % 3 == 0 && plyRemaining > 2)
+                {
+                    if (boardAPI.TrySkipTurn())
+                    {
+                        Search(plyRemaining - 2);
+                        boardAPI.UndoSkipTurn();
+                    }
+                }
+               
+                
+                API.Move[] moves;
+                if (useStackalloc)
+                {
+                    Span<API.Move> moveSpan = stackalloc API.Move[256];
+                    boardAPI.GetLegalMovesNonAlloc(ref moveSpan);
+                    moves = moveSpan.ToArray(); // (don't actually care about allocations here, just testing the func)
+                }
+                else
+                {
+                    moves = boardAPI.GetLegalMoves();
+                }
+
+                foreach (var move in moves)
+                {
+                    boardAPI.MakeMove(move);
+                    Search(plyRemaining - 1);
+                    boardAPI.UndoMove(move);
+                }
+
+
+            }
+        }
+
     }
 }
+ 
