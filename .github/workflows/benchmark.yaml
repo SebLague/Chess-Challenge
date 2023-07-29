@@ -110,19 +110,19 @@ jobs:
         DRAWS=$(grep -oP 'Match finished: \+\d+ =\K\d+' output.log)
         LOSSES=$(grep -oP 'Match finished: \+\d+ =\d+ -\K\d+' output.log)
         mv output.log ${{ matrix.chunk }}.log
-        echo "+$WINS =$DRAWS -$LOSSES" >> res_${{ matrix.chunk }}.txt
+        echo "+$WINS =$DRAWS -$LOSSES" >> res_${{ needs.prepare.outputs.key }}.txt
 
     - name: Upload Results
       uses: actions/upload-artifact@v3
       with:
         name: res_${{ needs.prepare.outputs.key }}
-        path: res_${{ matrix.chunk }}.txt
+        path: res_${{ needs.prepare.outputs.key }}.txt
 
     - name: Upload Log
       uses: actions/upload-artifact@v3
       with:
         name: log_${{ needs.prepare.outputs.key }}
-        path: ${{ matrix.chunk }}.log
+        path: output.log
 
   combine:
     runs-on: ubuntu-latest
