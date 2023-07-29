@@ -2,10 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using ChessChallenge.Application;
-using Timer = ChessChallenge.API.Timer;
-using System.Xml.Linq;
 
 //using static ChessChallenge.Application.ConsoleHelper;
 

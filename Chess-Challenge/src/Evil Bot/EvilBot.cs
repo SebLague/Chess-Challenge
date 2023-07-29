@@ -7,44 +7,75 @@ using ChessChallenge.Application;
 
 namespace ChessChallenge.Example
 {
-    public class EvilEdge
+    public class Edge : IComparable<Edge>
     {
         public Move move;
-        public EvilNode node;
+        public Node node;
 
-        public EvilEdge(Move move, EvilNode node)
+        public Edge(Move move, Node node)
         {
             this.move = move;
             this.node = node;
         }
+        public int CompareTo(Edge? other)
+        {
+            return other.node.moveStrength.CompareTo(this.node.moveStrength);
+        }
     }
-
-    public class EvilNode
+    public class Node
     {
-        public Move currentBestMove { get; set; } = Move.NullMove;
-        public double? moveStrength { get; set; } = null;
-        public ulong? position { get; set; } = null;
-        public List<EvilEdge>? edges { get; set; } = null;
+        public int moveStrength { get; set; }
+        //public ulong? position { get; set; } = null;
+        public List<Edge>? edges { get; set; } = null;
+
+        public Node(int moveStrength)
+        {
+            this.moveStrength = moveStrength;
+        }
     }
 
     public class EvilBot : IChessBot
     {
-        double[] pieceValues = { 0, 1, 3.2, 3, 5, 9, 500 };
+        private readonly int[] _pieceValues = { 0, 100, 320, 300, 500, 900, 50000 };
 
-        private EvilNode root;
+        private Node? _root = null;
+
+        private bool _isWhite = false;
+
+        private int _bigNumber = Int32.MaxValue / 10;
 
         public Move Think(Board board, Timer timer)
         {
-            double bestMoveEval = 1000000;
+            //_root = new Node();
+            if (_root == null)
+            {
+                _isWhite = board.IsWhiteToMove;
+                _root = new Node(_isWhite ? -_bigNumber : _bigNumber);
+            }
+            else
+            {
+                var lastMove = board.GameMoveHistory[^1];
+                var chosenEdge = _root.edges?.Where(edge => edge.move.Equals(lastMove))?.First();
+                if (chosenEdge != null)
+                {
+                    _root = chosenEdge.node;
+                }
+                else
+                {
+                    _root = new Node(_isWhite ? -_bigNumber : _bigNumber);
+                }
+            }
 
-            var root = new EvilNode();
 
-            Search(board, root, 4);
+            Search(board, _root, 4);
 
-            return root.currentBestMove;
+            ConsoleHelper.Log(_root.moveStrength.ToString());
+            var ourMove = _isWhite ? _root.edges.First() : _root.edges.Last();
+            _root = ourMove.node;
+            return ourMove.move;
         }
 
-        void Search(Board board, EvilNode node, int depth)
+        void Search(Board board, Node node, int depth)
         {
             if (depth == 0)
             {
@@ -52,76 +83,65 @@ namespace ChessChallenge.Example
                 return;
             }
 
-            Move[] allMoves = board.GetLegalMoves();
-            if (allMoves.Length == 0)
+            if (node.edges == null)
+            {
+                node.edges = board.GetLegalMoves().Select(move => new Edge(move, new Node(!board.IsWhiteToMove ? -_bigNumber : _bigNumber))).ToList();
+            }
+
+            if (node.edges.Count == 0)
             {
                 node.moveStrength = EvaluatePosition(board);
                 return;
             }
 
-            if (node.edges == null)
-            {
-                node.edges = board.GetLegalMoves().Select(move => new EvilEdge(move, new EvilNode())).ToList();
-            }
-
-            var bestMoves = new List<Move>();
-            var opponentsEvaluation = 1000000.0;
-
             foreach (var edge in node.edges)
             {
                 board.MakeMove(edge.move);
                 Search(board, edge.node, depth - 1);
-                if (edge.node.moveStrength == opponentsEvaluation)
-                {
-                    bestMoves.Add(edge.move);
-                }
-                else if (edge.node.moveStrength < opponentsEvaluation)
-                {
-                    opponentsEvaluation = (double)edge.node.moveStrength;
-                    bestMoves = new List<Move> { edge.move };
-                }
-
                 board.UndoMove(edge.move);
             }
 
-            var rng = new Random();
-            node.currentBestMove = bestMoves[rng.Next(bestMoves.Count)];
+            if (depth == 4)
+            {
+                ConsoleHelper.Log(String.Join(',', node.edges.Select(edge => edge.node.moveStrength)));
+                node.edges.Sort();
+                ConsoleHelper.Log(String.Join(',', node.edges.Select(edge => edge.node.moveStrength)));
+            }
+            else
+            {
+                node.edges.Sort();
+            }
 
-            node.moveStrength = -opponentsEvaluation;
+            node.moveStrength = board.IsWhiteToMove ? node.edges.First().node.moveStrength : node.edges.Last().node.moveStrength;
         }
 
 
-        double EvaluatePosition(Board board)
+        int EvaluatePosition(Board board)
         {
+            int evaluation = 0;
             if (board.IsInCheckmate())
             {
-                return -100000;
+                evaluation = board.IsWhiteToMove ? -_bigNumber : _bigNumber;
             }
-
-            if (board.IsDraw())
+            else if (board.IsDraw())
             {
-                return 0;
+                evaluation = 0;
             }
-
-            var allPieceLists = board.GetAllPieceLists();
-
-            var evaluation = 0.0;
-
-            foreach (var pieceList in allPieceLists)
+            else
             {
-                double pieceListValue = pieceList.Count * pieceValues[(int)pieceList.TypeOfPieceInList];
+                var allPieceLists = board.GetAllPieceLists();
 
-                if (!pieceList.IsWhitePieceList)
+                foreach (var pieceList in allPieceLists)
                 {
-                    pieceListValue *= -1;
+                    int pieceListValue = pieceList.Count * _pieceValues[(int)pieceList.TypeOfPieceInList];
+
+                    if (!pieceList.IsWhitePieceList)
+                    {
+                        pieceListValue *= -1;
+                    }
+
+                    evaluation += pieceListValue;
                 }
-
-                evaluation += pieceListValue;
-            }
-
-            if (!board.IsWhiteToMove)
-            {
-                evaluation *= -1;
             }
 
             return evaluation;
