@@ -11,7 +11,9 @@ public class MyBot : IChessBot
     private const int Mate = 1000000;
 
     const int TTSize = 1048576;
-    (ulong, Move)[] TT = new (ulong, Move)[TTSize];
+
+    // Key, move, depth, score, flag
+    (ulong, Move, int, int, byte)[] TT = new (ulong, Move, int, int, byte)[TTSize];
 
     int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
 
@@ -20,7 +22,6 @@ public class MyBot : IChessBot
     // For every value to fit inside a byte, the values are divided by 2, and multiplication inside evaluation is needed.
     ulong[] pstRanks = {0, 32973249741911296, 16357091511995071475, 17581496622553367027, 724241724997039354, 432919517870226424, 17729000522595302646 };
     ulong[] pstFiles = {0, 17944594909985834239, 17438231369917791979, 17799354947352068342, 17580088143863153148, 217585671819360496, 17944030877684269297 };
-
     private int Evaluate(Board board)
     {
         int score = 0;
@@ -84,6 +85,17 @@ public class MyBot : IChessBot
         if (board.IsInCheck())
             depth++;
 
+        // Look up best move known so far if it is available
+        var (ttKey, ttMove, ttDepth, ttScore, ttFlag) = TT[key % TTSize];
+
+        if (ttKey == key)
+        {
+            if (ply > 0 && ttDepth >= depth && (ttFlag == 0 && ttScore <= alpha || ttFlag == 1 && ttScore >= beta || ttFlag == 2))
+                return ttScore;
+        }
+        else
+            ttMove = Move.NullMove;
+
         var inQsearch = (depth <= 0);
         
         var staticScore = Evaluate(board);
@@ -103,28 +115,24 @@ public class MyBot : IChessBot
         else if (ply > 0 && depth < 5 && staticScore - depth * 150 > beta && !board.IsInCheck())
             return beta;
 
-        // Look up best move known so far if it is available
-        var (ttKey, ttMove) = TT[key % TTSize];
-        if (ttKey != key)
-            ttMove = Move.NullMove;
-
         // Move generation, best-known move then MVV-LVA ordering then quiet move history
         var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove ? 9000000000000000000 : move.IsCapture ? 8000000000000000000 + (long)move.CapturePieceType * 1000 - (long)move.MovePieceType : quietHistory[move.StartSquare.Index, move.TargetSquare.Index]);
 
         var movesEvaluated = 0;
+        byte flag = 0; // Upper
 
         // Loop over each legal move
         foreach (var move in moves)
         {
+            board.MakeMove(move);
+            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, quietHistory, out _);
+            board.UndoMove(move);
+
             // If we are out of time, stop searching
             if (depth > 2 && timer.MillisecondsElapsedThisTurn * 30 > totalTime)
             {
                 return bestScore;
             }
-
-            board.MakeMove(move);
-            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, quietHistory, out _);
-            board.UndoMove(move);
 
             // Count the number of moves we have evaluated for detecting mates and stalemates
             movesEvaluated++;
@@ -139,6 +147,7 @@ public class MyBot : IChessBot
                 if (score > alpha)
                 {
                     alpha = score;
+                    flag = 2; // Exact
 
                     // If the move is better than our current beta, we can stop searching
                     if (score >= beta)
@@ -147,18 +156,23 @@ public class MyBot : IChessBot
                         if (!move.IsCapture)
                             quietHistory[move.StartSquare.Index, move.TargetSquare.Index] += depth * depth;
 
+                        flag = 1; // Lower
+
                         break;
                     }
                 }
             }
         }
 
-        if (!inQsearch && movesEvaluated == 0)
+        if (movesEvaluated == 0)
         {
+            if(inQsearch)
+                return alpha;
+
             if (board.IsInCheck())
             {
                 // Checkmate
-                return -Mate;
+                return ply-Mate;
             }
             else
             {
@@ -167,7 +181,7 @@ public class MyBot : IChessBot
             }
         }
 
-        TT[key % TTSize] = (key, bestMove);
+        TT[key % TTSize] = (key, bestMove, depth, bestScore, flag);
 
         return bestScore;
     }
