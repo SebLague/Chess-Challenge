@@ -90,8 +90,8 @@ public class MyBot : IChessBot
         if (ttKey != key)
             ttMove = Move.NullMove;
 
-        // MVV-LVA ordering
-        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove).ThenByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
+        // Move generation, best-known move then MVV-LVA ordering
+        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove ? 1000000 : (int)move.CapturePieceType * 1000 - (int)move.MovePieceType);
 
         var bestScore = -Inf;
         var movesEvaluated = 0;

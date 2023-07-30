@@ -272,3 +272,26 @@ Elo difference: 85.8 +/- 15.4, LOS: 100.0 %, DrawRatio: 25.8 %
 Mark #DEBUG code
 
 593 tokens
+
+### 1.13
+Faster move ordering
+
+593 tokens
+
+```
+info depth 1 cp 56 time 29 Move: 'g1f3'
+info depth 2 cp 0 time 31 Move: 'g1f3'
+info depth 3 cp 50 time 36 Move: 'g1f3'
+info depth 4 cp 0 time 40 Move: 'g1f3'
+info depth 5 cp 12 time 142 Move: 'g1f3'
+info depth 6 cp 0 time 203 Move: 'g1f3'
+bestmove g1f3
+```
+
+```
+Score of ChessChallenge vs ChessChallengeDev: 929 - 660 - 411  [0.567] 2000
+...      ChessChallenge playing White: 530 - 252 - 219  [0.639] 1001
+...      ChessChallenge playing Black: 399 - 408 - 192  [0.495] 999
+...      White vs Black: 938 - 651 - 411  [0.572] 2000
+Elo difference: 47.0 +/- 13.7, LOS: 100.0 %, DrawRatio: 20.5 %
+```
