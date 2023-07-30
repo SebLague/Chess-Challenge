@@ -69,7 +69,7 @@ public class MyBot : IChessBot
         return score;
     }
 
-    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, out Move bestMove)
+    private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, long[,] quietHistory, out Move bestMove)
     {
         ulong key = board.ZobristKey;
         bestMove = Move.NullMove;
@@ -108,8 +108,8 @@ public class MyBot : IChessBot
         if (ttKey != key)
             ttMove = Move.NullMove;
 
-        // Move generation, best-known move then MVV-LVA ordering
-        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove ? 1000000 : (int)move.CapturePieceType * 1000 - (int)move.MovePieceType);
+        // Move generation, best-known move then MVV-LVA ordering then quiet move history
+        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove ? 9000000000000000000 : move.IsCapture ? 8000000000000000000 + (long)move.CapturePieceType * 1000 - (long)move.MovePieceType : quietHistory[move.StartSquare.Index, move.TargetSquare.Index]);
 
         var movesEvaluated = 0;
 
@@ -123,7 +123,7 @@ public class MyBot : IChessBot
             }
 
             board.MakeMove(move);
-            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, out _);
+            var score = -Search(board, timer, totalTime, ply + 1, depth - 1, -beta, -alpha, quietHistory, out _);
             board.UndoMove(move);
 
             // Count the number of moves we have evaluated for detecting mates and stalemates
@@ -143,6 +143,10 @@ public class MyBot : IChessBot
                     // If the move is better than our current beta, we can stop searching
                     if (score >= beta)
                     {
+                        // If the move is not a capture, add a bonus to the quiets table
+                        if (!move.IsCapture)
+                            quietHistory[move.StartSquare.Index, move.TargetSquare.Index] += depth * depth;
+
                         break;
                     }
                 }
@@ -171,12 +175,12 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         var totalTime = timer.MillisecondsRemaining;
-
+        var quietHistory = new long[64, 64];
         var bestMove = Move.NullMove;
         // Iterative deepening
         for (var depth = 1; depth < 128; depth++)
         {
-            var score = Search(board, timer, totalTime, 0, depth, -Inf, Inf, out var move);
+            var score = Search(board, timer, totalTime, 0, depth, -Inf, Inf, quietHistory, out var move);
 
             // If we are out of time, we cannot trust the move that was found during this iteration
             if (timer.MillisecondsElapsedThisTurn * 30 > totalTime)
