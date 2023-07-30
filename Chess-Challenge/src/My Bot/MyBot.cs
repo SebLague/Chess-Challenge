@@ -86,16 +86,22 @@ public class MyBot : IChessBot
 
         var inQsearch = (depth <= 0);
         
+        var staticScore = Evaluate(board);
         var bestScore = -Inf;
         if (inQsearch)
         {
-            bestScore = Evaluate(board);
-            if (bestScore >= beta)
-                return bestScore;
+            if (staticScore >= beta)
+                return staticScore;
 
-            if (bestScore > alpha)
-                alpha = bestScore;
+            if (staticScore > alpha)
+                alpha = staticScore;
+
+            bestScore = staticScore;
         }
+
+        // Reverse futility pruning
+        else if (ply > 0 && depth < 5 && staticScore - depth * 150 > beta && !board.IsInCheck())
+            return beta;
 
         // Look up best move known so far if it is available
         var (ttKey, ttMove) = TT[key % TTSize];
