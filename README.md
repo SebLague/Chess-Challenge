@@ -71,8 +71,8 @@ There is a size limit on the code you create called the _bot brain capacity_. Th
 All names (variables, functions, etc.) are counted as a single token, regardless of length. This means that both lines of code: `bool a = true;` and `bool myObscenelyLongVariableName = true;` count the same. Additionally, the following things do not count towards the limit: white space, new lines, comments, access modifiers, commas, and semicolons.
 
 ## FAQ and Troubleshooting
-* Will the final tournament games be played from the standard starting position, or from custom positions?
-  * Games will be played from the standard starting position. If tiebreak games are required, custom positions will be used.
+* What is the format of the tournament?
+  * The format may change depending on the number of entries, but the current plan is to run two tournaments, with the first being a large Swiss tournament in which all bots are able to receive a ranking. These games will be played from the standard starting position. Some percengtage of the top bots will then be promoted to a second knock-out tournament, which will use a selection of different opening positions. The exact number of rounds/games and time-control are TBD.
 * [Unable to build/run the project from my IDE/Code editor](https://github.com/SebLague/Chess-Challenge/issues/85)
   * After downloading the project and installing .Net 6.0, open a terminal / command prompt window.
   * Navigate to the folder where Chess-Challenge.csproj is located using the `cd` command.
