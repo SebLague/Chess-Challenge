@@ -85,17 +85,8 @@ public class MyBot : IChessBot
             depth++;
 
         var inQsearch = (depth <= 0);
-
-        var (ttKey, ttMove) = TT[key % TTSize];
-        if (ttKey != key)
-            ttMove = Move.NullMove;
-
-        // Move generation, best-known move then MVV-LVA ordering
-        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove ? 1000000 : (int)move.CapturePieceType * 1000 - (int)move.MovePieceType);
-
+        
         var bestScore = -Inf;
-        var movesEvaluated = 0;
-
         if (inQsearch)
         {
             bestScore = Evaluate(board);
@@ -105,6 +96,16 @@ public class MyBot : IChessBot
             if (bestScore > alpha)
                 alpha = bestScore;
         }
+
+        // Look up best move known so far if it is available
+        var (ttKey, ttMove) = TT[key % TTSize];
+        if (ttKey != key)
+            ttMove = Move.NullMove;
+
+        // Move generation, best-known move then MVV-LVA ordering
+        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove ? 1000000 : (int)move.CapturePieceType * 1000 - (int)move.MovePieceType);
+
+        var movesEvaluated = 0;
 
         // Loop over each legal move
         foreach (var move in moves)
