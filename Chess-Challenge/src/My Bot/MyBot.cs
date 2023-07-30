@@ -181,7 +181,7 @@ public class MyBot : IChessBot
 
             // For debugging purposes, can be removed if lacking tokens
             // Move is not printed in the usual pv format, because the API does not support easy conversion to UCI notation
-            Console.WriteLine($"info depth {depth} cp {score} time {timer.MillisecondsElapsedThisTurn} {bestMove}");
+            Console.WriteLine($"info depth {depth} cp {score} time {timer.MillisecondsElapsedThisTurn} {bestMove}"); // #DEBUG
         }
 
         return bestMove;
