@@ -10,6 +10,9 @@ public class MyBot : IChessBot
     private const int Inf = 2000000;
     private const int Mate = 1000000;
 
+    const int TTSize = 1048576;
+    (ulong, Move)[] TT = new (ulong, Move)[TTSize];
+
     int[] pieceValues = { 0, 151, 419, 458, 731, 1412, 0 };
 
     // PSTs are encoded with the following format:
@@ -68,6 +71,7 @@ public class MyBot : IChessBot
 
     private int Search(Board board, Timer timer, int totalTime, int ply, int depth, int alpha, int beta, out Move bestMove)
     {
+        ulong key = board.ZobristKey;
         bestMove = Move.NullMove;
 
         // Repetition detection
@@ -82,8 +86,12 @@ public class MyBot : IChessBot
 
         var inQsearch = (depth <= 0);
 
+        var (ttKey, ttMove) = TT[key % TTSize];
+        if (ttKey != key)
+            ttMove = Move.NullMove;
+
         // MVV-LVA ordering
-        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
+        var moves = board.GetLegalMoves(inQsearch).OrderByDescending(move => move == ttMove).ThenByDescending(move => move.CapturePieceType).ThenBy(move => move.MovePieceType);
 
         var bestScore = -Inf;
         var movesEvaluated = 0;
@@ -147,6 +155,8 @@ public class MyBot : IChessBot
                 return 0;
             }
         }
+
+        TT[key % TTSize] = (key, bestMove);
 
         return bestScore;
     }
