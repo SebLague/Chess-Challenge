@@ -5,6 +5,7 @@ namespace ChessChallenge.API
 	using System;
 	using System.Collections.Generic;
 	using System.Linq;
+    using System.Text;
 
 	public sealed class Board
 	{
@@ -358,6 +359,61 @@ namespace ChessChallenge.API
 		/// This only includes moves played in the actual game, not moves made on the board while the bot is thinking.
 		/// </summary>
 		public Move[] GameMoveHistory { get; private set; }
+
+        /// <summary>
+        /// Returns a human-readable string that represents the chess board on its current state.
+        /// The capital letters are the white pieces, while the lowercase letters are the black ones.
+        /// NOTE: To distinguish kings from knights, kings are represented by K/k and knights by N/n.
+        /// </summary>
+        public string ToHumanReadableString(bool includeFen = true, bool includeZobristKey = true, Square? highlightedSquare = null)
+		{
+            StringBuilder result = new();
+
+            for (int rankIndex = 7; rankIndex >= 0; rankIndex--)
+			{
+                result.AppendLine("+---+---+---+---+---+---+---+---+");
+
+                for (int fileIndex = 0; fileIndex < 8; fileIndex++)
+                {
+					Square square = new Square(fileIndex, rankIndex);
+					Piece pieceInSquare = GetPiece(square);
+					if (square != highlightedSquare)
+					{
+						result.Append($"| {pieceInSquare.ToOneLetterString()} ");
+					}
+					else
+					{
+						// To highlight this square, we add brackets around its piece
+						result.Append($"|({pieceInSquare.ToOneLetterString()})");
+					}
+
+					if (fileIndex == 7)
+					{
+						// Show rank number on the right side
+						result.AppendLine($"| {rankIndex + 1}");
+					}
+                }
+
+				if (rankIndex == 0)
+				{
+					// Show files at the bottom
+					result.AppendLine("+---+---+---+---+---+---+---+---+");
+					result.AppendLine("  a   b   c   d   e   f   g   h  ");
+					result.AppendLine();
+
+					if (includeFen)
+					{
+						result.AppendLine($"Fen         : {FenUtility.CurrentFen(board)}");
+					}
+					if (includeZobristKey)
+					{
+						result.AppendLine($"Zobrist Key : {board.ZobristKey}");
+					}
+				}
+			}
+
+			return result.ToString();
+		}
 
         /// <summary>
         /// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised

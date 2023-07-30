@@ -30,6 +30,20 @@ namespace ChessChallenge.API
             IsWhite = isWhite;
         }
 
+        /// <summary>
+        /// Returns a one-letter string that represents the piece. Uppercase for whites; lowercase for blacks.
+        /// NOTE: To distinguish kings from knights, kings are represented by K/k and knights by N/n.
+        /// </summary>
+        public string ToOneLetterString()
+        {
+            if (IsNull)
+            {
+                return " ";
+            }
+            string pieceSymbol = !IsKnight ? $"{PieceType.ToString()[0]}" : "N";
+            return IsWhite ? pieceSymbol.ToUpper() : pieceSymbol.ToLower();
+        }
+
         public override string ToString()
         {
             if (IsNull)
