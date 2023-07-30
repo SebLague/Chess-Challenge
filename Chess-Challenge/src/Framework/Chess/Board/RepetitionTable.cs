@@ -12,7 +12,7 @@ namespace ChessChallenge.Chess
         public RepetitionTable()
         {
             hashes = new ulong[256];
-            startIndices = new int[hashes.Length];
+            startIndices = new int[hashes.Length + 1];
         }
 
         public void Init(Board board)
@@ -31,9 +31,13 @@ namespace ChessChallenge.Chess
 
         public void Push(ulong hash, bool reset)
         {
-            hashes[count] = hash;
+            // Check bounds just in case
+            if (count < hashes.Length)
+            {
+                hashes[count] = hash;
+                startIndices[count + 1] = reset ? count : startIndices[count];
+            }
             count++;
-            startIndices[count] = reset ? count - 1 : startIndices[count - 1];
         }
 
         public void TryPop()
