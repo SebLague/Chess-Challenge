@@ -421,7 +421,7 @@ namespace ChessChallenge.Application
         void LoadPieceTexture()
         {
             // Workaround for Raylib.LoadTexture() not working when path contains non-ascii chars
-            byte[] pieceImgBytes = File.ReadAllBytes(GetResourcePath("Pieces.png"));
+            byte[] pieceImgBytes = File.ReadAllBytes(FileHelper.GetResourcePath("Pieces.png"));
             Image pieceImg = Raylib.LoadImageFromMemory(".png", pieceImgBytes);
             piecesTexture = Raylib.LoadTextureFromImage(pieceImg);
             Raylib.UnloadImage(pieceImg);
