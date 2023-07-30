@@ -5,6 +5,7 @@ namespace ChessChallenge.API
 	using System;
 	using System.Collections.Generic;
 	using System.Linq;
+	using System.Text;
 
 	public sealed class Board
 	{
@@ -360,10 +361,81 @@ namespace ChessChallenge.API
 		public Move[] GameMoveHistory { get; private set; }
 
         /// <summary>
-        /// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised
-        /// to use the board given in the Think function, and update it using MakeMove and UndoMove instead.
+        /// Creates an ASCII-diagram of the current position.
+        /// The capital letters are the white pieces, while the lowercase letters are the black ones.
+        /// NOTE: To distinguish kings from knights, kings are represented by K/k and knights by N/n.
         /// </summary>
-        public static Board CreateBoardFromFEN(string fen)
+        public string CreateDiagram(bool blackAtTop = true, bool includeFen = true, bool includeZobristKey = true, Square? highlightedSquare = null)
+        {
+            StringBuilder result = new();
+
+            for (int y = 0; y < 8; y++)
+            {
+                int rankIndex = blackAtTop ? 7 - y : y;
+                result.AppendLine("+---+---+---+---+---+---+---+---+");
+
+                for (int x = 0; x < 8; x++)
+                {
+                    int fileIndex = blackAtTop ? x : 7 - x;
+                    Square square = new Square(fileIndex, rankIndex);
+                    Piece pieceInSquare = GetPiece(square);
+                    if (square != highlightedSquare)
+                    {
+                        result.Append($"| {GetPieceSymbol(pieceInSquare)} ");
+                    }
+                    else
+                    {
+                        // To highlight this square, we add brackets around its piece
+                        result.Append($"|({GetPieceSymbol(pieceInSquare)})");
+                    }
+
+                    if (x == 7)
+                    {
+                        // Show rank number on the right side
+                        result.AppendLine($"| {rankIndex + 1}");
+                    }
+                }
+
+                if (y == 7)
+                {
+                    // Show files at the bottom
+                    result.AppendLine("+---+---+---+---+---+---+---+---+");
+                    const string fileNames = "  a   b   c   d   e   f   g   h  ";
+                    const string fileNamesRev = "  h   g   f   e   d   c   b   a  ";
+                    result.AppendLine(blackAtTop ? fileNames : fileNamesRev);
+                    result.AppendLine();
+
+                    if (includeFen)
+                    {
+                        result.AppendLine($"Fen         : {FenUtility.CurrentFen(board)}");
+                    }
+                    if (includeZobristKey)
+                    {
+                        result.AppendLine($"Zobrist Key : {board.ZobristKey}");
+                    }
+                }
+            }
+
+            return result.ToString();
+
+            static char GetPieceSymbol(Piece piece)
+            {
+                if (piece.IsNull)
+                {
+                    return ' ';
+                }
+                char pieceSymbol = piece.IsKnight ? 'N' : piece.PieceType.ToString()[0];
+                return piece.IsWhite ? char.ToUpper(pieceSymbol) : char.ToLower(pieceSymbol);
+            }
+        }
+
+		public override string ToString() => CreateDiagram();
+
+		/// <summary>
+		/// Creates a board from the given fen string. Please note that this is quite slow, and so it is advised
+		/// to use the board given in the Think function, and update it using MakeMove and UndoMove instead.
+		/// </summary>
+		public static Board CreateBoardFromFEN(string fen)
         {
             Chess.Board boardCore = new Chess.Board();
             boardCore.LoadPosition(fen);
