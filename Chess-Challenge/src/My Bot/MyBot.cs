@@ -55,9 +55,6 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        //var rook = board.GetPieceList(PieceType.Rook, _isWhite)[0];
-        BitboardHelper.VisualizeBitboard(BitboardHelper.GetPieceAttacks(PieceType.Rook, new Square("a1"), board), true);
-
         if (_root == null)
         {
             _isWhite = board.IsWhiteToMove;
@@ -177,6 +174,7 @@ public class MyBot : IChessBot
 
             foreach (var pieceList in allPieceLists)
             {
+                var listIsWhite = pieceList.IsWhitePieceList;
                 var pieceListValue = pieceList.Count * _pieceValues[(int)pieceList.TypeOfPieceInList];
                 
                 switch (pieceList.TypeOfPieceInList)
@@ -186,7 +184,7 @@ public class MyBot : IChessBot
                         foreach (var pawn in pieceList)
                         {
                             var rank = pawn.Square.Rank;
-                            pieceListValue += pieceList.IsWhitePieceList
+                            pieceListValue += listIsWhite
                                 ? rank * rank
                                 : (7 - rank) * (7 - rank);
 
@@ -198,7 +196,7 @@ public class MyBot : IChessBot
                             }
                         }   
                         break;
-                    case PieceType.Knight:
+                    case PieceType.Knight or PieceType.Queen:
                         foreach (var knight in pieceList)
                         {
                             var file = 2 * knight.Square.File - 7;
@@ -213,9 +211,31 @@ public class MyBot : IChessBot
                         }
                         break;
                     case PieceType.Rook:
-                        foreach (var bishop in pieceList)
+                        foreach (var rook in pieceList)
                         {
-                            //pieceListValue += 15 * (2 - Math.Min(Math.Abs(bishop.Square.Rank - bishop.Square.File), Math.Abs(bishop.Square.Rank + bishop.Square.File)));
+                            var friendlyPawnBitboard = board.GetPieceBitboard(PieceType.Pawn, listIsWhite);
+                            var opponentPawnBitboard = board.GetPieceBitboard(PieceType.Pawn, !listIsWhite);
+
+                            var rookAttacksBitboard =
+                                BitboardHelper.GetSliderAttacks(PieceType.Rook, rook.Square, board);
+
+                            for (int i = 0; i < 8; i++)
+                            {
+                                BitboardHelper.ClearSquare(ref rookAttacksBitboard, new Square(i, rook.Square.Rank));
+                            }
+
+                            var attackedFriendlyPawnOnFileBitboard = friendlyPawnBitboard & rookAttacksBitboard;
+                            var attackedOpponentsPawnOnFileBitboard = opponentPawnBitboard & rookAttacksBitboard;
+
+                            if (attackedOpponentsPawnOnFileBitboard > 0)
+                            {
+                                pieceListValue += 50;
+                                if (attackedFriendlyPawnOnFileBitboard == 0)
+                                {
+                                    pieceListValue += 40;
+                                }
+                            }
+                           
                         }
                         break;
                 }
@@ -230,10 +250,5 @@ public class MyBot : IChessBot
         //evaluation += rng.Next(100) - 50;
 
         return evaluation;
-    }
-
-    bool RookIsNotBlockedByItsOwnPawn(Piece rook)
-    {
-        return true;
     }
 }
