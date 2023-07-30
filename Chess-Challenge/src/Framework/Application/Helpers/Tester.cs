@@ -17,11 +17,13 @@ namespace ChessChallenge.Application
         public static void Run(bool runPerft)
         {
             anyFailed = false;
-
-            new SearchTest2().Run();
-
-            RepetitionTest();
             
+            new SearchTest().Run(false);
+            new SearchTest().Run(true);
+            new SearchTest2().Run();
+            new SearchTest3().Run();
+           
+            RepetitionTest();
             DrawTest();
             MoveGenTest();
             PieceListTest();
@@ -29,9 +31,6 @@ namespace ChessChallenge.Application
             MiscTest();
             TestBitboards();
             TestMoveCreate();
-            new SearchTest().Run(false);
-            new SearchTest().Run(true);
-
 
             if (runPerft)
             {
@@ -654,6 +653,69 @@ namespace ChessChallenge.Application
             Console.ResetColor();
         }
 
+        public class SearchTest3
+        {
+
+
+            API.Board board;
+            int numCaptures;
+            int numChecks;
+            int numMates;
+            int nodes;
+
+            public void Run()
+            {
+                Console.WriteLine("Running misc search test");
+                Chess.Board b = new();
+                b.LoadPosition("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - ");
+                board = new API.Board(b);
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                Search(4, API.Move.NullMove);
+                sw.Stop();
+                Console.WriteLine("Test3 time: " + sw.ElapsedMilliseconds + " ms");
+                bool passed = nodes == 4085603 && numCaptures == 757163 && numChecks == 25523 && numMates == 43;
+                Assert(passed, "Test3 failed");
+                
+
+            }
+
+            void Search(int depth, API.Move prevMove)
+            {
+              
+                Span<API.Move> moveSpan = stackalloc API.Move[256];
+                board.GetLegalMovesNonAlloc(ref moveSpan);
+
+                if (depth == 0)
+                {
+                    if (prevMove.IsCapture)
+                    {
+                        numCaptures++;
+                    }
+                    if (board.IsInCheck())
+                    {
+                        numChecks++;
+                    }
+                    if (board.IsInCheckmate())
+                    {
+                        numMates++;
+                    }
+
+                    nodes += 1;
+                    return;
+                }
+
+               
+                foreach (var move in moveSpan)
+                {
+                    board.MakeMove(move);
+                    Search(depth - 1, move);
+                    board.UndoMove(move);
+                }
+
+            }
+        }
+
+
         public class SearchTest2
         {
             API.Board board;
@@ -778,7 +840,7 @@ namespace ChessChallenge.Application
                 this.useStackalloc = useStackalloc;
                 Console.WriteLine("Running misc search test | stackalloc = " + useStackalloc);
                 Chess.Board b = new();
-                b.LoadPosition("1r4k1/2P1r1pp/3p4/4n1Q1/1p6/2PB3P/P3pPP1/2B3K1 w - - 7 16");
+                b.LoadPosition("2rqk2r/5p1p/p2p1n2/1pPPn3/8/3B1QP1/PR1K1P1p/2B1R3 w k b6 0 28");
                 board = new API.Board(b);
                 Search(4);
 
@@ -791,19 +853,19 @@ namespace ChessChallenge.Application
 
                 numCalls++;
                 var square = new Square(numCalls % 64);
-                miscSumTest += (int)boardAPI.GetPiece(square).PieceType;
-                miscSumTest += boardAPI.GetAllPieceLists()[numCalls % 12].Count;
-                miscSumTest += (long)(boardAPI.ZobristKey % 100);
-                miscSumTest += boardAPI.IsInCheckmate() ? 1 : 0;
+                miscSumTest += (int)board.GetPiece(square).PieceType;
+                miscSumTest += board.GetAllPieceLists()[numCalls % 12].Count;
+                miscSumTest += (long)(board.ZobristKey % 100);
+                miscSumTest += board.IsInCheckmate() ? 1 : 0;
 
                 if (numCalls % 6 == 0)
                 {
-                    miscSumTest += boardAPI.IsInCheck() ? 1 : 0;
+                    miscSumTest += board.IsInCheck() ? 1 : 0;
                 }
 
                 if (numCalls % 18 == 0)
                 {
-                    miscSumTest += boardAPI.SquareIsAttackedByOpponent(square) ? 1 : 0;
+                    miscSumTest += board.SquareIsAttackedByOpponent(square) ? 1 : 0;
                 }
 
                 if (plyRemaining == 0)
@@ -814,10 +876,10 @@ namespace ChessChallenge.Application
 
                 if (numCalls % 3 == 0 && plyRemaining > 2)
                 {
-                    if (boardAPI.TrySkipTurn())
+                    if (board.TrySkipTurn())
                     {
                         Search(plyRemaining - 2);
-                        boardAPI.UndoSkipTurn();
+                        board.UndoSkipTurn();
                     }
                 }
 
@@ -826,19 +888,19 @@ namespace ChessChallenge.Application
                 if (useStackalloc)
                 {
                     Span<API.Move> moveSpan = stackalloc API.Move[256];
-                    boardAPI.GetLegalMovesNonAlloc(ref moveSpan);
+                    board.GetLegalMovesNonAlloc(ref moveSpan);
                     moves = moveSpan.ToArray(); // (don't actually care about allocations here, just testing the func)
                 }
                 else
                 {
-                    moves = boardAPI.GetLegalMoves();
+                    moves = board.GetLegalMoves();
                 }
 
                 foreach (var move in moves)
                 {
-                    boardAPI.MakeMove(move);
+                    board.MakeMove(move);
                     Search(plyRemaining - 1);
-                    boardAPI.UndoMove(move);
+                    board.UndoMove(move);
                 }
 
 

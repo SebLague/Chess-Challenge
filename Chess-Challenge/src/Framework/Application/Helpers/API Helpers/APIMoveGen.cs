@@ -51,7 +51,9 @@ namespace ChessChallenge.Application.APIHelpers
         {
             board = new Board();
         }
-        
+
+        public bool IsInitialized => hasInitializedCurrentPosition;
+
         // Movegen needs to know when position has changed to allow for some caching optims in api
         public void NotifyPositionChanged()
         {
@@ -62,6 +64,27 @@ namespace ChessChallenge.Application.APIHelpers
         {
             Init(board);
             return opponentAttackMap;
+        }
+
+        public bool NoLegalMovesInPosition(Board board)
+        {
+            Span<API.Move> moves = stackalloc API.Move[128];
+            generateNonCapture = true;
+            Init(board);
+            GenerateKingMoves(moves);
+            if (currMoveIndex > 0) { return false; }
+
+            if (!inDoubleCheck)
+            {
+                GenerateKnightMoves(moves);
+                if (currMoveIndex > 0) { return false; }
+                GeneratePawnMoves(moves);
+                if (currMoveIndex > 0) { return false; }
+                GenerateSlidingMoves(moves, true);
+                if (currMoveIndex > 0) { return false; }
+            }
+
+            return true;
         }
 
         // Generates list of legal moves in current position.
@@ -96,17 +119,17 @@ namespace ChessChallenge.Application.APIHelpers
             this.board = board;
             currMoveIndex = 0;
 
-            
+
             if (hasInitializedCurrentPosition)
             {
                 moveTypeMask = generateNonCapture ? ulong.MaxValue : enemyPieces;
                 return;
             }
-            
+
             hasInitializedCurrentPosition = true;
 
             // Reset state
-           
+
             inCheck = false;
             inDoubleCheck = false;
             checkRayBitmask = 0;
@@ -131,7 +154,7 @@ namespace ChessChallenge.Application.APIHelpers
 
             CalculateAttackData();
 
-           
+
         }
 
         API.Move CreateAPIMove(int startSquare, int targetSquare, int flag)
@@ -187,7 +210,7 @@ namespace ChessChallenge.Application.APIHelpers
             }
         }
 
-        void GenerateSlidingMoves(Span<API.Move> moves)
+        void GenerateSlidingMoves(Span<API.Move> moves, bool exitEarly = false)
         {
             // Limit movement to empty or enemy squares, and must block check if king is in check.
             ulong moveMask = emptyOrEnemySquares & checkRayBitmask & moveTypeMask;
@@ -218,6 +241,10 @@ namespace ChessChallenge.Application.APIHelpers
                 {
                     int targetSquare = BitBoardUtility.PopLSB(ref moveSquares);
                     moves[currMoveIndex++] = CreateAPIMove(startSquare, targetSquare, 0);
+                    if (exitEarly)
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -237,6 +264,10 @@ namespace ChessChallenge.Application.APIHelpers
                 {
                     int targetSquare = BitBoardUtility.PopLSB(ref moveSquares);
                     moves[currMoveIndex++] = CreateAPIMove(startSquare, targetSquare, 0);
+                    if (exitEarly)
+                    {
+                        return;
+                    }
                 }
             }
         }

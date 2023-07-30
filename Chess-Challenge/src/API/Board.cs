@@ -20,6 +20,8 @@ namespace ChessChallenge.API
 		bool hasCachedMoves;
 		Move[] cachedLegalCaptureMoves;
 		bool hasCachedCaptureMoves;
+		bool hasCachedMoveCount;
+		int cachedMoveCount;
 		int depth;
 
         /// <summary>
@@ -154,6 +156,8 @@ namespace ChessChallenge.API
                 moveGen.GenerateMoves(ref moveSpan, board, includeQuietMoves: true);
                 cachedLegalMoves = moveSpan.ToArray();
                 hasCachedMoves = true;
+				hasCachedMoveCount = true;
+				cachedMoveCount = moveSpan.Length;
 			}
 
 			return cachedLegalMoves;
@@ -169,7 +173,9 @@ namespace ChessChallenge.API
 		{
 			bool includeQuietMoves = !capturesOnly;
 			moveGen.GenerateMoves(ref moveList, board, includeQuietMoves);
-		}
+            hasCachedMoveCount = true;
+            cachedMoveCount = moveList.Length;
+        }
 
 
 		Move[] GetLegalCaptureMoves()
@@ -187,12 +193,12 @@ namespace ChessChallenge.API
 		/// <summary>
 		/// Test if the player to move is in check in the current position.
 		/// </summary>
-		public bool IsInCheck() => board.IsInCheck();
+		public bool IsInCheck() => moveGen.IsInitialized ? moveGen.InCheck() : board.IsInCheck();
 
 		/// <summary>
 		/// Test if the current position is checkmate
 		/// </summary>
-		public bool IsInCheckmate() => IsInCheck() && GetLegalMoves().Length == 0;
+		public bool IsInCheckmate() => IsInCheck() && HasZeroLegalMoves();
 
         /// <summary>
         /// Test if the current position is a draw due stalemate, repetition, insufficient material, or 50-move rule.
@@ -202,17 +208,24 @@ namespace ChessChallenge.API
         public bool IsDraw()
 		{
 			return IsFiftyMoveDraw() || IsInsufficientMaterial() || IsInStalemate() || IsRepeatedPosition();
-
-			bool IsInStalemate() => !IsInCheck() && GetLegalMoves().Length == 0;
-			bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
 		}
 
-		/// <summary>
-		/// Test if the current position has occurred at least once before on the board.
-		/// This includes both positions in the actual game, and positions reached by
-		/// making moves while the bot is thinking.
-		/// </summary>
-		public bool IsRepeatedPosition() => depth > 0 && repetitionTable.Contains(board.ZobristKey);
+        /// <summary>
+        /// Test if the current position is a draw due to stalemate
+        /// </summary>
+        public bool IsInStalemate() => !IsInCheck() && HasZeroLegalMoves();
+
+        /// <summary>
+        /// Test if the current position is a draw due to the fifty move rule
+        /// </summary>
+        public bool IsFiftyMoveDraw() => board.currentGameState.fiftyMoveCounter >= 100;
+
+        /// <summary>
+        /// Test if the current position has occurred at least once before on the board.
+        /// This includes both positions in the actual game, and positions reached by
+        /// making moves while the bot is thinking.
+        /// </summary>
+        public bool IsRepeatedPosition() => depth > 0 && repetitionTable.Contains(board.ZobristKey);
 
 		/// <summary>
 		/// Test if there are sufficient pieces remaining on the board to potentially deliver checkmate.
@@ -362,7 +375,17 @@ namespace ChessChallenge.API
             moveGen.NotifyPositionChanged();
             hasCachedMoves = false;
             hasCachedCaptureMoves = false;
+			hasCachedMoveCount = false;
         }
+
+		bool HasZeroLegalMoves()
+		{
+			if (hasCachedMoveCount)
+			{
+				return cachedMoveCount == 0;
+			}
+			return moveGen.NoLegalMovesInPosition(board);
+		}
 
     }
 }
