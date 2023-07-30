@@ -69,7 +69,6 @@ namespace ChessChallenge.Example
 
             Search(board, _root, 4);
 
-            ConsoleHelper.Log(_root.moveStrength.ToString());
             var ourMove = _isWhite ? _root.edges.First() : _root.edges.Last();
             _root = ourMove.node;
             return ourMove.move;
@@ -101,16 +100,7 @@ namespace ChessChallenge.Example
                 board.UndoMove(edge.move);
             }
 
-            if (depth == 4)
-            {
-                ConsoleHelper.Log(String.Join(',', node.edges.Select(edge => edge.node.moveStrength)));
-                node.edges.Sort();
-                ConsoleHelper.Log(String.Join(',', node.edges.Select(edge => edge.node.moveStrength)));
-            }
-            else
-            {
-                node.edges.Sort();
-            }
+            node.edges.Sort();
 
             node.moveStrength = board.IsWhiteToMove ? node.edges.First().node.moveStrength : node.edges.Last().node.moveStrength;
         }
