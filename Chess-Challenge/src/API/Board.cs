@@ -10,16 +10,17 @@ namespace ChessChallenge.API
 	{
 		readonly Chess.Board board;
 		readonly APIMoveGen moveGen;
+		readonly RepetitionTable repetitionTable;
 
-		readonly HashSet<ulong> repetitionHistory;
 		readonly PieceList[] allPieceLists;
 		readonly PieceList[] validPieceLists;
 
+        readonly Move[] movesDest;
 		Move[] cachedLegalMoves;
 		bool hasCachedMoves;
 		Move[] cachedLegalCaptureMoves;
 		bool hasCachedCaptureMoves;
-        readonly Move[] movesDest;
+		int depth;
 
         /// <summary>
         /// Create a new board. Note: this should not be used in the challenge,
@@ -31,6 +32,7 @@ namespace ChessChallenge.API
 			board = new Chess.Board();
 			board.LoadPosition(boardSource.StartPositionInfo);
 			GameMoveHistory = new Move[boardSource.AllGameMoves.Count];
+			repetitionTable = new();
 
 			for (int i = 0; i < boardSource.AllGameMoves.Count; i ++)
 			{
@@ -61,9 +63,8 @@ namespace ChessChallenge.API
 			this.validPieceLists = validPieceLists.ToArray();
 
 			// Init rep history
-			repetitionHistory = new HashSet<ulong>(board.RepetitionPositionHistory);
-			GameRepetitionHistory = repetitionHistory.ToArray();
-			repetitionHistory.Remove(board.ZobristKey);
+			GameRepetitionHistory = board.RepetitionPositionHistory.ToArray();
+			repetitionTable.Init(board);
         }
 
 		/// <summary>
@@ -75,10 +76,12 @@ namespace ChessChallenge.API
 		{
 			if (!move.IsNull)
 			{
-				repetitionHistory.Add(board.ZobristKey);
 				OnPositionChanged();
 				board.MakeMove(new Chess.Move(move.RawValue), inSearch: true);
-			}
+				repetitionTable.Push(ZobristKey, move.IsCapture || move.MovePieceType == PieceType.Pawn);
+                depth++;
+
+            }
 		}
 
 		/// <summary>
@@ -88,9 +91,9 @@ namespace ChessChallenge.API
 		{
 			if (!move.IsNull)
 			{
+				repetitionTable.TryPop();
 				board.UndoMove(new Chess.Move(move.RawValue), inSearch: true);
                 OnPositionChanged();
-                repetitionHistory.Remove(board.ZobristKey);
 			}
 		}
 
@@ -209,7 +212,7 @@ namespace ChessChallenge.API
 		/// This includes both positions in the actual game, and positions reached by
 		/// making moves while the bot is thinking.
 		/// </summary>
-		public bool IsRepeatedPosition() => repetitionHistory.Contains(board.ZobristKey);
+		public bool IsRepeatedPosition() => depth > 0 && repetitionTable.Contains(board.ZobristKey);
 
 		/// <summary>
 		/// Test if there are sufficient pieces remaining on the board to potentially deliver checkmate.

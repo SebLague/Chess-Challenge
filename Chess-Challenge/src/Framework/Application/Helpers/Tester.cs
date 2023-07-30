@@ -18,16 +18,20 @@ namespace ChessChallenge.Application
         {
             anyFailed = false;
 
+            new SearchTest2().Run();
+
+            RepetitionTest();
+            
+            DrawTest();
             MoveGenTest();
             PieceListTest();
-            DrawTest();
             CheckTest();
             MiscTest();
             TestBitboards();
             TestMoveCreate();
             new SearchTest().Run(false);
             new SearchTest().Run(true);
-          
+
 
             if (runPerft)
             {
@@ -42,7 +46,7 @@ namespace ChessChallenge.Application
             else
             {
                 WriteWithCol("ALL TESTS PASSED", ConsoleColor.Green);
-            }    
+            }
         }
 
         public static void RunPerft(bool useStackalloc = true)
@@ -148,7 +152,7 @@ namespace ChessChallenge.Application
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("c3")), "Square attacked wrong");
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("h6")), "Square attacked wrong");
             Assert(!boardAPI.SquareIsAttackedByOpponent(new Square("h4")), "Square attacked wrong");
- 
+
             boardAPI.ForceSkipTurn();
 
             Assert(boardAPI.SquareIsAttackedByOpponent(new Square("f7")), "Square attacked wrong");
@@ -223,6 +227,118 @@ namespace ChessChallenge.Application
             Assert(!boardAPI.GetPiece(new Square("e6")).IsWhite, "Wrong piece col");
             Assert(boardAPI.GetPiece(new Square("g5")).IsKnight, "Wrong piece");
 
+        }
+
+        static void RepetitionTest()
+        {
+            Console.WriteLine("Repetition test");
+            string fen = "3k4/8/3K4/8/8/8/8/4Q3 w - - 0 1";
+            var board = new Chess.Board();
+            board.LoadPosition(fen);
+            boardAPI = new(board);
+
+            // -- Simple repeated position in search --
+            string[] moveStrings = { "d6c6", "d8c8", "c6d6", "c8d8" };
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make(moveStrings[0]); // Kc6
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make(moveStrings[1]); // ... Kc8
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make(moveStrings[2]); // Kd6
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            var move = Make(moveStrings[3]); // ...Kd8 (repeated position)
+            Assert(boardAPI.IsRepeatedPosition(), "should be repetition");
+            boardAPI.UndoMove(move); // Undo ...Kd8 (no longer repeated position)
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+
+            // -- Repetition of position in actual game occuring in search --
+            
+            board.LoadPosition(fen);
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("e1e2", board), inSearch: false); // Qe2
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("d8c8", board), inSearch: false); // ...Kc8
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("d6c6", board), inSearch: false); // Kc6
+            board.MakeMove(MoveUtility.GetMoveFromUCIName("c8d8", board), inSearch: false); // ...Kd8
+            boardAPI = new(board);
+
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            var moveKd6 = Make("c6d6"); // Kd6 (repetition of position in game)
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            boardAPI.UndoMove(moveKd6); // Undo Kd6
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            boardAPI.MakeMove(moveKd6); // Redo Kd6
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            var moveKc8 = Make("d8c8"); // ...Kc8
+            boardAPI.UndoMove(moveKc8);
+            boardAPI.UndoMove(moveKd6);
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            boardAPI.MakeMove(moveKd6);
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            
+            // -- Same test but purely in search --
+            board.LoadPosition(fen);
+            
+            boardAPI = new(board);
+            Make("e1e2"); // Qe2
+            Make("d8c8"); // ...Kc8
+            Make("d6c6"); // Kc6
+            Make("c8d8"); // ...Kd8
+
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            moveKd6 = Make("c6d6"); // Kd6 (repetition of position in game)
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            boardAPI.UndoMove(moveKd6); // Undo Kd6
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            boardAPI.MakeMove(moveKd6); // Redo Kd6
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            moveKc8 = Make("d8c8"); // ...Kc8
+            boardAPI.UndoMove(moveKc8);
+            boardAPI.UndoMove(moveKd6);
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            boardAPI.MakeMove(moveKd6);
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+
+            // Another test
+            board.LoadPosition("k7/1p6/2pp4/1QQ5/1b3N2/8/1qq1PPPP/3q2BK w - - 0 1");
+            boardAPI = new(board);
+            Make("b5a5");
+            Make("b4a5");
+            Make("c5a5");
+            Make("a8b8");
+            Make("a5d8");
+            Make("b8a7");
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make("d8a5");
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make("a7b8");
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            Make("a5d8");
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            Make("b8a7");
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            var pawnMove = Make("h2h4");
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            boardAPI.UndoMove(pawnMove);
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            boardAPI.MakeMove(pawnMove);
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make("d1c1");
+            Make("d8a5");
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make("a7b8");
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make("a5d8");
+            Assert(!boardAPI.IsRepeatedPosition(), "Should not be repetition");
+            Make("b8a7");
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+            Make("d8a5");
+            Assert(boardAPI.IsRepeatedPosition(), "Should be repetition");
+
+            API.Move Make(string name)
+            {
+                var move = new API.Move(name, boardAPI);
+                boardAPI.MakeMove(move);
+                return move;
+            }
         }
 
         static void DrawTest()
@@ -418,7 +534,7 @@ namespace ChessChallenge.Application
             Assert(RecreateOpponentAttackMap() == 18446743649919696896ul, "Wrong attack map");
             Assert(boardAPI.GetLegalMoves().Length == 43, "Wrong move count");
             Assert(boardAPI.GetLegalMoves(true).Length == 3, "Wrong capture count");
-           
+
             boardAPI.MakeMove(m1);
             Assert(RecreateOpponentAttackMap() == 68361585683595006ul, "Wrong attack map");
             Assert(boardAPI.GetLegalMoves().Length == 31, "Wrong move count");
@@ -457,7 +573,7 @@ namespace ChessChallenge.Application
             ulong RecreateOpponentAttackMap()
             {
                 ulong bb = 0;
-                for (int i = 0; i < 64; i ++)
+                for (int i = 0; i < 64; i++)
                 {
                     if (boardAPI.SquareIsAttackedByOpponent(new Square(i)))
                     {
@@ -538,6 +654,117 @@ namespace ChessChallenge.Application
             Console.ResetColor();
         }
 
+        public class SearchTest2
+        {
+            API.Board board;
+            int numSkips;
+            int numCalls;
+            int numMates;
+            int numDraws;
+            int numExtend;
+
+            public void Run()
+            {
+                Console.WriteLine("Running misc search test");
+                Chess.Board b = new();
+                b.LoadPosition("8/2b5/2kp4/2p2K2/7P/1p3RP1/2n3N1/8 w - - 0 1");
+                board = new API.Board(b);
+                var sw = System.Diagnostics.Stopwatch.StartNew();
+                Search(7, -10000, 10000);
+                sw.Stop();
+                Console.WriteLine("Time: " + sw.ElapsedMilliseconds + " ms");
+
+                long testVal = numCalls + numSkips + numMates + numDraws;
+                //17092086 skip: 3740 mate: 31 draw: 3803  extend: 172125
+                //Console.WriteLine(numCalls + " skip: " + numSkips + " mate: " + numMates + " draw: " + numDraws + "  extend: " + numExtend);
+                Console.WriteLine(testVal);
+                bool passed = testVal == 17092086;
+                //Assert(passed, "Test failed");
+
+                anyFailed &= passed;
+
+            }
+
+            int Search(int plyRemaining, int alpha, int beta, bool isQ = false)
+            {
+                numCalls++;
+
+
+                if (!isQ)
+                {
+                    if (plyRemaining == 0)
+                    {
+                        return Search(-1, alpha, beta, true);
+                    }
+
+                    if (board.IsInCheckmate())
+                    {
+                        numMates++;
+                        return -10000;
+                    }
+                    if (board.IsDraw())
+                    {
+                        numDraws++;
+                        return 0;
+                    }
+
+                    if ((numCalls % 4 == 0 || numCalls % 9 == 0) && plyRemaining > 2)
+                    {
+                        if (board.TrySkipTurn())
+                        {
+                            numSkips++;
+                            Search(plyRemaining - 2, -beta, -alpha);
+                            board.UndoSkipTurn();
+                        }
+                    }
+                }
+
+
+                API.Move[] moves;
+                if (numCalls % 3 == 0 || numCalls % 7 == 0)
+                {
+                    Span<API.Move> moveSpan = stackalloc API.Move[256];
+                    board.GetLegalMovesNonAlloc(ref moveSpan, isQ);
+                    // (don't actually care about allocations here, just testing the func)
+                    moves = moveSpan.ToArray();
+                }
+                else
+                {
+                    moves = board.GetLegalMoves(isQ);
+                }
+
+                if (isQ && moves.Length == 0)
+                {
+                    int numWhite = BitboardHelper.GetNumberOfSetBits(board.WhitePiecesBitboard);
+                    int numBlack = BitboardHelper.GetNumberOfSetBits(board.BlackPiecesBitboard);
+                    int e = numWhite - numBlack;
+                    return e * (board.IsWhiteToMove ? 1 : -1);
+                }
+
+                int best = int.MinValue;
+                foreach (var move in moves)
+                {
+                    board.MakeMove(move);
+                    int extend = !isQ && board.IsInCheck() ? 1 : 0;
+                    numExtend += extend;
+                    int eval = -Search(plyRemaining - 1 + extend, -beta, -alpha, isQ);
+                    best = Math.Max(best, eval);
+                    board.UndoMove(move);
+                    if (eval >= beta)
+                    {
+                        return eval;
+                    }
+                    if (eval > alpha)
+                    {
+                        alpha = eval;
+
+                    }
+                }
+                return best;
+
+            }
+        }
+
         public class SearchTest
         {
             API.Board board;
@@ -560,8 +787,8 @@ namespace ChessChallenge.Application
 
             void Search(int plyRemaining)
             {
-               
-   
+
+
                 numCalls++;
                 var square = new Square(numCalls % 64);
                 miscSumTest += (int)boardAPI.GetPiece(square).PieceType;
@@ -593,8 +820,8 @@ namespace ChessChallenge.Application
                         boardAPI.UndoSkipTurn();
                     }
                 }
-               
-                
+
+
                 API.Move[] moves;
                 if (useStackalloc)
                 {
@@ -620,4 +847,3 @@ namespace ChessChallenge.Application
 
     }
 }
- 
