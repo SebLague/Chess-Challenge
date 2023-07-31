@@ -236,7 +236,22 @@ namespace ChessChallenge.Application
                     playMoveTime = lastMoveMadeTime + MinMoveDelay;
                     if (PlayerToMove.Bot is MyBot)
                     {
-                        maxMemoryUsed = Math.Max(ObjectSizeHelper.GetSize(PlayerToMove.Bot), maxMemoryUsed);
+                        isPlaying = false;
+                        try
+                        {
+                            maxMemoryUsed = Math.Max(ObjectSizeHelper.GetSize(PlayerToMove.Bot), maxMemoryUsed);
+                        }
+                        catch (Exception e)
+                        {
+                            Log("An error occurred while determining used memory size.\n" + e.ToString(), true,
+                                ConsoleColor.Red);
+                            hasBotTaskException = true;
+                            botExInfo = ExceptionDispatchInfo.Capture(e);
+                        }
+                        finally
+                        {
+                            isPlaying = true;
+                        }
                     }
                 }
                 else
