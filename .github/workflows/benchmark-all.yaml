@@ -65,7 +65,6 @@ jobs:
         id: comment-branch
 
       - name: Checkout code
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
