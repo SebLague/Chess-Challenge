@@ -19,30 +19,15 @@ public class UciEngine
     private const string Stop = "stop";
     private const string Quit = "quit";
 
-    private const string botMatchStartFens = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
-
-    private MyBot _bot = new MyBot();
+    private const string BotMatchStartFens = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    
+    private readonly MyBot _bot = new MyBot();
     private Board _currentBoard;
 
-    private string _logFile = "./comm-log.txt";
-    private string _uciLog = "uci-log.txt";
-    private string _errorFile = "error.log";
-    private const string _dateFormat = "yyyyMMddTHHmmss";
-
-
-    private char GetPromotionCharacter(PieceType piece) =>
-        piece switch
-        {
-            PieceType.None => 'q',
-            PieceType.Pawn => 'q',
-            PieceType.Knight => 'n',
-            PieceType.Bishop => 'b',
-            PieceType.Rook => 'r',
-            PieceType.Queen => 'q',
-            PieceType.King => 'q',
-            _ => throw new ArgumentOutOfRangeException(nameof(piece), piece, null)
-        };
+    private const string LogFile = "./comm-log.txt";
+    private const string UciLog = "./uci-log.txt";
+    private const string ErrorFile = "./error.log";
+    private const string DateFormat = "yyyyMMddTHHmmss";
 
     private void WriteLineToDisk(string line, string file)
     {
@@ -51,53 +36,50 @@ public class UciEngine
         outputFile.WriteLine(line);
         
     }
-    public void ReceiveCommand(string message)
+    public bool ReceiveCommand(string message)
     {
         var messageType = message.Split(' ')[0];
-        WriteLineToDisk($"{DateTimeOffset.Now.ToString(_dateFormat)} -- Received message {message}", _logFile);
-        WriteLineToDisk($"{DateTimeOffset.Now.ToString(_dateFormat)}{message}", _uciLog);
+        WriteLineToDisk($"{DateTimeOffset.Now.ToString(DateFormat)} -- Received message {message}", LogFile);
+        WriteLineToDisk($"{DateTimeOffset.Now.ToString(DateFormat)}{message}", UciLog);
         try
         {
             switch (messageType)
             {
                 case UciInit:
                     Respond(UciOkay);
-                    break;
+                    return true;
                 case IsReady:
                     Respond(ReadyOk);
-                    break;
+                    return true;
                 case NewGame:
-                    _uciLog = $"./{_uciLog}";
                     _currentBoard = new Board();
-                    _currentBoard.LoadPosition(botMatchStartFens);
-                    break;
+                    _currentBoard.LoadPosition(BotMatchStartFens);
+                    return true;
                 case Position:
                     ProcessPositionCommand(message);
-                    break;
+                    return true;
                 case Go:
                     ProcessGoCommand(message);
-                    break;
+                    return true;
                 case Stop:
-                    // message = Quit;
-                    // ProcessStopCommand();
-                    break;
+                    return true;
                 case Quit:
-                    break;
                 default:
-                    message = Quit;
-                    break;
+                    return false;
             }
         }
         catch (Exception ex)
         {
             if (ex.StackTrace != null)
             {
-                var errorMessage = $"{DateTimeOffset.Now.ToString(_dateFormat)} -- {ex.Message}\n{ex.StackTrace}"; 
-                WriteLineToDisk(errorMessage, _errorFile);
+                var errorMessage = $"{DateTimeOffset.Now.ToString(DateFormat)} -- {ex.Message}\n{ex.StackTrace}"; 
+                WriteLineToDisk(errorMessage, ErrorFile);
                 
             }
         }
-        
+
+        return false;
+
     }
 
     private void ProcessStopCommand()
@@ -115,18 +97,9 @@ public class UciEngine
     }
 
     private void ProcessPositionCommand(string message)
-    { 
-        // if (message.Split(' ').Length < 3) return;
-        // var moveStrings = message.Split(' ').Skip(3).ToArray();
-        // var moves = new Move[moveStrings.Length];
-        // for (var i = 0; i <  moveStrings.Length; i++)
-        // {
-        //     var str = moveStrings[i];
-        //     moves[i] = MoveUtility.GetMoveFromUCIName(str, _currentBoard);
-        //     _currentBoard.MakeMove(moves[i], false);
-        // }
+    {
         _currentBoard = new Board();
-        _currentBoard.LoadPosition(botMatchStartFens);
+        _currentBoard.LoadPosition(BotMatchStartFens);
         var moveStrings = message.Split(' ');
         if (moveStrings[^1] == "startpos") return;
         for (var i = 3; i < moveStrings.Length; i++)
@@ -138,7 +111,7 @@ public class UciEngine
 
     private void Respond(string response)
     {
-        WriteLineToDisk($"Responding: {response}", _logFile);
+        WriteLineToDisk($"Responding: {response}", LogFile);
         Console.WriteLine(response);
     }
 }

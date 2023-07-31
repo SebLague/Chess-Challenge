@@ -4,8 +4,9 @@ using ChessChallenge.Bot;
 
 var engine = new UciEngine();
 var message = string.Empty;
-while (message != "quit")
+var run = true;
+while (run)
 {
     message = Console.ReadLine();
-    if (!string.IsNullOrEmpty(message)) engine.ReceiveCommand(message);
+    run = string.IsNullOrEmpty(message) || engine.ReceiveCommand(message);
 }
