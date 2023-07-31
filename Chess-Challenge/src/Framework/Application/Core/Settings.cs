@@ -20,6 +20,7 @@ namespace ChessChallenge.Application
         // Other settings
         public const int MaxTokenCount = 1024;
         public const LogType MessagesToLog = LogType.All;
+        public const int MaxMemoryUsage = 256 * 1024 * 1024;
 
         public enum LogType
         {
