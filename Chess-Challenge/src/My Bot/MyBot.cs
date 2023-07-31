@@ -52,10 +52,9 @@ public class MyBot : IChessBot
         if (diff > 0 || aborted)
             DEPTH = Math.Max(DEPTH - 1, 2);
         else
-            DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 5 : 4);
+            DEPTH = Math.Min(DEPTH + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 6 : 5);
         return bestMove;
     }
-
     /// <summary>
     /// Search is a recursive function that searches for the best move at a given depth.
     /// </summary>
@@ -78,9 +77,10 @@ public class MyBot : IChessBot
 
         double bestScore = WORST_SCORE;
         Move[] moves = board.GetLegalMoves();
+        Move[] orderedMoves = MoveOrderingHeuristics(moves);
         if (depth == DEPTH)
             bestMove = moves[0];
-        foreach (Move move in moves)
+        foreach (Move move in orderedMoves)
         {
             if (timer.MillisecondsElapsedThisTurn > timeForMove)
             {
@@ -164,6 +164,23 @@ public class MyBot : IChessBot
             progress);
     }
 
+    private Move[] MoveOrderingHeuristics(Move[] legalMoves)
+    {
+        int[] heuristicScores = new int[legalMoves.Length];
+        for (int i=0;i<legalMoves.Length;i++)
+        {
+            if (legalMoves[i].IsCapture)
+                heuristicScores[i] += 50;
+            if (legalMoves[i].IsCastles)
+                heuristicScores[i] += 50;
+            if (legalMoves[i].IsPromotion)
+                heuristicScores[i] += 100;
+        }
+        Array.Sort(heuristicScores, legalMoves);
+        Array.Reverse(legalMoves);
+        return legalMoves ;
+
+    }
 
     ulong[] PIECE_SQUARE_TABLE_RAW = {
         0x0000000000000000, 0xf11a10f6f0f2ffe8, 0xf8160202f9fdfdee, 0xef07040c08fdffee, 0xf00c08100e0409f6, 0xf211262c151205fc, 0xf917562e41295b43, 0x0000000000000000, //
