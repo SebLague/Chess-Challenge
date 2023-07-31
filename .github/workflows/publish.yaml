@@ -122,7 +122,7 @@ jobs:
           body: |
             | Opponent | Wins | Draws | Losses | Commit |
             | --- | --- | --- | --- | --- |
-            | ${{ inputs.opponent }} | ${{ inputs.wins }} | ${{ inputs.draws }} | ${{ inputs.losses }} | ${{ steps.prepare.outputs.short_sha }} |
+            | ${{ steps.opponent_adjust.outputs.opponent || inputs.opponent }} | ${{ inputs.wins }} | ${{ inputs.draws }} | ${{ inputs.losses }} | ${{ steps.prepare.outputs.short_sha }} |
 
   react:
     runs-on: ubuntu-latest
