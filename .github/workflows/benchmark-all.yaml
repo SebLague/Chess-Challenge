@@ -63,12 +63,13 @@ jobs:
 
       - uses: xt0rted/pull-request-comment-branch@v2
         id: comment-branch
+        if: github.event_name == 'issue_comment'
 
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
-          ref: ${{ github.event.pull_request.head.ref || steps.comment-branch.outputs.head_ref }}
+          ref: ${{ github.event.pull_request.head.ref || steps.comment-branch.outputs.head_ref || github.event.push.head.ref }}
 
       - name: Prepare (Dispatch)
         if: github.event_name == 'workflow_dispatch'
@@ -176,7 +177,7 @@ jobs:
       fens: ${{ fromJSON(needs.prepare.outputs.fens) }}
       run: ${{ needs.prepare.outputs.run }}
       remote_opponent: ${{ fromJSON(needs.prepare.outputs.remote_opponent) }}
-      head_ref: ${{ github.event.pull_request.head.ref || needs.prepare.outputs.head_ref }}
+      head_ref: ${{ github.event.pull_request.head.ref || needs.prepare.outputs.head_ref || github.event.push.ref }}
 
   publish:
     needs:
@@ -188,4 +189,4 @@ jobs:
       wins: ${{ fromJSON(needs.benchmark.outputs.wins) }}
       draws: ${{ fromJSON(needs.benchmark.outputs.draws) }}
       losses: ${{ fromJSON(needs.benchmark.outputs.losses) }}
-      head_ref: ${{ github.event.pull_request.head.ref || needs.prepare.outputs.head_ref }}
+      head_ref: ${{ github.event.pull_request.head.ref || needs.prepare.outputs.head_ref || github.event.push.ref }}
