@@ -1,50 +1,183 @@
-name: Benchmark All
+name: Benchmark Bot
+
+env:
+  DEFAULT_OPPONENT: Stockfish_2
+  DEFAULT_JOBS: 25
+  DEFAULT_FENS: 25
 
 on:
   push:
     branches:
       - main
+
   pull_request:
     types: [opened, synchronize, reopened]
 
+  issue_comment:
+    types: [created]
+
+  workflow_dispatch:
+    inputs:
+      opponent:
+        description: 'Opponent'
+        required: true
+        default: Stockfish_2
+      jobs:
+        description: 'Jobs'
+        required: true
+        default: 25
+      fens:
+        description: 'Fens'
+        required: true
+        default: 25
+      env:
+        description: 'Environment variables to set'
+        required: false
+
 permissions:
   pull-requests: write
+  issues: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.comment.id || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  evilbot:
-    if: false
-    uses: ./.github/workflows/benchmark-publish.yaml
-    with:
-      opponent: EvilBot
-      threads: 1
-      jobs: 40
 
-  stockfish:
-    uses: ./.github/workflows/benchmark-publish.yaml
-    strategy:
-      matrix:
-        level: [2]
-    with:
-      opponent: Stockfish
-      opponent_long: Stockfish (${{ matrix.level }})
-      threads: 1
-      jobs: 40
-      fens: 100
-      run: |
-        cd Chess-Challenge
-        wget -nv https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-avx2.tar
-        tar -xf stockfish-ubuntu-x86-64-avx2.tar
-        echo "STOCKFISH_BIN=stockfish/stockfish-ubuntu-x86-64-avx2" >> $GITHUB_ENV
-        echo "STOCKFISH_LEVEL=${{ matrix.level }}" >> $GITHUB_ENV
+  prepare:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'issue_comment' || contains(github.event.comment.body, '/benchmark')
 
-  comparebot:
-    if: false
-    uses: ./.github/workflows/benchmark-publish.yaml
+    outputs:
+      opponent: ${{ steps.out.outputs.opponent }}
+      fens: ${{ steps.out.outputs.fens }}
+      jobs: ${{ steps.out.outputs.jobs }}
+      run: ${{ steps.out.outputs.run }}
+      opponent_long: ${{ steps.out.outputs.opponent_long }}
+      remote_opponent: ${{ steps.out.outputs.remote_opponent }}
+
+    steps:
+
+      - name: Checkout code
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Prepare (Dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        id: prepare_dispatch
+        run: |
+          echo "opponent=${{ github.event.inputs.opponent }}" >> $GITHUB_OUTPUT
+          echo "fens=${{ github.event.inputs.fens }}" >> $GITHUB_OUTPUT
+          echo "jobs=${{ github.event.inputs.jobs }}" >> $GITHUB_OUTPUT
+          echo "env=${{ github.event.inputs.env }}" >> $GITHUB_OUTPUT
+
+      - name: Prepare (Push & PR)
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        id: prepare_push
+        run: |
+          LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha || github.event.head_commit.sha }}
+          COMMIT_MESSAGE=$(git log $LAST_COMMIT_SHA -1 --pretty=%B)
+          echo "opponent=$(echo $COMMIT_MESSAGE | grep -oP 'opponent=\K\S+')" >> $GITHUB_OUTPUT
+          echo "fens=$(echo $COMMIT_MESSAGE | grep -oP 'fens=\K\d+')" >> $GITHUB_OUTPUT
+          echo "jobs=$(echo $COMMIT_MESSAGE | grep -oP 'jobs=\K\d+')" >> $GITHUB_OUTPUT
+          echo "env=$(echo $COMMIT_MESSAGE | grep -oP 'env=\K\S+')" >> $GITHUB_OUTPUT
+
+      - name: Prepare (Comment)
+        if: github.event_name == 'issue_comment'
+        id: prepare_comment
+        run: |
+          COMMENT='${{ github.event.comment.body }}'
+          echo "opponent=$(echo $COMMENT | grep -oP 'opponent=\K\S+')" >> $GITHUB_OUTPUT
+          echo "fens=$(echo $COMMENT | grep -oP 'fens=\K\d+')" >> $GITHUB_OUTPUT
+          echo "jobs=$(echo $COMMENT | grep -oP 'jobs=\K\d+')" >> $GITHUB_OUTPUT
+          echo "env=$(echo $COMMENT | grep -oP 'env=\K\S+')" >> $GITHUB_OUTPUT
+
+      - name: Output
+        id: out
+        env:
+          OPPONENT: ${{ steps.prepare_dispatch.outputs.opponent || steps.prepare_push.outputs.opponent || steps.prepare_comment.outputs.opponent || env.DEFAULT_OPPONENT }}
+          FENS: ${{ steps.prepare_dispatch.outputs.fens || steps.prepare_push.outputs.fens || steps.prepare_comment.outputs.fens || env.DEFAULT_FENS }}
+          JOBS: ${{ steps.prepare_dispatch.outputs.jobs || steps.prepare_push.outputs.jobs || steps.prepare_comment.outputs.jobs || env.DEFAULT_JOBS }}
+          ENV: ${{ steps.prepare_dispatch.outputs.env || steps.prepare_push.outputs.env || steps.prepare_comment.outputs.env || '' }}
+        run: |
+          OPPONENT_LONG=$OPPONENT
+          if [[ $OPPONENT = Stockfish_* ]]; then
+            LEVEL=$(echo $OPPONENT | grep -oP 'Stockfish_\K\d+' || echo 0)
+            ENV="$ENV:STOCKFISH_LEVEL=$LEVEL"
+            OPPONENT_LONG="Stockfish ($LEVEL)"
+            OPPONENT="Stockfish"
+          elif [[ $OPPONENT = Stockfish ]]; then
+            ENV="$ENV:STOCKFISH_LEVEL=0"
+            OPPONENT_LONG="Stockfish (0)"
+            OPPONENT="Stockfish"
+          fi
+
+          REMOTE_OPPONENT=$(wget -q $OPPONENT && echo true || echo false)
+
+          RUN="true"
+          ENV_VARS=$(echo $ENV | tr ":" "\n")
+          for ENV_VAR in $ENV_VARS; do
+            RUN="$RUN && echo \"$ENV_VAR\" >> \$GITHUB_ENV"
+          done
+
+          echo "opponent=$OPPONENT" >> $GITHUB_OUTPUT
+          echo "opponent_long=$OPPONENT_LONG" >> $GITHUB_OUTPUT
+          echo "fens=$FENS" >> $GITHUB_OUTPUT
+          echo "jobs=$JOBS" >> $GITHUB_OUTPUT
+          echo "run=$RUN" >> $GITHUB_OUTPUT
+          echo "remote_opponent=$REMOTE_OPPONENT" >> $GITHUB_OUTPUT
+
+      - name: Notice
+        env:
+          OPPONENT: ${{ steps.out.outputs.opponent }}
+          OPPONENT_LONG: ${{ steps.out.outputs.opponent_long }}
+          FENS: ${{ steps.out.outputs.fens }}
+          JOBS: ${{ steps.out.outputs.jobs }}
+          RUN: ${{ steps.out.outputs.run }}
+          REMOTE_OPPONENT: ${{ steps.out.outputs.remote_opponent }}
+        run: echo "::notice::opponent=$OPPONENT, opponent_long=$OPPONENT_LONG, fens=$FENS, jobs=$JOBS, run=$RUN, remote_opponent=$REMOTE_OPPONENT"
+
+
+  react:
+    runs-on: ubuntu-latest
+    needs: prepare
+    if: github.event_name == 'issue_comment' || github.event_name == 'pull_request'
+    steps:
+      - name: Update comment
+        uses: peter-evans/create-or-update-comment@v3
+        if: github.event_name == 'issue_comment'
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: eyes
+          reactions-edit-mode: replace
+      - name: Update PR
+        uses: aidan-mundy/react-to-issue@v1.1.1
+        if: github.event_name == 'pull_request' && false # does not currently support replacing reactions
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          reactions: eyes
+
+
+  benchmark:
+    needs: prepare
+    uses: ./.github/workflows/benchmark.yaml
     with:
-      opponent: CompareBot
-      threads: 1
-      jobs: 20
+      opponent: ${{ needs.prepare.outputs.opponent }}
+      opponent_long: ${{ needs.prepare.outputs.opponent_long }}
+      jobs: ${{ fromJSON(needs.prepare.outputs.jobs) }}
+      fens: ${{ fromJSON(needs.prepare.outputs.fens) }}
+      run: ${{ needs.prepare.outputs.run }}
+      remote_opponent: ${{ fromJSON(needs.prepare.outputs.remote_opponent) }}
+
+  publish:
+    needs:
+      - prepare
+      - benchmark
+    uses: ./.github/workflows/publish.yaml
+    with:
+      opponent: ${{ needs.prepare.outputs.opponent_long }}
+      wins: ${{ fromJSON(needs.benchmark.outputs.wins) }}
+      draws: ${{ fromJSON(needs.benchmark.outputs.draws) }}
+      losses: ${{ fromJSON(needs.benchmark.outputs.losses) }}

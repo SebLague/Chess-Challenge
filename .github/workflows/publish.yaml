@@ -1,0 +1,143 @@
+name: Benchmark & Publish
+
+on:
+  workflow_call:
+    inputs:
+      opponent:
+        required: true
+        type: string
+      wins:
+        required: true
+        type: number
+      draws:
+        required: true
+        type: number
+      losses:
+        required: true
+        type: number
+
+jobs:
+
+  notice:
+    runs-on: ubuntu-latest
+    env:
+      WINS: ${{ inputs.wins }}
+      DRAWS: ${{ inputs.draws }}
+      LOSSES: ${{ inputs.losses }}
+      OPPONENT: ${{ inputs.opponent }}
+    steps:
+      - run: |
+          echo "::notice title=Results against $OPPONENT::$WINS wins, $DRAWS draws, $LOSSES losses"
+
+  publish:
+    if: github.event_name == 'pull_request' || github.event_name == 'issue_comment'
+    runs-on: ubuntu-latest
+    env:
+      OPPONENT: ${{ inputs.opponent }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Calculate and export context
+        id: prepare
+        run: |
+          LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha || '$(git rev-parse @)' }}
+          SHORT_SHA=$(echo $LAST_COMMIT_SHA | cut -c 1-7)
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+
+      - name: Adjust opponent
+        id: opponent_adjust
+        if: contains(inputs.opponent, 'github.com') || contains(inputs.opponent, 'githubusercontent.com')
+        run: |
+          OPPONENT_NAME=$(echo $OPPONENT | grep -oP 'githubusercontent\.com/\K[^/]*/[^/]*')
+          OPPONENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo $OPPONENT | grep -oP 'github\.com/\K[^/]*/[^/]*' )
+          echo "opponent=[$OPPONENT_NAME]($OPPONENT)" >> $GITHUB_OUTPUT
+
+
+      - name: Edit PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const opponent = '${{ steps.opponent_adjust.outputs.opponent || inputs.opponent }}';
+            const wins = '${{ inputs.wins }}';
+            const draws = '${{ inputs.draws }}';
+            const losses = '${{ inputs.losses }}';
+            const shortSha = '${{ steps.prepare.outputs.short_sha }}';
+            const pull_number = ${{ github.event.pull_request.number || github.event.issue.number || 'null' }};
+
+            if (!pull_number) return;
+
+            getNewContent = (existingContent) => {
+              let newContent = existingContent;
+              let benchmarkIndexStart = existingContent.indexOf('<!-- benchmark start -->');
+              let benchmarkIndexEnd = existingContent.indexOf('<!-- benchmark end -->');
+              let benchmarkSection = '';
+
+              const newLine = `| ${opponent} | ${wins} | ${draws} | ${losses} | ${shortSha} |\n`;
+
+              if (benchmarkIndexStart === -1) {
+                // Benchmark section does not exist. Add it.
+                benchmarkSection = `\n<!-- benchmark start -->\n| Opponent | Wins | Draws | Losses | Commit |\n| --- | --- | --- | --- | --- |\n${newLine}<!-- benchmark end -->\n`;
+                newContent += benchmarkSection;
+              } else {
+                // Benchmark section exists. Update it.
+                benchmarkSection = existingContent.slice(benchmarkIndexStart + 23, benchmarkIndexEnd);
+                let opponentIndex = benchmarkSection.indexOf(`| ${opponent} |`);
+
+                if (opponentIndex === -1) {
+                  // Opponent row does not exist. Add it.
+                  benchmarkSection += newLine;
+                } else {
+                  // Opponent row exists. Update it.
+                  const opponentIndexEnd = benchmarkSection.indexOf('\n', opponentIndex);
+                  benchmarkSection = benchmarkSection.slice(0, opponentIndex) + newLine + benchmarkSection.slice(opponentIndexEnd+1);
+                }
+
+                newContent = existingContent.slice(0, benchmarkIndexStart + 23) + benchmarkSection + existingContent.slice(benchmarkIndexEnd);
+              }
+              return newContent;
+            }
+
+            const pr = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pull_number
+            });
+            const newContent = getNewContent(pr.data.body || '');
+            github.rest.pulls.update({
+              pull_number: pull_number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: newContent
+            });
+
+      - name: Edit Comment
+        if: github.event_name == 'issue_comment'
+        uses: peter-evans/create-or-update-comment@v3
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          body: |
+            | Opponent | Wins | Draws | Losses | Commit |
+            | --- | --- | --- | --- | --- |
+            | ${{ inputs.opponent }} | ${{ inputs.wins }} | ${{ inputs.draws }} | ${{ inputs.losses }} | ${{ steps.prepare.outputs.short_sha }} |
+
+  react:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issue_comment' || github.event_name == 'pull_request'
+    steps:
+      - name: Update comment
+        uses: peter-evans/create-or-update-comment@v3
+        if: github.event_name == 'issue_comment'
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: hooray
+          reactions-edit-mode: replace
+      - name: Update PR
+        uses: aidan-mundy/react-to-issue@v1.1.1
+        if: github.event_name == 'pull_request' && false # does not currently support replacing reactions
+        with:
+          issue-number: ${{ github.event.pull_request.number }}
+          reactions: hooray

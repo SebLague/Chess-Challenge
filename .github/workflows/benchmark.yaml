@@ -9,9 +9,6 @@ on:
       opponent_long:
         required: false
         type: string
-      threads:
-        required: true
-        type: number
       jobs:
         required: false
         type: number
@@ -21,6 +18,9 @@ on:
       run:
         required: false
         type: string
+      remote_opponent:
+        required: false
+        type: boolean
     outputs:
       wins:
         value: ${{ jobs.combine.outputs.wins }}
@@ -52,8 +52,8 @@ jobs:
           JOBS=$((LINES / OFFSET + (LINES % OFFSET != 0)))
           CHUNKS="[$(seq 0 $((JOBS - 1)) | tr '\n' ',' | sed 's/,$//')]"
           SUFFIX=$(openssl rand -hex 4)
-          KEY="${{inputs.opponent}}_$SUFFIX"
-          echo "::notice title=Benchmark against ${{inputs.opponent_long || inputs.opponent }} ($SUFFIX)::$LINES FENs, $JOBS jobs with ${{ inputs.threads }} threads, $OFFSET FENs per job"
+          KEY="${{inputs.remote_opponent && 'RemoteOpponent' || inputs.opponent }}_$SUFFIX"
+          echo "::notice title=Benchmark against ${{inputs.opponent_long || inputs.opponent }} ($SUFFIX)::$LINES FENs, $JOBS jobs with $OFFSET FENs per job"
           echo "chunks=$CHUNKS" >> $GITHUB_OUTPUT
           echo "offset=$OFFSET" >> $GITHUB_OUTPUT
           echo "key=$KEY" >> $GITHUB_OUTPUT
@@ -85,6 +85,20 @@ jobs:
         Xvfb :99 &
         echo "DISPLAY=:99.0" >> $GITHUB_ENV
 
+    - name: Download Stockfish
+      if: inputs.opponent == 'stockfish'
+      run: |
+        cd Chess-Challenge
+        wget https://github.com/official-stockfish/Stockfish/releases/download/sf_16/stockfish-ubuntu-x86-64-avx2.tar
+        tar -xf stockfish-ubuntu-x86-64-avx2.tar
+        echo "STOCKFISH_BIN=stockfish/stockfish-ubuntu-x86-64-avx2" >> $GITHUB_ENV
+
+    - name: Download Remote Opponent
+      if: inputs.remote_opponent
+      run: |
+        wget ${{ inputs.opponent }} -O ./Chess-Challenge/src/CompareBot/CompareBot.cs
+        sed -i 's/MyBot/CompareBot/g' ./Chess-Challenge/src/CompareBot/CompareBot.cs
+
     - name: Prepare
       run: ${{ inputs.run || 'echo "Nothing to prepare"' }}
 
@@ -102,7 +116,7 @@ jobs:
 
         cd Chess-Challenge
         touch output.log
-        dotnet run ${{ inputs.opponent }}> >(tee output.log) &
+        dotnet run ${{ inputs.remote_opponent && 'CompareBot' || inputs.opponent }}> >(tee output.log) &
         PID=$!
         while ! grep -q "Match finished:" output.log; do sleep 1; done
         kill $PID
