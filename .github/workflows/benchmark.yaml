@@ -21,6 +21,9 @@ on:
       remote_opponent:
         required: false
         type: boolean
+      head_ref:
+        required: false
+        type: string
     outputs:
       wins:
         value: ${{ jobs.combine.outputs.wins }}
@@ -39,6 +42,9 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          ref: ${{ inputs.head_ref }}
       - name: Prepare
         id: prepare
         run: |
@@ -73,6 +79,8 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
+      with:
+        ref: ${{ inputs.head_ref }}
 
     - name: Setup .NET
       uses: actions/setup-dotnet@v3

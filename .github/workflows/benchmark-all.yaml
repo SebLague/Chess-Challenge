@@ -37,6 +37,7 @@ on:
 permissions:
   pull-requests: write
   issues: write
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.event.comment.id || github.ref }}
@@ -55,14 +56,20 @@ jobs:
       run: ${{ steps.out.outputs.run }}
       opponent_long: ${{ steps.out.outputs.opponent_long }}
       remote_opponent: ${{ steps.out.outputs.remote_opponent }}
+      head_ref: ${{ steps.comment-branch.outputs.head_ref }}
 
     steps:
+
+
+      - uses: xt0rted/pull-request-comment-branch@v2
+        id: comment-branch
 
       - name: Checkout code
         if: github.event_name == 'pull_request' || github.event_name == 'push'
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
+          ref: ${{ github.event.pull_request.head.ref || steps.comment-branch.outputs.head_ref }}
 
       - name: Prepare (Dispatch)
         if: github.event_name == 'workflow_dispatch'
@@ -77,7 +84,7 @@ jobs:
         if: github.event_name == 'pull_request' || github.event_name == 'push'
         id: prepare_push
         run: |
-          LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha || github.event.head_commit.sha }}
+          LAST_COMMIT_SHA=${{ github.event.pull_request.head.sha || steps.comment-branch.outputs.head_sha }}
           COMMIT_MESSAGE=$(git log $LAST_COMMIT_SHA -1 --pretty=%B)
           echo "opponent=$(echo $COMMIT_MESSAGE | grep -oP 'opponent=\K\S+')" >> $GITHUB_OUTPUT
           echo "fens=$(echo $COMMIT_MESSAGE | grep -oP 'fens=\K\d+')" >> $GITHUB_OUTPUT
@@ -170,6 +177,7 @@ jobs:
       fens: ${{ fromJSON(needs.prepare.outputs.fens) }}
       run: ${{ needs.prepare.outputs.run }}
       remote_opponent: ${{ fromJSON(needs.prepare.outputs.remote_opponent) }}
+      head_ref: ${{ github.event.pull_request.head.ref || needs.prepare.outputs.head_ref }}
 
   publish:
     needs:
@@ -181,3 +189,4 @@ jobs:
       wins: ${{ fromJSON(needs.benchmark.outputs.wins) }}
       draws: ${{ fromJSON(needs.benchmark.outputs.draws) }}
       losses: ${{ fromJSON(needs.benchmark.outputs.losses) }}
+      head_ref: ${{ github.event.pull_request.head.ref || needs.prepare.outputs.head_ref }}

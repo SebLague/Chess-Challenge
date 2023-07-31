@@ -15,6 +15,9 @@ on:
       losses:
         required: true
         type: number
+      head_ref:
+        required: false
+        type: string
 
 jobs:
 
@@ -40,6 +43,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
+          ref: ${{ inputs.head_ref }}
 
       - name: Calculate and export context
         id: prepare
