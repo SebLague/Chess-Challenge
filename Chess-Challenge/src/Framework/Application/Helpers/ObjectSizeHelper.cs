@@ -12,7 +12,9 @@ namespace ChessChallenge.Application
         static readonly long ObjectSize = IntPtr.Size == 8 ? 24 : 12;
         static readonly long PointerSize = IntPtr.Size;
 
-        public static long GetSize(object? obj)
+        public static long GetSize(object? obj) => GetSize(obj, new HashSet<object>());
+
+        static long GetSize(object? obj, HashSet<object> seenObjects)
         {
             if (obj is null)
             {
@@ -38,7 +40,7 @@ namespace ChessChallenge.Application
                 // Marshal.SizeOf() does not work for structs with reference types
                 var fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
                 return fieldInfos.Any(x => x.FieldType.IsClass) 
-                    ? GetFieldsMemorySize(obj, fieldInfos) 
+                    ? GetFieldsMemorySize(obj, fieldInfos, seenObjects) 
                     : Marshal.SizeOf(obj);
             }
             
@@ -50,24 +52,38 @@ namespace ChessChallenge.Application
 
             if (obj is IEnumerable enumerable)
             {
-                return ObjectSize + enumerable.Cast<object>().Sum(item => GetObjectSize(item, item?.GetType() ?? typeof(object)));
+                return ObjectSize + enumerable.Cast<object>().Sum(item => GetObjectSize(item, item?.GetType() ?? typeof(object), seenObjects));
             }
                 
             if (type.IsClass)
             {
-                return ObjectSize + GetFieldsMemorySize(obj, type, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                return ObjectSize + GetFieldsMemorySize(obj, type, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, seenObjects);
             }
 
             throw new ArgumentException($"Unknown type {type.Name}", nameof(obj));
         }
 
-        private static long GetFieldsMemorySize(object obj, Type type, BindingFlags bindingFlags) 
-            => GetFieldsMemorySize(obj, type.GetFields(bindingFlags));
+        private static long GetFieldsMemorySize(object obj, Type type, BindingFlags bindingFlags, HashSet<object> seenObjects) 
+            => GetFieldsMemorySize(obj, type.GetFields(bindingFlags), seenObjects);
 
-        private static long GetFieldsMemorySize(object obj, IEnumerable<FieldInfo> fieldInfos) 
-            => fieldInfos.Sum(x => GetObjectSize(x.GetValue(obj), x.GetType()));
+        private static long GetFieldsMemorySize(object obj, IEnumerable<FieldInfo> fieldInfos, HashSet<object> seenObjects) 
+            => fieldInfos.Sum(x => GetObjectSize(x.GetValue(obj), x.GetType(), seenObjects));
         
-        private static long GetObjectSize(object? obj, Type type) 
-            => GetSize(obj) + (type.IsClass ? PointerSize : 0);
+        private static long GetObjectSize(object? obj, Type type, HashSet<object> seenObjects)
+        {
+            if (type.IsClass && obj is not null && seenObjects.Contains(obj))
+            {
+                return 0;
+            }
+            
+            var size = GetSize(obj) + (type.IsClass ? PointerSize : 0);
+
+            if (type.IsClass && obj is not null)
+            {
+                seenObjects.Add(obj);
+            }
+            
+            return size;
+        }
     }
 }
