@@ -23,8 +23,8 @@ namespace ChessChallenge.Application
 
             var type = obj.GetType();
 
-            // ignore references to the API board
-            if (typeof(API.Board) == type)
+            // ignore references to the API board and the API Timer
+            if (typeof(API.Board) == type || typeof(API.Timer) == type)
             {
                 return 0;
             }
