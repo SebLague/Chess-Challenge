@@ -54,6 +54,7 @@ jobs:
 
       - name: Adjust opponent
         id: opponent_adjust
+        if: contains(inputs.opponent, 'https')
         run: |
           OPPONENT_NAME=$(echo $OPPONENT | grep -oP 'githubusercontent\.com/\K[^/]*/[^/]*' || echo '')
           OPPONENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo $OPPONENT | grep -oP 'github\.com/\K[^/]*/[^/]*' || echo '')
