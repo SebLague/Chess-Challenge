@@ -17,12 +17,12 @@ namespace ChessChallenge.Application
         public static void Run(bool runPerft)
         {
             anyFailed = false;
-            
+
             new SearchTest().Run(false);
             new SearchTest().Run(true);
             new SearchTest2().Run();
             new SearchTest3().Run();
-           
+
             RepetitionTest();
             DrawTest();
             MoveGenTest();
@@ -368,6 +368,19 @@ namespace ChessChallenge.Application
             Assert(!boardAPI.IsDraw(), "Draw wrong");
             boardAPI.MakeMove(new API.Move("f5f7", boardAPI));
             Assert(boardAPI.IsDraw(), "Draw wrong");
+            // Test stalemate bug when generating captures
+            board.LoadPosition("8/8/3k4/8/8/3K4/4Q3/8 w - - 0 1");
+            boardAPI = new API.Board(board);
+            var captures = boardAPI.GetLegalMoves(capturesOnly: true);
+            Assert(captures.Length == 0, "Wrong capture count");
+            Assert(!boardAPI.IsInStalemate(), "Stalemate wrong");
+            // Test stalemate bug when generating captures (non alloc)
+            board.LoadPosition("8/8/3k4/8/8/3K4/4Q3/8 w - - 0 1");
+            boardAPI = new API.Board(board);
+            Span<API.Move> captureSpan = stackalloc API.Move[64];
+            boardAPI.GetLegalMovesNonAlloc(ref captureSpan, capturesOnly: true);
+            Assert(captureSpan.Length == 0, "Wrong capture count");
+            Assert(!boardAPI.IsInStalemate(), "Stalemate wrong");
 
             // Insufficient material
             board = new Chess.Board();
