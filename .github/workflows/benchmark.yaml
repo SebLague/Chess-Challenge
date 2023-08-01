@@ -101,6 +101,21 @@ jobs:
         tar -xf stockfish-ubuntu-x86-64-avx2.tar
         echo "STOCKFISH_BIN=stockfish/stockfish-ubuntu-x86-64-avx2" >> $GITHUB_ENV
 
+    - name: Checkout SebLague Coding Adventure Bot
+      if: inputs.opponent == 'SebLague'
+      uses: actions/checkout@v3
+      with:
+        repository: SebLague/Chess-Coding-Adventure
+        path: Chess-Coding-Adventure
+
+    - name: Build SebLague Coding Adventure Bot
+      if: inputs.opponent == 'SebLague'
+      run: |
+        tree -L 3
+        cd Chess-Coding-Adventure/Chess-Coding-Adventure
+        dotnet publish -c release --self-contained
+        echo "SEBLAGUE_BIN=$(pwd)/bin/release/net6.0/linux-x64/publish/Chess-Coding-Adventure" >> $GITHUB_ENV
+
     - name: Download Remote Opponent
       if: inputs.remote_opponent
       run: |

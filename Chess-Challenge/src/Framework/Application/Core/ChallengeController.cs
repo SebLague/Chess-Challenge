@@ -21,6 +21,7 @@ namespace ChessChallenge.Application
             MyBot,
             EvilBot,
             Stockfish,
+            SebLague,
             CompareBot
         }
 
@@ -228,6 +229,7 @@ namespace ChessChallenge.Application
                 PlayerType.MyBot => new ChessPlayer(new MyBot(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
                 PlayerType.Stockfish => new ChessPlayer(new Stockfish(), type, GameDurationMilliseconds),
+                PlayerType.SebLague => new ChessPlayer(new SebLague(), type, GameDurationMilliseconds),
                 PlayerType.CompareBot => new ChessPlayer(new CompareBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
