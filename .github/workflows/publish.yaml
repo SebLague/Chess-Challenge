@@ -55,9 +55,9 @@ jobs:
       - name: Adjust opponent
         id: opponent_adjust
         run: |
-          OPPONENT_NAME=$(echo $OPPONENT | grep -oP 'githubusercontent\.com/\K[^/]*/[^/]*')
-          OPPONENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo $OPPONENT | grep -oP 'github\.com/\K[^/]*/[^/]*' )
-          OPPOENENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo RemoteOpponent )
+          OPPONENT_NAME=$(echo $OPPONENT | grep -oP 'githubusercontent\.com/\K[^/]*/[^/]*' || echo '')
+          OPPONENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo $OPPONENT | grep -oP 'github\.com/\K[^/]*/[^/]*' || echo '')
+          OPPONENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo RemoteOpponent )
           echo "opponent=[$OPPONENT_NAME]($OPPONENT)" >> $GITHUB_OUTPUT
 
 
