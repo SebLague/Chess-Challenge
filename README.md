@@ -22,6 +22,7 @@ It has been necessary to make some bug fixes to the original project, and I've a
 * <b>V1.16</b> Added `timer.GameStartTimeMilliseconds`, `timer.OpponentMillisecondsRemaining`, `board.ForceSkipTurn()`.
 * <b>V1.17</b> Added `BitboardHelper.GetPieceAttacks()` and optimized `board.SquareIsAttackedByOponent()`. Writing `#DEBUG` in a comment will now exclude code in that line from counting towards the token limit (for testing only of course).
 * <b>V1.18</b> Added `timer.IncrementMilliseconds` (this will be 0 for the main tournament, but a small increment may be used in the final playoff games). Fixed a bug in the repetition handling, and optimized check/stalemate detection.
+* <b>V1.19</b> Fixed potential out of bounds exception. Fixed bug in stalemate detection.
 
 [There will be no API changes after August 1]
 
