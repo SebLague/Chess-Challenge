@@ -311,6 +311,13 @@ namespace ChessChallenge.API
 		{
 			return board.pieceBitboards[PieceHelper.MakePiece((int)pieceType, white)];
 		}
+
+		/// <summary>
+		/// Returns 1 when it is white's turn, and -1 when it is black's.
+		/// </summary>
+		public int IsWhiteToMoveInt => IsWhiteToMove ? 1 : -1;
+
+
 		/// <summary>
 		/// 64-bit number where each bit that is set to 1 represents a square that contains any type of white piece.
 		/// </summary>
@@ -328,6 +335,7 @@ namespace ChessChallenge.API
 
 
 		public bool IsWhiteToMove => board.IsWhiteToMove;
+
 
 		/// <summary>
 		/// Number of ply (a single move by either white or black) played so far
