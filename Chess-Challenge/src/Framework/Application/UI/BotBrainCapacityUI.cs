@@ -69,6 +69,10 @@ namespace ChessChallenge.Application
         static readonly string[] sizes = { "B", "KB", "MB" };
         static string FriendlySize(long size)
         {
+            if (size == 0)
+            {
+                return "--";
+            }
             double friendlySize = size;
             int order = 0;
             while (friendlySize >= 1024 && order < sizes.Length - 1)

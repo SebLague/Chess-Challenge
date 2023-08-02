@@ -31,16 +31,28 @@ namespace ChessChallenge.Application
 
             if (type.IsEnum)
             {
-                var underlyingType = Enum.GetUnderlyingType(type);
-                return Marshal.SizeOf(underlyingType); 
+                if (!sizeOfTypeCache.TryGetValue(type, out var sizeOfType))
+                {
+                    var underlyingType = Enum.GetUnderlyingType(type);
+                    sizeOfTypeCache[type] = sizeOfType = Marshal.SizeOf(underlyingType);
+                }
+                
+                return sizeOfType; 
             }
             
             if (type.IsValueType)
             {
                 // Marshal.SizeOf() does not work for structs with reference types
                 // Marshal.SizeOf() also does not work with generics, so we need to use Unsafe.SizeOf()
-                var fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
-                return fieldInfos.Any(x => x.FieldType.IsClass) 
+                if (!fieldInfoCache.TryGetValue(type, out var fieldInfos))
+                {
+                    fieldInfoCache[type] = fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                }
+                if (!typeContainsClassCache.TryGetValue(type, out var typeContainsClass))
+                {
+                    typeContainsClassCache[type] = typeContainsClass = fieldInfos.Any(x => TypeIsClass(x.FieldType));
+                }
+                return typeContainsClass 
                     ? GetFieldsMemorySize(obj, fieldInfos, seenObjects) 
                     : GetStructSize(type);
             }
@@ -50,19 +62,36 @@ namespace ChessChallenge.Application
                 var str = (string)obj;
                 return str.Length * 2 + 6 + ObjectSize;
             }
-
-            if (obj is IEnumerable enumerable)
+            
+            if (obj is IList collection)
             {
-                return ObjectSize + enumerable.Cast<object>().Sum(item => GetObjectSize(item, item?.GetType() ?? typeof(object), seenObjects));
+                var totalSize = ObjectSize;
+                
+                for (var index = 0; index < collection.Count; index++)
+                {
+                    var item = collection[index];
+                    totalSize += GetObjectSize(item, item?.GetType() ?? typeof(object), seenObjects);
+                }
+
+                return totalSize;
             }
                 
-            if (type.IsClass)
+            if (TypeIsClass(type))
             {
-                return ObjectSize + GetFieldsMemorySize(obj, type, BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic, seenObjects);
+                if (!fieldInfoCache.TryGetValue(type, out var fieldInfos))
+                {
+                    fieldInfoCache[type] = fieldInfos = type.GetFields(BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+                }
+                
+                return ObjectSize + GetFieldsMemorySize(obj, fieldInfos, seenObjects);
             }
 
             throw new ArgumentException($"Unknown type {type.Name}", nameof(obj));
         }
+        
+        static readonly Dictionary<Type, FieldInfo[]> fieldInfoCache = new();
+        static readonly Dictionary<Type, bool> typeContainsClassCache = new();
+        static readonly Dictionary<Type, bool> typeIsClassCache = new();
 
         static readonly Dictionary<Type, int> sizeOfTypeCache = new();
         private static long GetStructSize(Type type)
@@ -79,22 +108,42 @@ namespace ChessChallenge.Application
             return sizeOfType;
         }
 
-        private static long GetFieldsMemorySize(object obj, Type type, BindingFlags bindingFlags, HashSet<object> seenObjects) 
-            => GetFieldsMemorySize(obj, type.GetFields(bindingFlags), seenObjects);
+        private static long GetFieldsMemorySize(object obj, FieldInfo[] fieldInfos, HashSet<object> seenObjects)
+        {
+            var totalSize = 0L;
 
-        private static long GetFieldsMemorySize(object obj, IEnumerable<FieldInfo> fieldInfos, HashSet<object> seenObjects) 
-            => fieldInfos.Sum(x => GetObjectSize(x.GetValue(obj), x.FieldType, seenObjects));
+            for (var index = 0; index < fieldInfos.Length; index++)
+            {
+                var fieldInfo = fieldInfos[index];
+                var fieldValue = fieldInfo.GetValue(obj);
+                totalSize += GetObjectSize(fieldValue, fieldInfo.FieldType, seenObjects);
+            }
+
+            return totalSize;
+        }
+
+        private static bool TypeIsClass(Type type)
+        {
+            if (!typeIsClassCache.TryGetValue(type, out var typeIsClass))
+            {
+                typeIsClassCache[type] = typeIsClass = type.IsClass;
+            }
+
+            return typeIsClass;
+        }
         
         private static long GetObjectSize(object? obj, Type type, HashSet<object> seenObjects)
         {
-            if (type.IsClass && obj is not null && seenObjects.Contains(obj))
+            var typeIsClass = TypeIsClass(type);
+            
+            if (obj is not null && typeIsClass && seenObjects.Contains(obj))
             {
                 return 0;
             }
             
             var size = GetSize(obj, seenObjects) + (type.IsClass ? PointerSize : 0);
 
-            if (type.IsClass && obj is not null)
+            if (obj is not null && typeIsClass)
             {
                 seenObjects.Add(obj);
             }

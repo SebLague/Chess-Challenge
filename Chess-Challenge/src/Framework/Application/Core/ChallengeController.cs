@@ -234,7 +234,7 @@ namespace ChessChallenge.Application
                     moveToPlay = chosenMove;
                     isWaitingToPlayMove = true;
                     playMoveTime = lastMoveMadeTime + MinMoveDelay;
-                    if (PlayerToMove.Bot is MyBot)
+                    if (MonitorMemoryUsage && PlayerToMove.Bot is MyBot)
                     {
                         isPlaying = false;
                         try
