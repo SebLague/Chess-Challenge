@@ -67,6 +67,14 @@ namespace ChessChallenge.Application
             {
                 var totalSize = ObjectSize;
                 
+                // structs are counted easy
+                var typeZero = collection.Count > 0 ? collection[0]?.GetType() : null;
+                if (typeZero is not null && sizeOfTypeCache.TryGetValue(typeZero, out var sizeOfType))
+                {
+                    totalSize += collection.Count * sizeOfType;
+                    return totalSize;
+                }
+
                 for (var index = 0; index < collection.Count; index++)
                 {
                     var item = collection[index];
