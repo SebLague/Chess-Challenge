@@ -25,8 +25,8 @@ namespace ChessChallenge.Application
         static readonly Color nameCol = new(67, 204, 101, 255);
 
         // Bitboard debug mode
-        static readonly Color bitboardColZERO = new(61, 121, 217, 200);
-        static readonly Color bitboardColONE = new(252, 43, 92, 200);
+        static readonly Color bitboardColZERO = new(61, 121, 217, 100);
+        static readonly Color bitboardColONE = new(252, 43, 92, 100);
 
         static readonly Color squareTablecolMIN = new(255, 0, 0, 150);
         static readonly Color squareTableColMAX = new(0, 255, 0, 150);
@@ -386,7 +386,7 @@ namespace ChessChallenge.Application
         void DrawSquareTableDebugOverlaySquare(int file, int rank)
         {
             int index = (rank * 8 + file) ^ SquareTableDebugState.XORValue;
-            int[] squareTable = SquareTableDebugState.SquareTableToVisualize;
+            float[] squareTable = SquareTableDebugState.SquareTableToVisualize;
             float val = squareTable[index];
             float min = squareTable.Min();
             float max = squareTable.Max();
@@ -396,7 +396,8 @@ namespace ChessChallenge.Application
             Vector2 squarePos = GetSquarePos(file, rank, whitePerspective);
             Raylib.DrawRectangle((int)squarePos.X, (int)squarePos.Y, squareSize, squareSize, col);
             Vector2 textPos = squarePos + new Vector2(squareSize, squareSize) / 2;
-            DrawText($"{squareTable[index]}", textPos, 50, 0, Color.WHITE, AlignH.Centre);
+            string text = SquareTableDebugState.Floating ? $"{squareTable[index]:0.0}" : $"{squareTable[index]}";
+            DrawText(text, textPos, 50, 0, Color.WHITE, AlignH.Centre);
         }
 
         static Vector2 GetSquarePos(int file, int rank, bool whitePerspective)

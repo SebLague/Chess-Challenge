@@ -15,9 +15,18 @@ namespace ChessChallenge.API
         /// </summary>
         public static void VisualizeSquareTable(int[] squareTable, int? XORValue = 0)
         {
+            SquareTableDebugState.Floating = false;
+            SquareTableDebugState.SquareTableDebugVisualizationRequested = true;
+            SquareTableDebugState.SquareTableToVisualize = squareTable.Select(value => (float)value).ToArray();
+            SquareTableDebugState.XORValue = XORValue ?? 0;
+        }
+        public static void VisualizeSquareTable(float[] squareTable, int? XORValue = 0)
+        {
+            SquareTableDebugState.Floating = true;
             SquareTableDebugState.SquareTableDebugVisualizationRequested = true;
             SquareTableDebugState.SquareTableToVisualize = squareTable;
             SquareTableDebugState.XORValue = XORValue ?? 0;
+
         }
 
         /// <summary>

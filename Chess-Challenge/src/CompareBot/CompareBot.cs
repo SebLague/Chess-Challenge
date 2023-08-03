@@ -1,53 +1,51 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Diagnostics;
 using System.Linq;
+using static ChessChallenge.Application.ConsoleHelper;
 
-public class CompareBot: IChessBot
+public class CompareBot : IChessBot
 {
     //                                    .  P    K    B    R    Q    K
-    private static int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
-    private static int WORST_SCORE = -Int32.MaxValue;
-    /// <summary>the depth to which the bot searches</summary>
-    private int DEPTH = 4;
-    private Move bestMove = Move.NullMove;
-    private double alpha = -Int32.MaxValue;
-    private double beta = Int32.MaxValue;
-    private float progress = 0;
-    int[] PIECE_SQUARE_TABLE;
+    private int[] PIECE_VALUES = { 0, 100, 320, 330, 500, 900, 20000 };
 
+    private int depth = 5,
+            lastThinkTime = 0,
+            timeForMove = 5_000,
+            WORST_SCORE = -Int32.MaxValue;
+
+    private float progress = 0;
+    private bool aborted = false;
+
+    private Move bestMove = Move.NullMove;
+    private Timer gameTimer;
+
+    private byte[] PIECE_SQUARE_TABLE;
+
+    #pragma warning disable CS8618
     public CompareBot()
     {
-
-        PIECE_SQUARE_TABLE = PIECE_SQUARE_TABLE_RAW.Aggregate(new int[0], (decoded, rank) =>
-              {
-                  return decoded.Concat(
-                      Enumerable.Range(0, 8).Select(file =>
-                          {
-                              return (int)(sbyte)((rank & (255UL << 8 * file)) >> 8 * file);
-                          })
-                  ).ToArray();
-              });
-    }
-
-    private float Lerp(float a, float b, float t)
-    {
-        t = Math.Min(1, Math.Max(t, 0));
-        return a + (b - a) * t;
-    }
-
-    private float GetPieceSquareValue(Piece piece)
-    {
-        int index = piece.Square.Index ^ (piece.IsWhite ? 0 : 56);
-        return Lerp( //
-            PIECE_SQUARE_TABLE[((int)piece.PieceType - 1) * 64 + index],
-            PIECE_SQUARE_TABLE[(int)piece.PieceType * 64 + index],
-            progress);
+        PIECE_SQUARE_TABLE = PIECE_SQUARE_TABLE_RAW.SelectMany(BitConverter.GetBytes).ToArray();
     }
 
     public Move Think(Board board, Timer timer)
     {
-        progress = Math.Min(board.GameMoveHistory.Length / 65f, 1);
-        Search(board, DEPTH, alpha, beta);
+        aborted = false;
+        gameTimer = timer;
+        int movesDone = board.GameMoveHistory.Length;
+        progress = Math.Min(movesDone / 65f, 1);
+        if (movesDone > 60)
+            timeForMove = timer.MillisecondsRemaining / 40;
+        bestMove = board.GetLegalMoves()[0];
+
+        Search(board, depth, WORST_SCORE, -WORST_SCORE, 0);
+
+        lastThinkTime = timer.MillisecondsElapsedThisTurn;
+        double diff = lastThinkTime - 1200 * Math.Exp(-Math.Pow((movesDone - 25) / 55, 2));
+        if (diff > 0 || aborted)
+            depth = Math.Max(depth - 1, 2);
+        else
+            depth = Math.Min(depth + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 6 : 5);
         return bestMove;
     }
 
@@ -55,33 +53,48 @@ public class CompareBot: IChessBot
     /// Search is a recursive function that searches for the best move at a given depth.
     /// </summary>
     /// <param name="board">current board</param>
-    /// <param name="depth">current search depth</param>
+    /// <param name="currentDepth">current search depth</param>
     /// <remarks>the depth is decreased by 1 for each recursive call</remarks>
     /// <param name="maxDepth">maximal depth to be searched + the depth at which the boards are ultimately evaluated</param>
     /// <returns>score of the board at depth=0 with the best score obtained</returns>
-    double Search(Board board, int depth, double alpha, double beta)
+    private double Search(Board board, int currentDepth, double alpha, double beta, int castled)
     {
-        //Log("alpha" + alpha);
-        //Log("Beta" + beta);
+        if (board.IsInCheckmate())
+            return WORST_SCORE;
+        if (board.IsRepeatedPosition())
+            return 0;
+        if (board.IsDraw())
+            return 0;
         // we have reached the depth - evaluate the board for the current color
-        if (depth == 0)
-            return Evaluate(board);
+        if (currentDepth == 0)
+            return Evaluate(board, castled);
 
         double bestScore = WORST_SCORE;
+
         Move[] moves = board.GetLegalMoves();
-        if (depth == DEPTH)
-            bestMove = moves[0];
+        Array.Sort(moves.Select(move =>
+              Convert.ToInt32(move.IsCastles) * -50
+              - PIECE_VALUES[(int)move.CapturePieceType]
+              - PIECE_VALUES[(int)move.PromotionPieceType]).ToArray(), moves);
+
         foreach (Move move in moves)
         {
-            board.MakeMove(move);
+            if (gameTimer.MillisecondsElapsedThisTurn > timeForMove)
+            {
+                aborted = true;
+                break;
+            }
+
             // negate the score because after making a move,
             // we are looking at the board from the other player's perspective
-            double score = -Search(board, depth - 1, -beta, -alpha);
+            board.MakeMove(move);
+            double score = -Search(board, currentDepth - 1, -beta, -alpha, -(castled + Convert.ToInt32(move.IsCastles)));
             board.UndoMove(move);
+
             if (score > bestScore)
             {
                 bestScore = score;
-                if (depth == DEPTH)
+                if (currentDepth == depth)
                     this.bestMove = move;
             }
             if (bestScore > alpha)
@@ -98,43 +111,45 @@ public class CompareBot: IChessBot
     /// </summary>
     /// <param name="board">board to be evaluated</param>
     /// <returns>score of the board</returns>
-    private double Evaluate(Board board)
+    private double Evaluate(Board board, int castlingScore)
     {
-        if (board.IsInCheckmate())
-            return WORST_SCORE;
-        if (board.IsRepeatedPosition())
-            return WORST_SCORE / 4;
-        if (board.IsDraw())
-            return 0;
 
-        int mobilityScore = CalculateMobilityScore(board);
-
-        int materialScore = 0;
+        int materialScore = 0, mobilityScore = 0;
         float positionScore = 0;
+
         ulong pieces = board.AllPiecesBitboard;
         while (pieces > 0)
         {
-            Piece piece = board.GetPiece(
-                              new Square(BitboardHelper.ClearAndGetIndexOfLSB(ref pieces)));
+            Piece piece = board.GetPiece(new Square(BitboardHelper.ClearAndGetIndexOfLSB(ref pieces)));
             int factor = piece.IsWhite == board.IsWhiteToMove ? 1 : -1;
             materialScore += PIECE_VALUES[(int)piece.PieceType] * factor;
             positionScore += GetPieceSquareValue(piece) * factor;
+            mobilityScore += BitboardHelper.GetNumberOfSetBits(((piece.IsKnight ? BitboardHelper.GetKnightAttacks(piece.Square) : 0)
+                | BitboardHelper.GetSliderAttacks(piece.PieceType, piece.Square, board))
+                & ~(piece.IsWhite ? board.WhitePiecesBitboard : board.BlackPiecesBitboard)) * factor;
         }
-        return 60 * materialScore //
-           + 20 * mobilityScore //
-          + 20 * positionScore;
+
+        return 50 * materialScore
+           + 25 * mobilityScore
+           + 500 * castlingScore
+           + 25 * Math.Min(progress * 2, 1) * positionScore
+           + 50 * (board.IsInCheck() ? progress : 0);
     }
 
-    private int CalculateMobilityScore(Board board)
+
+    private float ProgressLerp(float a, float b) => a + (b - a) * progress;
+
+    private float GetPieceSquareValue(Piece piece)
     {
-        // beware of effect on isInCheck
-        board.ForceSkipTurn();
-        int theirMobility = board.GetLegalMoves().Length;
-        board.UndoSkipTurn();
-        return -theirMobility + board.GetLegalMoves().Length;
+        int index = piece.Square.Index ^ (piece.IsWhite ? 0 : 56);
+        return ProgressLerp(
+            // (type - 1) * 2 * 64 + index
+            (sbyte)PIECE_SQUARE_TABLE[128 * (int)piece.PieceType - 128 + index],
+            // ((type - 1) * 2 + 1) * 64 + index
+            (sbyte)PIECE_SQUARE_TABLE[128 * (int)piece.PieceType - 64 + index]);
     }
 
-    ulong[] PIECE_SQUARE_TABLE_RAW = {
+    private ulong[] PIECE_SQUARE_TABLE_RAW = {
         0x0000000000000000, 0xf11a10f6f0f2ffe8, 0xf8160202f9fdfdee, 0xef07040c08fdffee, 0xf00c08100e0409f6, 0xf211262c151205fc, 0xf917562e41295b43, 0x0000000000000000, //
         0x0000000000000000, 0xfb01000907050509, 0xfbfffd0001fc0503, 0xff02fbfbfbfe0609, 0x0c0c03ff03091016, 0x393824262e3a4440, 0x7f705a645b6b7579, 0x0000000000000000, //
         0xf0f3edf4ead9f2b9, 0xf3f60cfffef8dcec, 0xf5110c0d0708faf0, 0xfb0e0d13090b03f7, 0x0f0c2f19240d0cfa, 0x1e3258392c1929e0, 0xf4052a101831e4ce, 0xb7f6be29dfe9c48f, //
