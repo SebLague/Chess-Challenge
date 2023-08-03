@@ -20,21 +20,102 @@ on:
         type: string
 
 jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      elo_difference: ${{ steps.elo.outputs.result }}
+    steps:
+      # see https://3dkingdoms.com/chess/elo.htm
+      - name: Calculate Elo difference
+        uses: actions/github-script@v6
+        id: elo
+        with:
+          result-encoding: string
+          script: |
+            function CalculateElo(wins, draws, losses)
+            {
+              const score = wins + draws/2;
+              const total = wins + draws + losses;
+              const percentage = (score /  total);
+              const EloDifference = -400 * Math.log(1 / percentage - 1) / Math.LN10;
+
+              return (EloDifference > 0 ? "+" : "") + Math.round(EloDifference);
+            }
+
+            function CalculateErrorMargin( wins, draws, losses )
+            {
+              const total = wins + draws + losses;
+              const winP = wins / total;
+              const drawP = draws / total;
+              const lossP = losses / total;
+              const percentage = (wins + draws * 0.5) / total;
+              const winsDev = winP * Math.pow(1 - percentage, 2);
+              const drawsDev = drawP * Math.pow(0.5 - percentage, 2);
+              const lossesDev = lossP * Math.pow(0 - percentage, 2);
+              const stdDeviation = Math.sqrt(winsDev + drawsDev + lossesDev) / Math.sqrt( total );
+
+              const confidenceP = 0.95;
+              const minConfidenceP = (1 - confidenceP) / 2;
+              const maxConfidenceP = 1 - minConfidenceP;
+              const devMin = percentage + phiInv(minConfidenceP) * stdDeviation;
+              const devMax = percentage + phiInv(maxConfidenceP) * stdDeviation;
+
+              const difference = CalculateEloDifference(devMax) - CalculateEloDifference(devMin);
+
+              return Math.round(difference / 2);
+            }
+
+
+            function phiInv( p )
+            {
+              return Math.sqrt(2) * CalculateInverseErrorFunction(2 * p - 1);
+            }
+
+            function CalculateInverseErrorFunction( x )
+            {
+              const pi = Math.PI;
+              const a = 8 * (pi - 3) / (3 * pi * (4 - pi));
+              const y = Math.log(1 - x * x);
+              const z = 2 / (pi * a) + y / 2;
+
+              const ret = Math.sqrt( Math.sqrt(z * z - y / a) - z);
+
+              if (x < 0)
+                return -ret;
+
+              return ret;
+            }
+
+            function CalculateEloDifference( percentage )
+            {
+               return -400 * Math.log(1 / percentage - 1) / Math.LN10;
+            }
+
+            const wins = ${{ inputs.wins }};
+            const draws = ${{ inputs.draws }};
+            const losses = ${{ inputs.losses }};
+            const eloDifference = CalculateElo(wins, draws, losses) + ' ±' + CalculateErrorMargin(wins, draws, losses);
+            console.log(eloDifference);
+            return eloDifference;
+
 
   notice:
     runs-on: ubuntu-latest
+    needs: prepare
     env:
       WINS: ${{ inputs.wins }}
       DRAWS: ${{ inputs.draws }}
       LOSSES: ${{ inputs.losses }}
       OPPONENT: ${{ inputs.opponent }}
+      ELO_DIFFERENCE: ${{ needs.prepare.outputs.elo_difference }}
     steps:
       - run: |
-          echo "::notice title=Results against $OPPONENT::$WINS wins, $DRAWS draws, $LOSSES losses"
+          echo "::notice title=Results against $OPPONENT::$WINS wins, $DRAWS draws, $LOSSES losses -> $ELO_DIFFERENCE elo"
 
   publish:
     if: github.event_name == 'pull_request' || github.event_name == 'issue_comment'
     runs-on: ubuntu-latest
+    needs: prepare
     env:
       OPPONENT: ${{ inputs.opponent }}
 
@@ -61,7 +142,6 @@ jobs:
           OPPONENT_NAME=$( [ $OPPONENT_NAME ] && echo $OPPONENT_NAME || echo RemoteOpponent )
           echo "opponent=[$OPPONENT_NAME]($OPPONENT)" >> $GITHUB_OUTPUT
 
-
       - name: Edit PR
         uses: actions/github-script@v6
         with:
@@ -70,6 +150,7 @@ jobs:
             const wins = '${{ inputs.wins }}';
             const draws = '${{ inputs.draws }}';
             const losses = '${{ inputs.losses }}';
+            const eloDifference = '${{ needs.prepare.outputs.elo_difference }}';
             const shortSha = '${{ steps.prepare.outputs.short_sha }}';
             const pull_number = ${{ github.event.pull_request.number || github.event.issue.number || 'null' }};
 
@@ -81,11 +162,11 @@ jobs:
               let benchmarkIndexEnd = existingContent.indexOf('<!-- benchmark end -->');
               let benchmarkSection = '';
 
-              const newLine = `| ${opponent} | ${wins} | ${draws} | ${losses} | ${shortSha} |\n`;
+              const newLine = `| ${opponent} | ${wins} | ${draws} | ${losses} | ${shortSha} | ${eloDifference} |\n`;
 
               if (benchmarkIndexStart === -1) {
                 // Benchmark section does not exist. Add it.
-                benchmarkSection = `\n<!-- benchmark start -->\n| Opponent | Wins | Draws | Losses | Commit |\n| --- | --- | --- | --- | --- |\n${newLine}<!-- benchmark end -->\n`;
+                benchmarkSection = `\n<!-- benchmark start -->\n| Opponent | Wins | Draws | Losses | Commit | Elo Difference |\n| --- | --- | --- | --- | --- | --- |\n${newLine}<!-- benchmark end -->\n`;
                 newContent += benchmarkSection;
               } else {
                 // Benchmark section exists. Update it.
@@ -125,9 +206,9 @@ jobs:
         with:
           comment-id: ${{ github.event.comment.id }}
           body: |
-            | Opponent | Wins | Draws | Losses | Commit |
-            | --- | --- | --- | --- | --- |
-            | ${{ steps.opponent_adjust.outputs.opponent || inputs.opponent }} | ${{ inputs.wins }} | ${{ inputs.draws }} | ${{ inputs.losses }} | ${{ steps.prepare.outputs.short_sha }} |
+            | Opponent | Wins | Draws | Losses | Commit | Elo Difference |
+            | --- | --- | --- | --- | --- | --- |
+            | ${{ steps.opponent_adjust.outputs.opponent || inputs.opponent }} | ${{ inputs.wins }} | ${{ inputs.draws }} | ${{ inputs.losses }} | ${{ steps.prepare.outputs.short_sha }} | ${{ needs.prepare.outputs.elo_difference }} |
 
   react:
     runs-on: ubuntu-latest
