@@ -1,7 +1,6 @@
 ﻿using ChessChallenge.API;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
+using System.Linq;
 
 public class MyBot : IChessBot
 {
@@ -43,12 +42,18 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
+
+    // TODO: merge with Negamax somehow, this costs 60+ tokens
     private Move Search(Board board, int maxDepth)
     {
         int bestEval = int.MinValue;
         Move bestMove = Move.NullMove;
 
-        foreach (Move aMove in board.GetLegalMoves())
+        Move[] moves = board
+            .GetLegalMoves()
+            .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
+
+        foreach (Move aMove in moves)
         {
             int moveEval = -Negamax(board, aMove, int.MinValue, int.MaxValue, maxDepth);
             if (moveEval > bestEval)
@@ -69,7 +74,11 @@ public class MyBot : IChessBot
         if (depth <= 0) bestEval = Evaluate(board);
         else
         {
-            foreach (Move aMove in board.GetLegalMoves())
+            Move[] moves = board
+                .GetLegalMoves()
+                .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
+
+            foreach (Move aMove in moves)
             {
                 int moveEval = -Negamax(board, aMove, alpha, beta, depth - 1);
                 if (moveEval > bestEval)
