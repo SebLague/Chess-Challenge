@@ -5,27 +5,28 @@ using System.Linq;
 public class MyBot : IChessBot
 {
     private int numEvals; // #DEBUG
-    private readonly int[] midgamePieceValues = { 0, 82, 337, 365, 477, 1025, 20000 };
-    private readonly int[] endgamePieceValues = { 0, 94, 281, 297, 512, 936, 20000 };
+    private readonly int[] pieceValues = {
+        0, 82, 337, 365, 477, 1025, 20000, // opening
+        0, 94, 281, 297, 512, 936, 20000, // endgame
+    };
 
-    private readonly double[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
+    private readonly int[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
 
     private int searchDepth;
     private Move bestMove;
     private int bigNumber = 500000;
 
-    private ulong[] pstMidgame =
+    private ulong[] psts =
     {
+        // opening
         8608480569177386391, 8685660850885265542, 7455859293954733975, 7450775221175809911,
         244781470246865543, 6528739145396427400, 8613284402485037191, 7311444969172399718,
         7441747066522933893, 8762203425850628487, 8685359588994222216, 8685060590264547174,
         11068062936632834697, 8685624712745224566, 7383519125143254902, 6298135045248419942,
         7464902858680793738, 8613304275280820343, 8536422973693196167, 7460081354432607845,
         5226240968522954598, 8680521733502297718, 6297815023207405174, 8679658625515751048,
-    };
 
-    private ulong[] pstEndgame =
-    {
+        // endgame
         8608480570020589039, 13599369747493255048, 9833459666392676215, 9838262333166024567,
         6230279642916812389, 7388286466382137478, 7460362824862697318, 6230578787355420244,
         8536422969399277431, 8608481667260647543, 8613284334033995639, 8536422969128744823,
@@ -39,7 +40,7 @@ public class MyBot : IChessBot
         ulong bitboard = board.GetPieceBitboard(PieceType.Pawn, true); // #DEBUG
         BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard); // #DEBUG
 
-        for (int depth = 4; depth <= 4; depth++)
+        for (int depth = 1; depth <= 4; depth++)
         {
             numEvals = 0; // #DEBUG
 
@@ -62,7 +63,7 @@ public class MyBot : IChessBot
         // TODO better move ordering
         Move[] moves = board
             .GetLegalMoves()
-            .OrderByDescending(x => midgamePieceValues[(int)x.CapturePieceType] - midgamePieceValues[(int)x.MovePieceType]).ToArray();
+            .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
 
         int bestEval = int.MinValue;
         foreach (Move aMove in moves)
@@ -91,32 +92,34 @@ public class MyBot : IChessBot
 
         if (board.IsRepeatedPosition() || board.IsInStalemate()) return -bigNumber;
 
-        double phase = 0;
-        int midgameEval = 0;
-        int endgameEval = 0;
+        int phase = 0,
+            openingEval = 0,
+            endgameEval = 0;
 
-        // TODO: Optimise with bitmaps
-        foreach (PieceList pieceList in board.GetAllPieceLists())
+        // Evaluate basic position based on PST & piece values
+        foreach (bool isWhite in new[] { true, false })
         {
-            int listMidgameEval = pieceList.Sum((aPiece) => GetValueOfPiece(aPiece, pstMidgame, midgamePieceValues));
-            int listEndgameEval = pieceList.Sum((aPiece) => GetValueOfPiece(aPiece, pstEndgame, endgamePieceValues));
-            phase += phaseTransitions[(int)pieceList.TypeOfPieceInList] * pieceList.Count;
-
-            int mul = (pieceList.IsWhitePieceList ? 1 : -1);
-            midgameEval += listMidgameEval * mul;
-            endgameEval += listEndgameEval * mul;
+            int mul = isWhite ? 1 : -1;
+            for (PieceType pieceType = PieceType.Pawn; pieceType <= PieceType.King; pieceType++)
+            {
+                ulong bitboard = board.GetPieceBitboard(pieceType, isWhite);
+                int pieceIdx = (int)pieceType;
+                while (bitboard != 0)
+                {
+                    phase += phaseTransitions[pieceIdx];
+                    int squareIdx = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard) ^ (isWhite ? 0 : 56);
+                    int pstIdx = (squareIdx / 16) + (pieceIdx - 1) * 4;
+                    openingEval += GetValueOfPiece(squareIdx, pieceIdx, pstIdx) * mul;
+                    endgameEval += GetValueOfPiece(squareIdx, pieceIdx + 7, pstIdx + 24) * mul;
+                }
+            }
         }
 
-        double midgame = phase / 24.0;
-        return (int)(((midgameEval * midgame) + (endgameEval * (1 - midgame))) * (board.IsWhiteToMove ? 1.0 : -1.0));
+        return (openingEval * phase + endgameEval * (24 - phase)) / 24 * (board.IsWhiteToMove ? 1 : -1);
     }
 
-    // TODO: Optimise this func with better bit operations
-    private int GetValueOfPiece(Piece piece, ulong[] pstList, int[] pieceValues)
+    private int GetValueOfPiece(int squareIdx, int pieceIdx, int pstIdx)
     {
-        int pieceIdx = piece.IsWhite ? piece.Square.Index : piece.Square.Index ^ 56;
-        int pstIdx = (pieceIdx / 16) + ((int)piece.PieceType - 1) * 4;
-        int bitmapOffset = 60 - (pieceIdx % 16) * 4;
-        return pieceValues[(int)piece.PieceType] + (int)((pstList[pstIdx] >> bitmapOffset) & 15) * 23 - 167;
+        return pieceValues[pieceIdx] + (int)((psts[pstIdx] >> (60 - (squareIdx % 16) * 4)) & 15) * 23 - 167;
     }
 }
