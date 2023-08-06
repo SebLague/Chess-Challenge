@@ -5,6 +5,7 @@ using System.Linq;
 public class MyBot : IChessBot
 {
     private int numEvals; // #DEBUG
+    private int bigNumber = 500000;
     private readonly int[] pieceValues = {
         0, 82, 337, 365, 477, 1025, 20000, // opening
         0, 94, 281, 297, 512, 936, 20000, // endgame
@@ -14,7 +15,7 @@ public class MyBot : IChessBot
 
     private int searchDepth;
     private Move bestMove;
-    private int bigNumber = 500000;
+    private string[] killerMoves = new string[20];
 
     // pESTO PSTs compacted to 4-bit per square
     // in piece value order pawn > knight > bishop > rook > queen > king
@@ -41,13 +42,12 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        // TODO: figure out how to add timer into iterative deepening
-        int maxDepth = timer.MillisecondsRemaining > 30000 ? 5 : 4;
-
         // Feature: Iterative Deepening
-        for (int depth = 1; depth <= maxDepth; depth++)
+        for (int depth = 1; depth <= 6; depth++)
         {
             numEvals = 0; // #DEBUG
+
+            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 40) break;
             searchDepth = depth;
             Negamax(board, -bigNumber, bigNumber, depth);
 
@@ -63,8 +63,10 @@ public class MyBot : IChessBot
         if (board.IsInCheckmate()) return -bigNumber;
         if (board.IsRepeatedPosition() || board.IsInStalemate() || board.IsInsufficientMaterial()) return bigNumber;
 
-
         if (depth <= 0) return Evaluate(board);
+
+        int bestEval = int.MinValue,
+            killerMoveIdx = depth * 2;
 
         // TODO: Feature Transposition Tables
 
@@ -72,9 +74,17 @@ public class MyBot : IChessBot
         // TODO: Better move ordering
         Move[] moves = board
             .GetLegalMoves()
-            .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
+            .OrderByDescending((x) => {
+                // Feature: Killer Move Heuristic
+                if (
+                    x.ToString() == killerMoves[killerMoveIdx] ||
+                    x.ToString() == killerMoves[killerMoveIdx + 1]
+                ) return bigNumber;
 
-        int bestEval = int.MinValue;
+                // Feature: MVV-LVA
+                return pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType];
+            }).ToArray();
+
         foreach (Move aMove in moves)
         {
             board.MakeMove(aMove);
@@ -87,7 +97,17 @@ public class MyBot : IChessBot
                 if (depth == searchDepth) bestMove = aMove;
 
                 // Feature: Alpha/Beta Pruning
-                if (bestEval >= beta) break;
+                if (bestEval >= beta) {
+                    if (!aMove.IsCapture)
+                    {
+                        // Feature: Shuffle Killer Moves
+                        killerMoves[killerMoveIdx + 1] = killerMoves[killerMoveIdx];
+                        killerMoves[killerMoveIdx] = aMove.ToString();
+                    }
+
+                    break;
+                };
+
                 alpha = Math.Max(bestEval, alpha);
             }
         }
