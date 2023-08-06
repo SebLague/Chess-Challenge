@@ -41,12 +41,13 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
+        // TODO: figure out how to add timer into iterative deepening
+        int maxDepth = timer.MillisecondsRemaining > 30000 ? 5 : 4;
+
         // Feature: Iterative Deepening
-        for (int depth = 1; depth <= 4; depth++)
+        for (int depth = 1; depth <= maxDepth; depth++)
         {
             numEvals = 0; // #DEBUG
-
-            // TODO: figure out how to add timer into iterative deepening
             searchDepth = depth;
             Negamax(board, -bigNumber, bigNumber, depth);
 
@@ -59,12 +60,16 @@ public class MyBot : IChessBot
     // Feature: Negamax
     private int Negamax(Board board, int alpha, int beta, int depth)
     {
+        if (board.IsInCheckmate()) return -bigNumber;
+        if (board.IsRepeatedPosition() || board.IsInStalemate() || board.IsInsufficientMaterial()) return bigNumber;
+
+
         if (depth <= 0) return Evaluate(board);
 
         // TODO: Feature Transposition Tables
 
         // Feature: Move Ordering
-        // TODO: better move ordering
+        // TODO: Better move ordering
         Move[] moves = board
             .GetLegalMoves()
             .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
@@ -94,8 +99,6 @@ public class MyBot : IChessBot
     {
         numEvals++; // #DEBUG
 
-        if (board.IsRepeatedPosition() || board.IsInStalemate()) return -bigNumber;
-
         int phase = 0,
             openingEval = 0,
             endgameEval = 0;
@@ -120,7 +123,9 @@ public class MyBot : IChessBot
         }
 
         // Feature: Tapered Eval
-        return (openingEval * phase + endgameEval * (24 - phase)) / 24 * (board.IsWhiteToMove ? 1 : -1);
+        int eval = (openingEval * phase + endgameEval * (24 - phase)) / 24;
+
+        return eval * (board.IsWhiteToMove ? 1 : -1);
     }
 
     // PST are 4-bit based
