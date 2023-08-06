@@ -36,6 +36,9 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
+        ulong bitboard = board.GetPieceBitboard(PieceType.Pawn, true); // #DEBUG
+        BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard); // #DEBUG
+
         for (int depth = 4; depth <= 4; depth++)
         {
             numEvals = 0; // #DEBUG
@@ -111,9 +114,7 @@ public class MyBot : IChessBot
     // TODO: Optimise this func with better bit operations
     private int GetValueOfPiece(Piece piece, ulong[] pstList, int[] pieceValues)
     {
-        int rank = piece.IsWhite ? piece.Square.Rank : (7 - piece.Square.Rank);
-
-        int pieceIdx = rank * 8 + piece.Square.File;
+        int pieceIdx = piece.IsWhite ? piece.Square.Index : piece.Square.Index ^ 56;
         int pstIdx = (pieceIdx / 16) + ((int)piece.PieceType - 1) * 4;
         ulong pst = pstList[pstIdx];
         int bitmapOffset = 60 - (pieceIdx % 16) * 4;

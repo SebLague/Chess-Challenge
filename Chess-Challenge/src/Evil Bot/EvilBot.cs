@@ -1,54 +1,121 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Linq;
 
 namespace ChessChallenge.Example
 {
-    // A simple bot that can spot mate in one, and always captures the most valuable piece it can.
-    // Plays randomly otherwise.
     public class EvilBot : IChessBot
     {
-        // Piece values: null, pawn, knight, bishop, rook, queen, king
-        int[] pieceValues = { 0, 100, 300, 300, 500, 900, 10000 };
+        private int numEvals; // #DEBUG
+        private readonly int[] pieceValues = { 0, 82, 337, 365, 477, 1025, 20000 };
+        private readonly double[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
+
+        private int searchDepth;
+        private Move bestMove;
+        private int bigNumber = 500000;
+
+        private ulong[] pstMidgame =
+        {
+        8608480569177386391, 8685660850885265542, 7455859293954733975, 7450775221175809911,
+        244781470246865543, 6528739145396427400, 8613284402485037191, 7311444969172399718,
+        7441747066522933893, 8762203425850628487, 8685359588994222216, 8685060590264547174,
+        11068062936632834697, 8685624712745224566, 7383519125143254902, 6298135045248419942,
+        7464902858680793738, 8613304275280820343, 8536422973693196167, 7460081354432607845,
+        5226240968522954598, 8680521733502297718, 6297815023207405174, 8679658625515751048,
+    };
+
+        private ulong[] pstEndgame =
+        {
+        8608480570020589039, 13599369747493255048, 9833459666392676215, 9838262333166024567,
+        6230279642916812389, 7388286466382137478, 7460362824862697318, 6230578787355420244,
+        8536422969399277431, 8608481667260647543, 8613284334033995639, 8536422969128744823,
+        9838263501683455879, 9837963266004318071, 8612984167358494583, 8608480567731124086,
+        8685342001104267415, 7532720663170754985, 7532720731856603271, 7378996696646514277,
+        5072874484798097800, 9838264673941096839, 7460362897878190215, 7455858129732331365,
+    };
 
         public Move Think(Board board, Timer timer)
         {
-            Move[] allMoves = board.GetLegalMoves();
-
-            // Pick a random move to play if nothing better is found
-            Random rng = new();
-            Move moveToPlay = allMoves[rng.Next(allMoves.Length)];
-            int highestValueCapture = 0;
-
-            foreach (Move move in allMoves)
+            for (int depth = 1; depth <= 4; depth++)
             {
-                // Always play checkmate in one
-                if (MoveIsCheckmate(board, move))
-                {
-                    moveToPlay = move;
-                    break;
-                }
+                numEvals = 0; // #DEBUG
 
-                // Find highest value capture
-                Piece capturedPiece = board.GetPiece(move.TargetSquare);
-                int capturedPieceValue = pieceValues[(int)capturedPiece.PieceType];
+                if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 30) break;
 
-                if (capturedPieceValue > highestValueCapture)
+                searchDepth = depth;
+                Negamax(board, -bigNumber, bigNumber, depth);
+
+                // Console.WriteLine($"{numEvals} evals at {depth} depth"); // #DEBUG
+            }
+
+            return bestMove;
+        }
+
+        private int Negamax(Board board, int alpha, int beta, int depth)
+        {
+            if (depth <= 0) return Evaluate(board);
+
+            // TODO transposition tables
+            // TODO better move ordering
+            Move[] moves = board
+                .GetLegalMoves()
+                .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
+
+            int bestEval = int.MinValue;
+            foreach (Move aMove in moves)
+            {
+                board.MakeMove(aMove);
+                int moveEval = -Negamax(board, -beta, -alpha, depth - 1);
+                board.UndoMove(aMove);
+
+                if (moveEval > bestEval)
                 {
-                    moveToPlay = move;
-                    highestValueCapture = capturedPieceValue;
+                    bestEval = moveEval;
+                    if (depth == searchDepth) bestMove = aMove;
+
+                    // TODO alpha/beta pruning
+                    if (bestEval >= beta) break;
+                    alpha = Math.Max(bestEval, alpha);
                 }
             }
 
-            return moveToPlay;
+            return bestEval;
         }
 
-        // Test if this move gives checkmate
-        bool MoveIsCheckmate(Board board, Move move)
+        private int Evaluate(Board board)
         {
-            board.MakeMove(move);
-            bool isMate = board.IsInCheckmate();
-            board.UndoMove(move);
-            return isMate;
+            numEvals++; // #DEBUG
+
+            double phase = 0;
+            int midgameEval = 0;
+            int endgameEval = 0;
+
+            // TODO: Optimise with bitmaps
+            foreach (PieceList pieceList in board.GetAllPieceLists())
+            {
+                int listMidgameEval = pieceList.Sum((aPiece) => GetValueOfPiece(aPiece, pstMidgame));
+                int listEndgameEval = pieceList.Sum((aPiece) => GetValueOfPiece(aPiece, pstEndgame));
+                phase += phaseTransitions[(int)pieceList.TypeOfPieceInList] * pieceList.Count;
+
+                int mul = (pieceList.IsWhitePieceList ? 1 : -1);
+                midgameEval += listMidgameEval * mul;
+                endgameEval += listEndgameEval * mul;
+            }
+
+            double midgame = phase / 24.0;
+            return midgameEval * (board.IsWhiteToMove ? 1 : -1);
+        }
+
+        // TODO: Optimise this func with better bit operations
+        private int GetValueOfPiece(Piece piece, ulong[] pstList)
+        {
+            int rank = piece.IsWhite ? piece.Square.Rank : (7 - piece.Square.Rank);
+
+            int pieceIdx = rank * 8 + piece.Square.File;
+            int pstIdx = (pieceIdx / 16) + ((int)piece.PieceType - 1) * 4;
+            ulong pst = pstList[pstIdx];
+            int bitmapOffset = 60 - (pieceIdx % 16) * 4;
+            return pieceValues[(int)piece.PieceType] + (int)((pst >> bitmapOffset) & 15) * 23 - 167;
         }
     }
 }
