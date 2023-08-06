@@ -5,10 +5,11 @@ using System.Linq;
 public class MyBot : IChessBot
 {
     private int numEvals; // #DEBUG
-    private readonly int[] pieceValues = { 0, 100, 300, 330, 500, 800, 10000 };
+    private readonly int[] pieceValues = { 0, 82, 337, 365, 477, 1025, 20000 };
 
     private int searchDepth;
     private Move bestMove;
+    private int bigNumber = 500000;
 
     private ulong[] pstMidgame =
     {
@@ -36,12 +37,12 @@ public class MyBot : IChessBot
         {
             numEvals = 0; // #DEBUG
 
-            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 60) break;
+            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 30) break;
 
             searchDepth = depth;
-            Negamax(board, int.MinValue, int.MaxValue, depth);
+            Negamax(board, -bigNumber, bigNumber, depth);
 
-            Console.WriteLine($"{numEvals} evals at {depth} depth"); // #DEBUG
+             Console.WriteLine($"{numEvals} evals at {depth} depth"); // #DEBUG
         }
 
         return bestMove;
@@ -67,9 +68,9 @@ public class MyBot : IChessBot
                 bestEval = moveEval;
                 if (depth == searchDepth) bestMove = aMove;
 
-                // alpha/beta pruning
-                //alpha = Math.Max(bestEval, alpha);
-                //if (alpha >= beta) break;
+                // TODO alpha/beta pruning
+                if (bestEval >= beta) break;
+                alpha = Math.Max(bestEval, alpha);
             }
         }
 
@@ -83,7 +84,7 @@ public class MyBot : IChessBot
 
         foreach (PieceList pieceList in board.GetAllPieceLists())
         {
-            int materialEval = pieceValues[(int)pieceList.TypeOfPieceInList] * pieceList.Count;
+            int materialEval = 0;
             foreach (Piece piece in pieceList)
             {
                 materialEval += GetValueOfPiece(piece);
@@ -96,6 +97,8 @@ public class MyBot : IChessBot
         return boardEval * (board.IsWhiteToMove ? 1 : -1);
     }
 
+    // TODO: Optimise this func with better bit operations
+    // TODO: Game Phase
     private int GetValueOfPiece(Piece piece)
     {
         int rank = piece.IsWhite ? piece.Square.Rank : (7 - piece.Square.Rank);
@@ -104,6 +107,6 @@ public class MyBot : IChessBot
         int pstIdx = (pieceIdx / 16) + ((int)piece.PieceType - 1) * 4;
         ulong pst = pstMidgame[pstIdx];
         int bitmapOffset = 60 - (pieceIdx % 16) * 4;
-        return (int)((pst >> bitmapOffset) & 15) * 23 - 167;
+        return pieceValues[(int)piece.PieceType] + (int)((pst >> bitmapOffset) & 15) * 23 - 167;
     }
 }
