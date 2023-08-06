@@ -74,15 +74,20 @@ public class MyBot : IChessBot
         // TODO: Better move ordering
         Move[] moves = board
             .GetLegalMoves()
-            .OrderByDescending((x) => {
-                // Feature: Killer Move Heuristic
-                if (
-                    x.ToString() == killerMoves[killerMoveIdx] ||
-                    x.ToString() == killerMoves[killerMoveIdx + 1]
-                ) return bigNumber;
-
+            .OrderByDescending((aMove) => {
+                
                 // Feature: MVV-LVA
-                return pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType];
+                if (aMove.IsCapture) return pieceValues[(int)aMove.CapturePieceType] - pieceValues[(int)aMove.MovePieceType];
+
+                // Feature: Killer Move Heuristic
+                else if (
+                    aMove.ToString() == killerMoves[killerMoveIdx] ||
+                    aMove.ToString() == killerMoves[killerMoveIdx + 1]
+                ) return 0;
+
+                return -bigNumber;
+                
+                
             }).ToArray();
 
         foreach (Move aMove in moves)
@@ -98,7 +103,7 @@ public class MyBot : IChessBot
 
                 // Feature: Alpha/Beta Pruning
                 if (bestEval >= beta) {
-                    if (!aMove.IsCapture)
+                    if (!aMove.IsCapture && killerMoves[killerMoveIdx] != aMove.ToString())
                     {
                         // Feature: Shuffle Killer Moves
                         killerMoves[killerMoveIdx + 1] = killerMoves[killerMoveIdx];
