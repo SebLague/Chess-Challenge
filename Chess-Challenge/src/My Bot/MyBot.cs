@@ -116,8 +116,7 @@ public class MyBot : IChessBot
     {
         int pieceIdx = piece.IsWhite ? piece.Square.Index : piece.Square.Index ^ 56;
         int pstIdx = (pieceIdx / 16) + ((int)piece.PieceType - 1) * 4;
-        ulong pst = pstList[pstIdx];
         int bitmapOffset = 60 - (pieceIdx % 16) * 4;
-        return pieceValues[(int)piece.PieceType] + (int)((pst >> bitmapOffset) & 15) * 23 - 167;
+        return pieceValues[(int)piece.PieceType] + (int)((pstList[pstIdx] >> bitmapOffset) & 15) * 23 - 167;
     }
 }
