@@ -5,7 +5,10 @@ using System.Linq;
 public class MyBot : IChessBot
 {
     private int numEvals; // #DEBUG
-    private readonly int[] pieceValues = { 0, 82, 337, 365, 477, 1025, 20000 };
+    private readonly int[] midgamePieceValues = { 0, 82, 337, 365, 477, 1025, 20000 };
+    private readonly int[] endgamePieceValues = { 0, 94, 281, 297, 512, 936, 20000 };
+
+    private readonly double[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
 
     private int searchDepth;
     private Move bestMove;
@@ -33,7 +36,7 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        for (int depth = 1; depth <= 4; depth++)
+        for (int depth = 4; depth <= 4; depth++)
         {
             numEvals = 0; // #DEBUG
 
@@ -42,7 +45,7 @@ public class MyBot : IChessBot
             searchDepth = depth;
             Negamax(board, -bigNumber, bigNumber, depth);
 
-             Console.WriteLine($"{numEvals} evals at {depth} depth"); // #DEBUG
+             // Console.WriteLine($"{numEvals} evals at {depth} depth"); // #DEBUG
         }
 
         return bestMove;
@@ -52,11 +55,13 @@ public class MyBot : IChessBot
     {
         if (depth <= 0) return Evaluate(board);
 
-        int bestEval = int.MinValue;
+        // TODO transposition tables
+        // TODO better move ordering
         Move[] moves = board
             .GetLegalMoves()
-            .OrderByDescending(x => pieceValues[(int)x.CapturePieceType] - pieceValues[(int)x.MovePieceType]).ToArray();
+            .OrderByDescending(x => midgamePieceValues[(int)x.CapturePieceType] - midgamePieceValues[(int)x.MovePieceType]).ToArray();
 
+        int bestEval = int.MinValue;
         foreach (Move aMove in moves)
         {
             board.MakeMove(aMove);
@@ -68,7 +73,7 @@ public class MyBot : IChessBot
                 bestEval = moveEval;
                 if (depth == searchDepth) bestMove = aMove;
 
-                // TODO alpha/beta pruning
+                // alpha/beta pruning
                 if (bestEval >= beta) break;
                 alpha = Math.Max(bestEval, alpha);
             }
@@ -80,32 +85,37 @@ public class MyBot : IChessBot
     private int Evaluate(Board board)
     {
         numEvals++; // #DEBUG
-        int boardEval = 0;
 
+        if (board.IsRepeatedPosition() || board.IsInStalemate()) return -bigNumber;
+
+        double phase = 0;
+        int midgameEval = 0;
+        int endgameEval = 0;
+
+        // TODO: Optimise with bitmaps
         foreach (PieceList pieceList in board.GetAllPieceLists())
         {
-            int materialEval = 0;
-            foreach (Piece piece in pieceList)
-            {
-                materialEval += GetValueOfPiece(piece);
-            }
+            int listMidgameEval = pieceList.Sum((aPiece) => GetValueOfPiece(aPiece, pstMidgame, midgamePieceValues));
+            int listEndgameEval = pieceList.Sum((aPiece) => GetValueOfPiece(aPiece, pstEndgame, endgamePieceValues));
+            phase += phaseTransitions[(int)pieceList.TypeOfPieceInList] * pieceList.Count;
 
-            materialEval *= pieceList.IsWhitePieceList ? 1 : -1;
-            boardEval += materialEval;
+            int mul = (pieceList.IsWhitePieceList ? 1 : -1);
+            midgameEval += listMidgameEval * mul;
+            endgameEval += listEndgameEval * mul;
         }
 
-        return boardEval * (board.IsWhiteToMove ? 1 : -1);
+        double midgame = phase / 24.0;
+        return (int)(((midgameEval * midgame) + (endgameEval * (1 - midgame))) * (board.IsWhiteToMove ? 1.0 : -1.0));
     }
 
     // TODO: Optimise this func with better bit operations
-    // TODO: Game Phase
-    private int GetValueOfPiece(Piece piece)
+    private int GetValueOfPiece(Piece piece, ulong[] pstList, int[] pieceValues)
     {
         int rank = piece.IsWhite ? piece.Square.Rank : (7 - piece.Square.Rank);
 
         int pieceIdx = rank * 8 + piece.Square.File;
         int pstIdx = (pieceIdx / 16) + ((int)piece.PieceType - 1) * 4;
-        ulong pst = pstMidgame[pstIdx];
+        ulong pst = pstList[pstIdx];
         int bitmapOffset = 60 - (pieceIdx % 16) * 4;
         return pieceValues[(int)piece.PieceType] + (int)((pst >> bitmapOffset) & 15) * 23 - 167;
     }
