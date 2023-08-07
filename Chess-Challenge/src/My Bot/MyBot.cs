@@ -92,7 +92,6 @@ public class MyBot : IChessBot
         if (depth <= 0) return Evaluate(board);
         int alphaOriginal = alpha,
             bestEval = -bigNumber,
-            transpositionFlag = 1, // EXACT
             killerMoveIdx = depth * 2;
 
         // Feature: Move Ordering
@@ -141,8 +140,7 @@ public class MyBot : IChessBot
         }
 
         // Feature: Store in Transposition Table
-        if (bestEval <= alphaOriginal) transpositionFlag = 2; // UPPERBOUND
-        else if (bestEval >= beta) transpositionFlag = 0; // LOWERBOUND
+        int transpositionFlag = bestEval <= alphaOriginal ? 2 : bestEval >= beta ? 0 : 1;
         transpositionTables[key] = (bestEval, transpositionFlag, depth);
 
         return bestEval;
