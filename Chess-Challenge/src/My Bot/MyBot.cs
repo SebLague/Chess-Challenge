@@ -64,7 +64,7 @@ public class MyBot : IChessBot
 
         if (depth <= 0) return Evaluate(board);
 
-        int bestEval = int.MinValue,
+        int bestEval = -bigNumber,
             killerMoveIdx = depth * 2;
 
         // TODO: Feature Transposition Tables
