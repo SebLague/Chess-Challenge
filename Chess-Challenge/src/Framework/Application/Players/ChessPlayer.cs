@@ -1,4 +1,4 @@
-﻿using ChessChallenge.API;
+using ChessChallenge.API;
 using System;
 
 namespace ChessChallenge.Application
@@ -7,32 +7,21 @@ namespace ChessChallenge.Application
     {
         // public event Action<Chess.Core.Move>? MoveChosen;
 
-        public readonly ChallengeController.PlayerType PlayerType;
         public readonly IChessBot? Bot;
-        public readonly HumanPlayer? Human;
 
         double secondsElapsed;
         int incrementAddedMs;
         int baseTimeMs;
 
-        public ChessPlayer(object instance, ChallengeController.PlayerType type, int baseTimeMs = int.MaxValue)
+        public ChessPlayer(object instance, int baseTimeMs = int.MaxValue)
         {
-            this.PlayerType = type;
             Bot = instance as IChessBot;
-            Human = instance as HumanPlayer;
             this.baseTimeMs = baseTimeMs;
 
         }
 
-        public bool IsHuman => Human != null;
-        public bool IsBot => Bot != null;
-
         public void Update()
         {
-            if (Human != null)
-            {
-                Human.Update();
-            }
         }
 
         public void UpdateClock(double dt)
@@ -59,10 +48,7 @@ namespace ChessChallenge.Application
 
         public void SubscribeToMoveChosenEventIfHuman(Action<Chess.Move> action)
         {
-            if (Human != null)
-            {
-                Human.MoveChosen += action;
-            }
+
         }
 
 
