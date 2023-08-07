@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Chess_Challenge.Cli;
 using ChessChallenge.API;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
@@ -11,10 +12,8 @@ namespace ChessChallenge.Application
         {
             IChessBot player1 = await CSharpScript.EvaluateAsync<IChessBot>("code + return new MyBot();",
                 ScriptOptions.Default.WithReferences(typeof(IChessBot).Assembly));
-            IChessBot player2 = await CSharpScript.EvaluateAsync<IChessBot>("code + return new MyBot();",
-                ScriptOptions.Default.WithReferences(typeof(IChessBot).Assembly));
-            Controller controller = new(player1, player2);
-            controller.StartNewGame(); 
+            var uci = new Uci(player1);
+            uci.Run();
         }
     }
 }
