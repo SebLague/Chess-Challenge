@@ -1,6 +1,9 @@
 ﻿using ChessChallenge.API;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Reflection.Emit;
+using System.Xml.Linq;
 
 public class MyBot : IChessBot
 {
@@ -15,6 +18,10 @@ public class MyBot : IChessBot
     private int searchDepth;
     private Move currentBestMove, previousBestMove;
     private Move[] killerMoves = new Move[20];
+
+    // (int, int, int) = eval, flag, depth
+    // Flag Values: LOWERBOUND = 0, EXACT = 1, UPPERBOUND = 2
+    private Dictionary<ulong, (int, int, int)> transpositionTables = new Dictionary<ulong, (int, int, int)>();
 
     // pESTO PSTs compacted to 4-bit per square
     // in piece value order pawn > knight > bishop > rook > queen > king
@@ -42,11 +49,11 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         // Feature: Iterative Deepening
-        for (int depth = 1; depth <= 6; depth++)
+        for (int depth = 1; depth <= 9; depth++)
         {
             numEvals = 0; // #DEBUG
 
-            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 40) break;
+            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 60) break;
 
             searchDepth = depth;
             Negamax(board, -bigNumber, bigNumber, depth);
@@ -64,12 +71,40 @@ public class MyBot : IChessBot
         if (board.IsInCheckmate()) return -bigNumber;
         if (board.IsRepeatedPosition() || board.IsInStalemate() || board.IsInsufficientMaterial()) return bigNumber;
 
+        //(*Transposition Table Lookup; node is the lookup key for ttEntry *)
+        //ttEntry:= transpositionTableLookup(node)
+        //if ttEntry is valid and ttEntry.depth ≥ depth then
+        //    if ttEntry.flag = EXACT then
+        //        return ttEntry.value
+        //    else if ttEntry.flag = LOWERBOUND then
+        //        α := max(α, ttEntry.value)
+        //    else if ttEntry.flag = UPPERBOUND then
+        //        β := min(β, ttEntry.value)
+
+        //    if α ≥ β then
+        //        return ttEntry.value
+        ulong key = board.ZobristKey;
+        if (transpositionTables.ContainsKey(key))
+        {
+            var transpositionEntry = transpositionTables[key];
+            if (transpositionEntry.Item3 >= depth)
+            {
+                int transpositionEval = transpositionEntry.Item1;
+                if (transpositionEntry.Item2 == 1) return transpositionEval; // EXACT
+                else if (transpositionEntry.Item2 == 0) alpha = Math.Max(alpha, transpositionEval); // LOWERBOUND
+                else if (transpositionEntry.Item2 == 2) beta = Math.Min(beta, transpositionEval); // UPPERBOUND
+
+                if (alpha >= beta) return transpositionEval;
+            }
+        }
+
         if (depth <= 0) return Evaluate(board);
 
-        int bestEval = -bigNumber,
+        
+        int alphaOriginal = alpha,
+            bestEval = -bigNumber,
+            transpositionFlag = 1, // EXACT
             killerMoveIdx = depth * 2;
-
-        // TODO: Feature Transposition Tables
 
         // Feature: Move Ordering
         Move[] moves = board
@@ -102,7 +137,8 @@ public class MyBot : IChessBot
                 if (depth == searchDepth) currentBestMove = aMove;
 
                 // Feature: Alpha/Beta Pruning
-                if (bestEval >= beta) {
+                alpha = Math.Max(bestEval, alpha);
+                if (alpha >= beta) {
                     if (!aMove.IsCapture && !aMove.Equals(killerMoves[killerMoveIdx]))
                     {
                         // Feature: Shuffle Killer Moves
@@ -112,10 +148,23 @@ public class MyBot : IChessBot
 
                     break;
                 };
-
-                alpha = Math.Max(bestEval, alpha);
             }
         }
+
+        //(*Transposition Table Store; node is the lookup key for ttEntry *)
+        //ttEntry.value := value
+        //if value ≤ alphaOrig then
+        //    ttEntry.flag := UPPERBOUND
+        //else if value ≥ β then
+        //    ttEntry.flag := LOWERBOUND
+        //else
+        //        ttEntry.flag := EXACT
+        //ttEntry.depth := depth
+        //ttEntry.is_valid := true
+        //transpositionTableStore(node, ttEntry)
+        if (bestEval <= alphaOriginal) transpositionFlag = 2; // UPPERBOUND
+        else if (bestEval >= beta) transpositionFlag = 0; // LOWERBOUND
+        transpositionTables[key] = (bestEval, transpositionFlag, depth);
 
         return bestEval;
     }
@@ -139,8 +188,9 @@ public class MyBot : IChessBot
                 while (bitboard != 0)
                 {
                     phase += phaseTransitions[pieceIdx];
-                    int squareIdx = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard) ^ (isWhite ? 0 : 56);
-                    int pstIdx = (squareIdx / 16) + (pieceIdx - 1) * 4;
+                    int squareIdx = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard) ^ (isWhite ? 0 : 56),
+                        pstIdx = (squareIdx / 16) + (pieceIdx - 1) * 4;
+
                     openingEval += GetValueOfPiece(squareIdx, pieceIdx, pstIdx) * mul;
                     endgameEval += GetValueOfPiece(squareIdx, pieceIdx, pstIdx + 24) * mul;
                 }
