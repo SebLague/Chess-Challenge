@@ -4,15 +4,16 @@ using System.Linq;
 
 public class MyBot : IChessBot
 {
-    private int numEvals; // #DEBUG
-    private int bigNumber = 500000;
-    private readonly int[] pieceValues = { 0, 100, 300, 330, 500, 1000, 20000 };
+    private int
+        bigNumber = 500000,
+        numEvals; // #DEBUG
 
-    private readonly int[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
+    private readonly int[]
+        pieceValues = { 0, 100, 300, 330, 500, 1000, 20000 },
+        phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
 
     private int searchDepth;
-    private Move currentBestMove;
-    private Move previousBestMove;
+    private Move currentBestMove, previousBestMove;
     private Move[] killerMoves = new Move[20];
 
     // pESTO PSTs compacted to 4-bit per square
@@ -46,6 +47,7 @@ public class MyBot : IChessBot
             numEvals = 0; // #DEBUG
 
             if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 40) break;
+
             searchDepth = depth;
             Negamax(board, -bigNumber, bigNumber, depth);
             previousBestMove = currentBestMove;
