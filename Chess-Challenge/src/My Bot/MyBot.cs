@@ -49,7 +49,7 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         // Feature: Iterative Deepening
-        for (int depth = 1; depth <= 9; depth++)
+        for (int depth = 1; depth <= 6; depth++)
         {
             numEvals = 0; // #DEBUG
 
@@ -71,6 +71,8 @@ public class MyBot : IChessBot
         if (board.IsInCheckmate()) return -bigNumber;
         if (board.IsRepeatedPosition() || board.IsInStalemate() || board.IsInsufficientMaterial()) return bigNumber;
 
+        // Leaf Node
+        if (depth <= 0) return Evaluate(board);
 
         // Feature: Evaluate existing Transposition Table entry
         ulong key = board.ZobristKey;
@@ -88,8 +90,6 @@ public class MyBot : IChessBot
             }
         }
 
-        // Leaf Node
-        if (depth <= 0) return Evaluate(board);
         int alphaOriginal = alpha,
             bestEval = -bigNumber,
             transpositionFlag = 1, // EXACT
