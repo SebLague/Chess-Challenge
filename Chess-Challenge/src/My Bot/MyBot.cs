@@ -71,18 +71,8 @@ public class MyBot : IChessBot
         if (board.IsInCheckmate()) return -bigNumber;
         if (board.IsRepeatedPosition() || board.IsInStalemate() || board.IsInsufficientMaterial()) return bigNumber;
 
-        //(*Transposition Table Lookup; node is the lookup key for ttEntry *)
-        //ttEntry:= transpositionTableLookup(node)
-        //if ttEntry is valid and ttEntry.depth ≥ depth then
-        //    if ttEntry.flag = EXACT then
-        //        return ttEntry.value
-        //    else if ttEntry.flag = LOWERBOUND then
-        //        α := max(α, ttEntry.value)
-        //    else if ttEntry.flag = UPPERBOUND then
-        //        β := min(β, ttEntry.value)
 
-        //    if α ≥ β then
-        //        return ttEntry.value
+        // Feature: Evaluate existing Transposition Table entry
         ulong key = board.ZobristKey;
         if (transpositionTables.ContainsKey(key))
         {
@@ -98,9 +88,8 @@ public class MyBot : IChessBot
             }
         }
 
+        // Leaf Node
         if (depth <= 0) return Evaluate(board);
-
-        
         int alphaOriginal = alpha,
             bestEval = -bigNumber,
             transpositionFlag = 1, // EXACT
@@ -151,17 +140,7 @@ public class MyBot : IChessBot
             }
         }
 
-        //(*Transposition Table Store; node is the lookup key for ttEntry *)
-        //ttEntry.value := value
-        //if value ≤ alphaOrig then
-        //    ttEntry.flag := UPPERBOUND
-        //else if value ≥ β then
-        //    ttEntry.flag := LOWERBOUND
-        //else
-        //        ttEntry.flag := EXACT
-        //ttEntry.depth := depth
-        //ttEntry.is_valid := true
-        //transpositionTableStore(node, ttEntry)
+        // Feature: Store in Transposition Table
         if (bestEval <= alphaOriginal) transpositionFlag = 2; // UPPERBOUND
         else if (bestEval >= beta) transpositionFlag = 0; // LOWERBOUND
         transpositionTables[key] = (bestEval, transpositionFlag, depth);
