@@ -14,8 +14,9 @@ public class MyBot : IChessBot
     private readonly int[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
 
     private int searchDepth;
-    private Move bestMove;
-    private string[] killerMoves = new string[20];
+    private Move currentBestMove;
+    private Move previousBestMove;
+    private Move[] killerMoves = new Move[20];
 
     // pESTO PSTs compacted to 4-bit per square
     // in piece value order pawn > knight > bishop > rook > queen > king
@@ -50,11 +51,12 @@ public class MyBot : IChessBot
             if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 40) break;
             searchDepth = depth;
             Negamax(board, -bigNumber, bigNumber, depth);
+            previousBestMove = currentBestMove;
 
             Console.WriteLine($"{numEvals} evals at {depth} depth"); // #DEBUG
         }
 
-        return bestMove;
+        return currentBestMove;
     }
 
     // Feature: Negamax
@@ -75,14 +77,16 @@ public class MyBot : IChessBot
         Move[] moves = board
             .GetLegalMoves()
             .OrderByDescending((aMove) => {
+                // Feature: Iterative Deepening for Move Ordering
+                if (aMove.Equals(previousBestMove)) return bigNumber;
                 
                 // Feature: MVV-LVA
                 if (aMove.IsCapture) return pieceValues[(int)aMove.CapturePieceType] - pieceValues[(int)aMove.MovePieceType];
 
                 // Feature: Killer Move Heuristic
                 else if (
-                    aMove.ToString() == killerMoves[killerMoveIdx] ||
-                    aMove.ToString() == killerMoves[killerMoveIdx + 1]
+                    aMove.Equals(killerMoves[killerMoveIdx]) ||
+                    aMove.Equals(killerMoves[killerMoveIdx + 1])
                 ) return 0;
 
                 return -bigNumber;
@@ -99,15 +103,15 @@ public class MyBot : IChessBot
             if (moveEval > bestEval)
             {
                 bestEval = moveEval;
-                if (depth == searchDepth) bestMove = aMove;
+                if (depth == searchDepth) currentBestMove = aMove;
 
                 // Feature: Alpha/Beta Pruning
                 if (bestEval >= beta) {
-                    if (!aMove.IsCapture && killerMoves[killerMoveIdx] != aMove.ToString())
+                    if (!aMove.IsCapture && !aMove.Equals(killerMoves[killerMoveIdx]))
                     {
                         // Feature: Shuffle Killer Moves
                         killerMoves[killerMoveIdx + 1] = killerMoves[killerMoveIdx];
-                        killerMoves[killerMoveIdx] = aMove.ToString();
+                        killerMoves[killerMoveIdx] = aMove;
                     }
 
                     break;
@@ -149,7 +153,6 @@ public class MyBot : IChessBot
 
         // Feature: Tapered Eval
         int eval = (openingEval * phase + endgameEval * (24 - phase)) / 24;
-
         return eval * (board.IsWhiteToMove ? 1 : -1);
     }
 
