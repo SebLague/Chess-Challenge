@@ -6,10 +6,7 @@ public class MyBot : IChessBot
 {
     private int numEvals; // #DEBUG
     private int bigNumber = 500000;
-    private readonly int[] pieceValues = {
-        0, 82, 337, 365, 477, 1025, 20000, // opening
-        0, 94, 281, 297, 512, 936, 20000, // endgame
-    };
+    private readonly int[] pieceValues = { 0, 100, 300, 330, 500, 1000, 20000 };
 
     private readonly int[] phaseTransitions = { 0, 0, 1, 1, 2, 4, 0 };
 
@@ -73,7 +70,6 @@ public class MyBot : IChessBot
         // TODO: Feature Transposition Tables
 
         // Feature: Move Ordering
-        // TODO: Better move ordering
         Move[] moves = board
             .GetLegalMoves()
             .OrderByDescending((aMove) => {
@@ -90,8 +86,6 @@ public class MyBot : IChessBot
                 ) return 0;
 
                 return -bigNumber;
-                
-                
             }).ToArray();
 
         foreach (Move aMove in moves)
@@ -146,7 +140,7 @@ public class MyBot : IChessBot
                     int squareIdx = BitboardHelper.ClearAndGetIndexOfLSB(ref bitboard) ^ (isWhite ? 0 : 56);
                     int pstIdx = (squareIdx / 16) + (pieceIdx - 1) * 4;
                     openingEval += GetValueOfPiece(squareIdx, pieceIdx, pstIdx) * mul;
-                    endgameEval += GetValueOfPiece(squareIdx, pieceIdx + 7, pstIdx + 24) * mul;
+                    endgameEval += GetValueOfPiece(squareIdx, pieceIdx, pstIdx + 24) * mul;
                 }
             }
         }
