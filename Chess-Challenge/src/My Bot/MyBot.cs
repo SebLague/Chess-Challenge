@@ -119,7 +119,7 @@ public class MyBot : IChessBot
             int moveEval = -Negamax(board, -beta, -alpha, depth - 1);
             board.UndoMove(aMove);
 
-            if (moveEval > bestEval)
+            if (moveEval >= bestEval)
             {
                 bestEval = moveEval;
                 if (depth == searchDepth) currentBestMove = aMove;
