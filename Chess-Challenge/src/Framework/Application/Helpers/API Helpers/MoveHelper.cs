@@ -55,6 +55,7 @@ namespace ChessChallenge.Application.APIHelpers
                     else if (startSquare.File != targetSquare.File && board.GetPiece(targetSquare).IsNull)
                     {
                         flag = Chess.Move.EnPassantCaptureFlag;
+                        capturedPieceType = PieceType.Pawn;
                     }
                 }
             }
