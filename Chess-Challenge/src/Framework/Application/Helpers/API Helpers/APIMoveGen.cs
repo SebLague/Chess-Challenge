@@ -45,20 +45,55 @@ namespace ChessChallenge.Application.APIHelpers
         // If only captures should be generated, this will have 1s only in positions of enemy pieces.
         // Otherwise it will have 1s everywhere.
         ulong moveTypeMask;
+        bool hasInitializedCurrentPosition;
 
         public APIMoveGen()
         {
             board = new Board();
         }
 
+        public bool IsInitialized => hasInitializedCurrentPosition;
+
+        // Movegen needs to know when position has changed to allow for some caching optims in api
+        public void NotifyPositionChanged()
+        {
+            hasInitializedCurrentPosition = false;
+        }
+
+        public ulong GetOpponentAttackMap(Board board)
+        {
+            Init(board);
+            return opponentAttackMap;
+        }
+
+        public bool NoLegalMovesInPosition(Board board)
+        {
+            Span<API.Move> moves = stackalloc API.Move[128];
+            generateNonCapture = true;
+            Init(board);
+            GenerateKingMoves(moves);
+            if (currMoveIndex > 0) { return false; }
+
+            if (!inDoubleCheck)
+            {
+                GenerateKnightMoves(moves);
+                if (currMoveIndex > 0) { return false; }
+                GeneratePawnMoves(moves);
+                if (currMoveIndex > 0) { return false; }
+                GenerateSlidingMoves(moves, true);
+                if (currMoveIndex > 0) { return false; }
+            }
+
+            return true;
+        }
+
         // Generates list of legal moves in current position.
         // Quiet moves (non captures) can optionally be excluded. This is used in quiescence search.
         public void GenerateMoves(ref Span<API.Move> moves, Board board, bool includeQuietMoves = true)
         {
-            this.board = board;
             generateNonCapture = includeQuietMoves;
 
-            Init();
+            Init(board);
 
             GenerateKingMoves(moves);
 
@@ -79,10 +114,22 @@ namespace ChessChallenge.Application.APIHelpers
             return inCheck;
         }
 
-        void Init()
+        public void Init(Board board)
         {
-            // Reset state
+            this.board = board;
             currMoveIndex = 0;
+
+
+            if (hasInitializedCurrentPosition)
+            {
+                moveTypeMask = generateNonCapture ? ulong.MaxValue : enemyPieces;
+                return;
+            }
+
+            hasInitializedCurrentPosition = true;
+
+            // Reset state
+
             inCheck = false;
             inDoubleCheck = false;
             checkRayBitmask = 0;
@@ -103,7 +150,11 @@ namespace ChessChallenge.Application.APIHelpers
             emptyOrEnemySquares = emptySquares | enemyPieces;
             moveTypeMask = generateNonCapture ? ulong.MaxValue : enemyPieces;
 
+
+
             CalculateAttackData();
+
+
         }
 
         API.Move CreateAPIMove(int startSquare, int targetSquare, int flag)
@@ -159,7 +210,7 @@ namespace ChessChallenge.Application.APIHelpers
             }
         }
 
-        void GenerateSlidingMoves(Span<API.Move> moves)
+        void GenerateSlidingMoves(Span<API.Move> moves, bool exitEarly = false)
         {
             // Limit movement to empty or enemy squares, and must block check if king is in check.
             ulong moveMask = emptyOrEnemySquares & checkRayBitmask & moveTypeMask;
@@ -190,6 +241,10 @@ namespace ChessChallenge.Application.APIHelpers
                 {
                     int targetSquare = BitBoardUtility.PopLSB(ref moveSquares);
                     moves[currMoveIndex++] = CreateAPIMove(startSquare, targetSquare, 0);
+                    if (exitEarly)
+                    {
+                        return;
+                    }
                 }
             }
 
@@ -209,6 +264,10 @@ namespace ChessChallenge.Application.APIHelpers
                 {
                     int targetSquare = BitBoardUtility.PopLSB(ref moveSquares);
                     moves[currMoveIndex++] = CreateAPIMove(startSquare, targetSquare, 0);
+                    if (exitEarly)
+                    {
+                        return;
+                    }
                 }
             }
         }
@@ -532,7 +591,6 @@ namespace ChessChallenge.Application.APIHelpers
             }
 
             // Pawn attacks
-            PieceList opponentPawns = board.pawns[enemyIndex];
             opponentPawnAttackMap = 0;
 
             ulong opponentPawnsBoard = board.pieceBitboards[PieceHelper.MakePiece(PieceHelper.Pawn, board.OpponentColour)];
