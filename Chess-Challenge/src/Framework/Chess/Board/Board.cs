@@ -54,12 +54,14 @@ namespace ChessChallenge.Chess
 
         // List of (hashed) positions since last pawn move or capture (for detecting 3-fold repetition)
         public Stack<ulong> RepetitionPositionHistory;
+        public Stack<string> RepetitionPositionHistoryFen;
 
         Stack<GameState> gameStateHistory;
         public GameState currentGameState;
 
         public List<Move> AllGameMoves;
-        public string GameStartFen { get; private set; }
+        public string GameStartFen => StartPositionInfo.fen;
+        public FenUtility.PositionInfo StartPositionInfo;
 
         // piece count excluding pawns and kings
         public int totalPieceCountWithoutPawnsAndKings;
@@ -68,20 +70,17 @@ namespace ChessChallenge.Chess
 
 
 
-        public Board(Board source = null)
+        public Board(Board? source = null)
         {
             if (source != null)
             {
-                string fen = FenUtility.CurrentFen(source);
-                LoadPosition(fen);
+                LoadPosition(source.StartPositionInfo);
 
-                RepetitionPositionHistory = new(source.RepetitionPositionHistory);
-                //AllGameMoves = new(source.AllGameMoves);
-                //Console.WriteLine(source.gameStateHistory.Count);
-                //gameStateHistory = new(source.gameStateHistory);
-                currentGameState = source.currentGameState;
+                for (int i = 0; i < source.AllGameMoves.Count; i++)
+                {
+                    MakeMove(source.AllGameMoves[i], false);
+                }
             }
-
         }
 
 
@@ -269,9 +268,13 @@ namespace ChessChallenge.Chess
             UpdateSliderBitboards();
 
             // Pawn moves and captures reset the fifty move counter and clear 3-fold repetition history
-            if (!inSearch && (movedPieceType == PieceHelper.Pawn || capturedPieceType != PieceHelper.None))
+            if (movedPieceType == PieceHelper.Pawn || capturedPieceType != PieceHelper.None)
             {
-                RepetitionPositionHistory.Clear();
+                if (!inSearch)
+                {
+                    RepetitionPositionHistory.Clear();
+                    RepetitionPositionHistoryFen.Clear();
+                }
                 newFiftyMoveCounter = 0;
             }
 
@@ -283,6 +286,7 @@ namespace ChessChallenge.Chess
             if (!inSearch)
             {
                 RepetitionPositionHistory.Push(newState.zobristKey);
+                RepetitionPositionHistoryFen.Push(FenUtility.CurrentFen(this));
                 AllGameMoves.Add(move);
             }
         }
@@ -374,6 +378,7 @@ namespace ChessChallenge.Chess
             if (!inSearch && RepetitionPositionHistory.Count > 0)
             {
                 RepetitionPositionHistory.Pop();
+                RepetitionPositionHistoryFen.Pop();
             }
             if (!inSearch)
             {
@@ -470,9 +475,13 @@ namespace ChessChallenge.Chess
         // Load custom position from fen string
         public void LoadPosition(string fen)
         {
+            LoadPosition(FenUtility.PositionFromFen(fen));
+        }
+
+        public void LoadPosition(FenUtility.PositionInfo posInfo)
+        {
+            StartPositionInfo = posInfo;
             Initialize();
-            GameStartFen = fen;
-            FenUtility.PositionInfo posInfo = FenUtility.PositionFromFen(fen);
 
             // Load pieces into board array and piece lists
             for (int squareIndex = 0; squareIndex < 64; squareIndex++)
@@ -520,6 +529,7 @@ namespace ChessChallenge.Chess
             RepetitionPositionHistory.Push(zobristKey);
 
             gameStateHistory.Push(currentGameState);
+            RepetitionPositionHistoryFen.Push(FenUtility.CurrentFen(this));
         }
 
         void UpdateSliderBitboards()
@@ -544,6 +554,7 @@ namespace ChessChallenge.Chess
             KingSquare = new int[2];
 
             RepetitionPositionHistory = new Stack<ulong>(capacity: 64);
+            RepetitionPositionHistoryFen = new Stack<string>(capacity: 64);
             gameStateHistory = new Stack<GameState>(capacity: 64);
 
             currentGameState = new GameState();

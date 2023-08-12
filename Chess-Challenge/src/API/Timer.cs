@@ -5,22 +5,51 @@ namespace ChessChallenge.API
     public sealed class Timer
     {
         /// <summary>
-        /// Amount of time left on clock for current player (in milliseconds)
+        /// The amount of time (in milliseconds) that each player started the game with
         /// </summary>
-        public int MillisecondsRemaining => Math.Max(0, initialMillisRemaining - (int)sw.ElapsedMilliseconds);
+        public readonly int GameStartTimeMilliseconds;
+
         /// <summary>
-        /// Amount of time elapsed since current player started thinking (in milliseconds)
+        /// The amount of time (in milliseconds) that gets added to the clock after each turn
+        /// </summary>
+        public readonly int IncrementMilliseconds;
+
+        /// <summary>
+        /// Amount of time elapsed since the current player started thinking (in milliseconds)
         /// </summary>
         public int MillisecondsElapsedThisTurn => (int)sw.ElapsedMilliseconds;
 
-        System.Diagnostics.Stopwatch sw;
-        readonly int initialMillisRemaining;
+        /// <summary>
+        /// Amount of time left on the clock for the current player (in milliseconds)
+        /// </summary>
+        public int MillisecondsRemaining => Math.Max(0, millisRemainingAtStartOfTurn - MillisecondsElapsedThisTurn);
+
+        /// <summary>
+        /// Amount of time left on the clock for the other player (in milliseconds)
+        /// </summary>
+        public readonly int OpponentMillisecondsRemaining;
+        
+        readonly System.Diagnostics.Stopwatch sw;
+        readonly int millisRemainingAtStartOfTurn;
 
         public Timer(int millisRemaining)
         {
-            initialMillisRemaining = millisRemaining;
+            millisRemainingAtStartOfTurn = millisRemaining;
             sw = System.Diagnostics.Stopwatch.StartNew();
+        }
 
+        public Timer(int remainingMs, int opponentRemainingMs, int startingMs, int incrementMs = 0)
+        {
+            millisRemainingAtStartOfTurn = remainingMs;
+            sw = System.Diagnostics.Stopwatch.StartNew();
+            GameStartTimeMilliseconds = startingMs;
+            OpponentMillisecondsRemaining = opponentRemainingMs;
+            IncrementMilliseconds = incrementMs;
+        }
+
+        public override string ToString()
+        {
+            return $"Game start time: {GameStartTimeMilliseconds} ms. Turn elapsed time: {MillisecondsElapsedThisTurn} ms. My time remaining: {MillisecondsRemaining} Opponent time remaining: {OpponentMillisecondsRemaining} ms.";
         }
     }
 }
