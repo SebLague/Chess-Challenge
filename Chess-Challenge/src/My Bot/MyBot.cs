@@ -1,9 +1,25 @@
 ﻿using ChessChallenge.API;
 using System;
-using System.Xml.Linq;
 
 public class MyBot : IChessBot
 {
+    private class EvaluatedMove : IComparable<EvaluatedMove>
+    {
+        public EvaluatedMove(Move move, int eval)
+        {
+            Move = move;
+            Eval = eval;
+        }
+
+        public Move Move { get; set; }
+        public int Eval { get; set; }
+
+        public int CompareTo(EvaluatedMove? other)
+        {
+            return Eval.CompareTo(other.Eval);
+        }
+    }
+
     public Move Think(Board board, Timer timer)
     {
         Move[] moves = board.GetLegalMoves();
@@ -15,12 +31,12 @@ public class MyBot : IChessBot
             board.MakeMove(move);
 
             // Evaluate the board
-            int evaluation = NegaMax(board, 3, int.MinValue, int.MaxValue);
-            Console.WriteLine(evaluation);
-            if (evaluation > bestMoveEvaluation)
+            EvaluatedMove evaluation = NegaMax(board, 3, int.MinValue, int.MaxValue);
+            Console.WriteLine(-evaluation.Eval);
+            if (-evaluation.Eval > bestMoveEvaluation)
             {
-                bestMove = move; 
-                bestMoveEvaluation = evaluation;
+                bestMove = move;
+                bestMoveEvaluation = -evaluation.Eval;
             }
 
             board.UndoMove(move);
@@ -29,26 +45,28 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
-    
-    private int NegaMax(Board board, int depth, int a, int b)
-    {
-        if (depth == 0 || board.IsInCheckmate()) { return Evaluate(board); }
 
+    private EvaluatedMove NegaMax(Board board, int depth, int alpha, int beta)
+    {
+        // Check terminal node
+        if (depth == 0 || board.IsInCheckmate() || board.IsDraw()) { return new(default, Evaluate(board)); }
 
         Move[] moves = board.GetLegalMoves();
         // Order moves here
 
-        int value = int.MinValue;
+        EvaluatedMove best = new(default, int.MinValue);
         foreach (Move move in moves)
         {
             board.MakeMove(move);
-            value = Math.Max(value, -NegaMax(board, depth - 1, a, b));
-            a = Math.Max(a, value);
+            EvaluatedMove temp = NegaMax(board, depth - 1, alpha, beta);
+            temp.Eval *= -1;
             board.UndoMove(move);
-            if (a >= b) { break; }
-        }
 
-        return value;
+            best = (temp.Eval > best.Eval) ? temp : best;
+            alpha = Math.Max(alpha, best.Eval);
+            if (alpha >= beta) { break; }
+        }
+        return best;
     }
 
 
@@ -56,19 +74,23 @@ public class MyBot : IChessBot
     {
         int evaluatedScore = 0;
 
+        // Check end conditions
         if (board.IsDraw()) { return evaluatedScore; }
+        if (board.IsInCheckmate()) { return board.IsWhiteToMove ? -10000000 : 10000000; }
 
         PieceList[] pieces = board.GetAllPieceLists();
 
         // Use a weighted piece differential
+        // TODO: Change to use pice locations and: pieces[i].GetPiece(j).Square.Index;
         int[] values = { 94, 281, 297, 512, 1025, 100000 };
         for (int i = 0; i < 6; i++)
         {
             evaluatedScore += (pieces[i].Count - pieces[i + 6].Count) * values[i];
         }
 
-        // Check if a player is in checkmate
+        // Check if a player is in check
+        if (board.IsInCheck()) { evaluatedScore += 50000 * (board.IsWhiteToMove ? 1 : -1); }
 
-        return evaluatedScore;
+        return evaluatedScore * (board.IsWhiteToMove ? 1 : -1);
     }
 }
