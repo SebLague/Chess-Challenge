@@ -398,3 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 
 # *MyBot.cs
+/Chess-Challenge/src/My Bot/MyBot.cs
+/Chess-Challenge/src/My Bot/MyBot_v1.cs
+/Chess-Challenge/src/My Bot/MyBot_v2.cs

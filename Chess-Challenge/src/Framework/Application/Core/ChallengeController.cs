@@ -20,7 +20,10 @@ namespace ChessChallenge.Application
             MyBot,
             MyBot_v1,
             MyBot_v2,
-            EvilBot
+            EvilBot,
+            EvilBot_T1,
+            EvilBot_T2,
+            Stockfish_Bot
         }
 
         // Game state
@@ -215,6 +218,9 @@ namespace ChessChallenge.Application
                 PlayerType.MyBot_v1 => new ChessPlayer(new MyBotV1(), type, GameDurationMilliseconds),
                 PlayerType.MyBot_v2 => new ChessPlayer(new MyBotV2(), type, GameDurationMilliseconds),
                 PlayerType.EvilBot => new ChessPlayer(new EvilBot(), type, GameDurationMilliseconds),
+                PlayerType.EvilBot_T1 => new ChessPlayer(new EvilBotT1(), type, GameDurationMilliseconds),
+                PlayerType.EvilBot_T2 => new ChessPlayer(new EvilBotT2(), type, GameDurationMilliseconds),
+                PlayerType.Stockfish_Bot => new ChessPlayer(new StockfishBot(), type, GameDurationMilliseconds),
                 _ => new ChessPlayer(new HumanPlayer(boardUI), type)
             };
         }

@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <PackageReference Include="Raylib-cs" Version="4.5.0.2" />
+    <PackageReference Include="Stockfish.NET" Version="1.0.7" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +24,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="src\Evil Bot\Stockfish_Bot.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="src\Evil Bot\EvilBot_T1.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="src\Evil Bot\EvilBot_T2.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="src\My Bot\MyBot.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
