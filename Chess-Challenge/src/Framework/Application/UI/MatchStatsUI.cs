@@ -26,8 +26,8 @@ namespace ChessChallenge.Application
                 DrawStats(controller.BotStatsA);
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
-           
-
+                startPos.Y += spacingY * 2;
+                
                 void DrawStats(ChallengeController.BotMatchStats stats)
                 {
                     DrawNextText(stats.BotName + ":", nameFontSize, Color.WHITE);
@@ -43,6 +43,10 @@ namespace ChessChallenge.Application
                 {
                     UIHelper.DrawText(text, startPos, fontSize, 1, col);
                     startPos.Y += spacingY;
+                }
+
+                double CalculateEloDifference(double percent){
+                    return -400 * Math.log(1 / percentage - 1) / Math.log(10)
                 }
             }
         }
