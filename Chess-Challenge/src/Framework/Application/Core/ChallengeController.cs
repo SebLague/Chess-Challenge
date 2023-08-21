@@ -297,7 +297,7 @@ namespace ChessChallenge.Application
                     if (botMatchGameIndex < numGamesToPlay && autoStartNextBotMatch)
                     {
                         botAPlaysWhite = !botAPlaysWhite;
-                        const int startNextGameDelayMs = 60000;//600;
+                        const int startNextGameDelayMs = 600;
                         System.Timers.Timer autoNextTimer = new(startNextGameDelayMs);
                         int originalGameID = gameID;
                         autoNextTimer.Elapsed += (s, e) => AutoStartNextBotMatchGame(originalGameID, autoNextTimer);
