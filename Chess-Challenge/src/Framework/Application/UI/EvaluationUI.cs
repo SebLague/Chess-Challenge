@@ -20,7 +20,7 @@ namespace ChessChallenge.Application
             double percent = Math.Min(evaluation,scale)/scale;
 
             Raylib.DrawRectangle(0, screenHeight - height, screenWidth, height, white);
-            Raylib.DrawRectangle(0, screenHeight - height, (int)(middle + middle*percent), height, black);
+            Raylib.DrawRectangle(0, screenHeight - height, (int)(middle - middle*percent), height, black);
 
             var textPos = new System.Numerics.Vector2(screenWidth / 2, screenHeight - height / 2);
 
