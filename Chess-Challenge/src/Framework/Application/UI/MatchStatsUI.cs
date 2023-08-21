@@ -14,6 +14,9 @@ namespace ChessChallenge.Application
                 int regularFontSize = UIHelper.ScaleInt(35);
                 int headerFontSize = UIHelper.ScaleInt(45);
                 Color col = new(180, 180, 180, 255);
+                Color Red = new(255, 0, 0, 255);
+                Color White = new(255, 255, 255);
+                Color Green = new(0, 255, 0);
                 Vector2 startPos = UIHelper.Scale(new Vector2(1500, 250));
                 float spacingY = UIHelper.Scale(35);
 
@@ -31,6 +34,9 @@ namespace ChessChallenge.Application
                     DrawNextText($"Score: +{stats.NumWins} ={stats.NumDraws} -{stats.NumLosses}", regularFontSize, col);
                     DrawNextText($"Num Timeouts: {stats.NumTimeouts}", regularFontSize, col);
                     DrawNextText($"Num Illegal Moves: {stats.NumIllegalMoves}", regularFontSize, col);
+                    DrawNextText($"Win Percent: {(double)stats.NumWins/(controller.CurrGameNumber - 1)}", regularFontSize, Green);
+                    DrawNextText($"Draw Percent: {(double)stats.NumDraws/(controller.CurrGameNumber - 1)}", regularFontSize, White);
+                    DrawNextText($"Lose Percent: {(double)stats.NumLosses/(controller.CurrGameNumber - 1)}", regularFontSize, Red);
                 }
            
                 void DrawNextText(string text, int fontSize, Color col)
