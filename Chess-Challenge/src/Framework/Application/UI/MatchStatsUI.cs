@@ -27,6 +27,11 @@ namespace ChessChallenge.Application
                 startPos.Y += spacingY * 2;
                 DrawStats(controller.BotStatsB);
                 startPos.Y += spacingY * 2;
+
+                string eloDifference = CalculateElo(controller.BotStatsA.NumWins, controller.BotStatsA.NumDraws, controller.BotStatsA.NumLosses);
+
+                DrawNextText("Elo Difference:", headerFontSize, Color.WHITE);
+                DrawNextText(eloDifference, regularFontSize, col);
                 
                 void DrawStats(ChallengeController.BotMatchStats stats)
                 {
@@ -45,6 +50,18 @@ namespace ChessChallenge.Application
                     startPos.Y += spacingY;
                 }
 
+                string CalculateElo(int wins, int draws int losses){
+                    double score = wins + (double)draws / 2;
+                    double total = wins + draws + losses;
+                    double percentage = score / total;
+                    double elo = CalculateEloDifference(percentage);
+                    if(Double.IsNaN(elo))return "Nan";
+                    string eloDifference;
+                    if(elo >= 0) eloDifference = "+" + elo.ToString();
+                    else eloDifference = "-" + elo.ToString();
+                    return eloDifference;
+                }
+                
                 double CalculateEloDifference(double percent){
                     return -400 * Math.log(1 / percentage - 1) / Math.log(10)
                 }
