@@ -1,4 +1,4 @@
-﻿using ChessChallenge.Chess;
+using ChessChallenge.Chess;
 using ChessChallenge.Example;
 using Raylib_cs;
 using System;
@@ -297,7 +297,7 @@ namespace ChessChallenge.Application
                     if (botMatchGameIndex < numGamesToPlay && autoStartNextBotMatch)
                     {
                         botAPlaysWhite = !botAPlaysWhite;
-                        const int startNextGameDelayMs = 600;
+                        const int startNextGameDelayMs = 60000;//600;
                         System.Timers.Timer autoNextTimer = new(startNextGameDelayMs);
                         int originalGameID = gameID;
                         autoNextTimer.Elapsed += (s, e) => AutoStartNextBotMatchGame(originalGameID, autoNextTimer);
@@ -389,7 +389,9 @@ namespace ChessChallenge.Application
 
         public void DrawOverlay()
         {
-            BotBrainCapacityUI.Draw(tokenCount, debugTokenCount, MaxTokenCount);
+            //BotBrainCapacityUI.Draw(tokenCount, debugTokenCount, MaxTokenCount);
+            API.Board botBoard = new(board);
+            EvaluationUI.Draw(MyBot.EvaluatePosition(botBoard));
             MenuUI.DrawButtons(this);
             MatchStatsUI.DrawMatchStats(this);
         }
