@@ -1,7 +1,7 @@
 using Raylib_cs;
 using System.Numerics;
 using System;
-
+using System.Collections.Generic;
 
 namespace ChessChallenge.Application
 {
@@ -18,8 +18,8 @@ namespace ChessChallenge.Application
                 Color white = new(225, 225, 225, 225);
                 Color red = new Color(200, 0, 0, 255);
                 Color green = new Color(0, 200, 0, 255);
-                Vector2 startPos = UIHelper.Scale(new Vector2(1500, 100));
-                float spacingY = UIHelper.Scale(35);
+                Vector2 startPos = UIHelper.Scale(new Vector2(1500, 40));
+                float spacingY = UIHelper.Scale(30);
 
                 DrawNextText($"Game {controller.CurrGameNumber} of {controller.TotalGameCount}", headerFontSize, Color.WHITE);
                 startPos.Y += spacingY * 2;
@@ -51,12 +51,19 @@ namespace ChessChallenge.Application
                     else DrawNextText($"-Inf +/- {(int)eloMargin}", regularFontSize, Color.GRAY);
                     else
                         DrawNextText($"{(int)eloDifference} +/- {(int)eloMargin}", regularFontSize, Color.GRAY);
+                startPos.Y += spacingY * 2;
 
                 double los = LOS(controller.BotStatsA.NumWins, controller.BotStatsA.NumLosses);
-                if(!double.IsNaN(los)){
-                    DrawNextText("LOS:", headerFontSize, Color.WHITE);
+
+                DrawNextText("LOS:", headerFontSize, Color.WHITE);
+                if(!double.IsNaN(los))
                     DrawNextText($"{(double)(int)(los*1000)/10}%", regularFontSize, Color.GRAY);
-                }
+                else 
+                    DrawNextText("Nan", regularFontSize, Color.GRAY);
+                startPos.Y += spacingY * 2;
+
+                DrawNextText("SPRT:", headerFontSize, Color.WHITE);
+                DrawNextText(SPRT(controller.BotStatsA.NumWins, controller.BotStatsA.NumDraws, controller.BotStatsA.NumLosses, 0, 5, 0.05, 0.05), regularFontSize, Color.GRAY);
                     
 
                 void DrawStats(ChallengeController.BotMatchStats stats)
@@ -149,6 +156,36 @@ namespace ChessChallenge.Application
             double y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t*Math.Exp(-x*x);
 
             return sign * y;
+        }
+
+        private static double LL(double x){
+            return 1/(1+Math.Pow(10, -x/400));
+        }
+        private static double LLR(int W, int D, int L, int elo0, int elo1){
+            if (W == 0 || D == 0 || L == 0)
+                return 0.0;
+            double N = W + D + L;
+            double w = W / N;
+            double d = D / N;
+            double l = L / N;
+            double s = w + d / 2;
+            double m2 = w + d / 4;
+            double _var = m2 - s * s;
+            double _var_s = _var / N;
+            double s0 = LL(elo0);
+            double s1 = LL(elo1);
+            return (s1 - s0) * (2 * s - s0 - s1) / _var_s / 2.0;
+        }
+        private static string SPRT(int W, int D, int L, int elo0, int elo1, double alpha, double beta){
+            double LLR_ = LLR(W, D, L, elo0, elo1);
+            double LA = Math.Log((double)beta/(1-alpha));
+            double LB = Math.Log((double)(1-beta)/alpha);
+            if (LLR_ > LB)
+                return "H1 Accepted";
+            else if (LLR_ < LA)
+                return "H0 Accepted";
+            else
+                return "Not enough evidence";
         }
     }
 }
