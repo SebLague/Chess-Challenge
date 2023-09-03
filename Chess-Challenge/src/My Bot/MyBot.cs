@@ -110,10 +110,19 @@ public class MyBot : IChessBot
     private int NegaMax(int alpha, int beta, int depth, Board board)
     {
         int score;
-        if (depth >= Depth)
+        if (depth <= 0)
             return NegaQ(alpha, beta, board);
-
+        int eval = Eval(board);
         int bestScore = -CheckmateScore;
+        if (depth > 1 && eval - 10 >= beta && board.TrySkipTurn())
+        {
+            if (-NegaMax(-beta, -beta + 1, depth - 3 - depth / 4, board) >= beta)
+            {
+                board.UndoSkipTurn();
+                return beta;
+            }
+            board.UndoSkipTurn();
+        }
         Move[] move = board.GetLegalMoves();
         for (int i = 0; i < move.Length; i++)
         {
@@ -139,19 +148,17 @@ public class MyBot : IChessBot
                 return CheckmateScore - board.PlyCount;
             }
             if (board.IsDraw())
+                score = 0;
+            else
+                if (beta - alpha > 1)
             {
-                board.UndoMove(move[i]);
-                return 0;
-            }
-            if (beta - alpha > 1)
-            {
-                score = -NegaMax(-alpha - 1, -alpha, depth + 2, board);
+                score = -NegaMax(-alpha - 1, -alpha, depth - 2, board);
                 if (score > alpha)
-                    score = -NegaMax(-beta, -alpha, depth + 1, board);
+                    score = -NegaMax(-beta, -alpha, depth - 1, board);
             }
             else
             {
-                score = -NegaMax(-beta, -alpha, depth + 1, board);
+                score = -NegaMax(-beta, -alpha, depth - 1, board);
             }
             board.UndoMove(move[i]);
 
