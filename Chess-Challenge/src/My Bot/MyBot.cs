@@ -1,4 +1,13 @@
-﻿using ChessChallenge.API;
+﻿// TalkChess Bot
+
+// contributors:
+// Thomas Jahn - Leorik
+// Mike Sherwin - RomiChess
+// Dmitry Shechtman - LeanChess
+// (Get your name added here)
+// Deadline October 1st
+
+using ChessChallenge.API;
 
 public class MyBot : IChessBot
 {
