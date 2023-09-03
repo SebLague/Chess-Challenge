@@ -70,7 +70,7 @@ public class MyBot : IChessBot
                 }
             }
             bestMove = bestNew.IsNull ? bestMove : bestNew;
-            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 40)
+            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 100)
                 break;
         }
         return bestMove;
