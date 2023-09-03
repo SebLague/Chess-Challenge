@@ -1,10 +1,10 @@
 ﻿using ChessChallenge.API;
+using System;
 
 public class MyBot : IChessBot
 {
     int[] PieceValues = { 0, 100, 320, 330, 500, 900, 10000 };
     int CheckmateScore = 9999;
-    int Depth;
 
     ulong[] pst = {
         0x04BE53FA54055052,0x30C0140E5C47C052,0x2D41E3FA46C97852,0x1DC0D42052090052,
@@ -48,8 +48,9 @@ public class MyBot : IChessBot
         int beta = CheckmateScore;
         int score;
         Move[] move = board.GetLegalMoves();
-        for (Depth = 1; Depth < 99; Depth++)
+        for (int depth = 1; depth < 99; depth++)
         {
+            Console.WriteLine(depth);
             alpha = -CheckmateScore;
             bestMove = default;
             for (int i = 0; i < move.Length; i++)
@@ -64,7 +65,7 @@ public class MyBot : IChessBot
                 {
                     score = 0;
                 }
-                else score = -NegaMax(-beta, -alpha, Depth, board);
+                else score = -NegaMax(-beta, -alpha, depth, board);
                 board.UndoMove(move[i]);
 
                 if (score > alpha)
@@ -80,57 +81,19 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
-    private int NegaQ(int alpha, int beta, Board board)
-    {
-        int score;
-        int eval = Eval(board);
-        if (eval >= beta) return beta;
-        if (eval > alpha) alpha = eval;
-        Move[] move = board.GetLegalMoves(true);
-        for (int i = 0; i < move.Length; i++)
-        {
-            Move tempMove;
-            Piece capturedPiece1 = board.GetPiece(move[i].TargetSquare);
-            int capturedPieceValue1 = PieceValues[(int)capturedPiece1.PieceType];
-            for (int j = i + 1; j < move.Length; j++)
-            {
-                Piece capturedPiece2 = board.GetPiece(move[j].TargetSquare);
-                int capturedPieceValue2 = PieceValues[(int)capturedPiece2.PieceType];
-                if (capturedPieceValue2 > capturedPieceValue1)
-                {
-                    tempMove = move[i];
-                    move[i] = move[j];
-                    move[j] = tempMove;
-                }
-            }
-
-            board.MakeMove(move[i]);
-            if (board.IsInCheckmate())
-            {
-                board.UndoMove(move[i]);
-                return CheckmateScore - board.PlyCount;
-            }
-            score = -NegaQ(-beta, -alpha, board);
-            board.UndoMove(move[i]);
-
-            if (score > alpha)
-            {
-                alpha = score;
-                if (score >= beta)
-                    return beta;
-            }
-        }
-        return alpha;
-    }
-
     private int NegaMax(int alpha, int beta, int depth, Board board)
     {
         int score;
-        if (depth <= 0)
-            return NegaQ(alpha, beta, board);
+        bool q = depth <= 0;
         int eval = Eval(board);
-        int bestScore = -CheckmateScore;
-        if (depth > 1 && eval - 10 >= beta && board.TrySkipTurn())
+
+        if (q)
+        {
+            if (eval >= beta) return beta;
+            alpha = Math.Max(alpha, eval);
+        }
+
+        if (!q && depth > 1 && eval - 10 >= beta && board.TrySkipTurn())
         {
             if (-NegaMax(-beta, -beta + 1, depth - 3 - depth / 4, board) >= beta)
             {
@@ -139,7 +102,8 @@ public class MyBot : IChessBot
             }
             board.UndoSkipTurn();
         }
-        Move[] move = board.GetLegalMoves();
+
+        Move[] move = board.GetLegalMoves(q);
         for (int i = 0; i < move.Length; i++)
         {
             Move tempMove;
@@ -170,7 +134,7 @@ public class MyBot : IChessBot
             {
                 score = -NegaMax(-alpha - 1, -alpha, depth - 2, board);
                 if (score > alpha)
-                    score = -NegaMax(-beta, -alpha, depth - 1, board);
+                    score = -NegaMax(-beta, -alpha, depth - 1 - i / 4, board);
             }
             else
             {
@@ -180,9 +144,9 @@ public class MyBot : IChessBot
 
             if (score > alpha)
             {
-                alpha = score;
                 if (score >= beta)
                     return beta;
+                alpha = score;
             }
         }
         return alpha;
