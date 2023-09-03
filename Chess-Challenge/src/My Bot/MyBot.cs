@@ -30,10 +30,34 @@ public class MyBot : IChessBot
         return bestMove;
     }
 
+    private int NegaQ(int alpha, int beta, Board board)
+    {
+        int eval = Eval(board);
+        if (eval >= beta) return beta;
+        if (eval > alpha) alpha = eval;
+        foreach (Move move in board.GetLegalMoves())
+        {
+            if (move.IsCapture || move.IsPromotion || move.IsEnPassant)
+            {
+                board.MakeMove(move);
+                int score = -NegaQ(-beta, -alpha, board);
+                board.UndoMove(move);
+
+                if (score > alpha)
+                {
+                    alpha = score;
+                    if (score >= beta)
+                        return beta;
+                }
+            }
+        }
+        return alpha;
+    }
+
     private int NegaMax(int alpha, int beta, int depth, Board board)
     {
         if (depth == Depth)
-            return Eval(board);
+            return NegaQ(alpha, beta, board);
 
         if (board.IsInCheckmate())
             return -CheckmateScore;
