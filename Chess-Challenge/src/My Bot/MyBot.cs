@@ -16,7 +16,7 @@ public class MyBot : IChessBot
     // Piece values: null, pawn, knight, bishop, rook, queen
     int[] PieceValues = { 0, 100, 320, 330, 500, 900, 10000 };
     int CheckmateScore = 9999;
-    int Depth = 8;
+    int Depth;
 
     ulong[] pst = {
         0xE6F4B06438321400,0xEAF6B2643A341400,0xEAF2B2643A361400,0xEAF0B3653A361400,
@@ -40,37 +40,39 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         Move bestMove = default;
-        int bestScore = -CheckmateScore;
+        int bestScore;
         int alpha = -CheckmateScore;
         int beta = CheckmateScore;
-        int score = 0;
-        foreach (Move move in board.GetLegalMoves())
+        int score;
+        Move[] move = board.GetLegalMoves();
+        for (Depth = 1; Depth < 9; Depth++)
         {
-            board.MakeMove(move);
-            if (board.IsInCheckmate())
+            bestScore = -CheckmateScore;
+            bestMove = default;
+            for (int i = 0; i < move.Length; i++)
             {
-                board.UndoMove(move);
-                return move;
-            }
-            if (board.IsDraw())
-            {
-                score = 0;
-            }
-            else
-            {
-                for (int i = 8; i > 0; i--)
+                board.MakeMove(move[i]);
+                if (board.IsInCheckmate())
                 {
-                    score = -NegaMax(-beta, -alpha, i, board);
-                    if (timer.MillisecondsElapsedThisTurn > 200) break;
+                    board.UndoMove(move[i]);
+                    return move[i];
+                }
+                if (board.IsDraw())
+                {
+                    score = 0;
+                }
+                else score = -NegaMax(-beta, -alpha, 1, board);
+                board.UndoMove(move[i]);
+
+                if (score > bestScore)
+                {
+                    bestMove = move[i];
+                    move[i] = move[0];
+                    move[0] = bestMove;
+                    bestScore = score;
                 }
             }
-            board.UndoMove(move);
-
-            if (score > bestScore)
-            {
-                bestMove = move;
-                bestScore = alpha = score;
-            }
+            if (timer.MillisecondsElapsedThisTurn > 400) break;
         }
         return bestMove;
     }
