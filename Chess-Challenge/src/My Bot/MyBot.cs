@@ -5,7 +5,7 @@
 // Mike Sherwin - RomiChess
 // Dmitry Shechtman - LeanChess
 // (Get your name added here)
-// Deadline October 1st
+// Deadline October 1st 2023
 
 using ChessChallenge.API;
 
