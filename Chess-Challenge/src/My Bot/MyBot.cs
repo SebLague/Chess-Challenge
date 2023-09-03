@@ -32,8 +32,8 @@ public class MyBot : IChessBot
     {
         Move bestMove = default;
         int bestScore = -CheckmateScore;
-        int alpha = -10000;
-        int beta = 10000;
+        int alpha = -CheckmateScore;
+        int beta = CheckmateScore;
         foreach (Move move in board.GetLegalMoves())
         {
             board.MakeMove(move);
