@@ -7,7 +7,7 @@ public class MyBot : IChessBot
     // Piece values: null, pawn, knight, bishop, rook, queen
     int[] PieceValues = { 0, 100, 320, 330, 500, 900, 10000 };
     int CheckmateScore = 9999;
-    int Depth = 4;
+    int Depth = 8;
 
     ulong[] pst = {
         0xE6F4B06438321400,0xEAF6B2643A341400,0xEAF2B2643A361400,0xEAF0B3653A361400,
@@ -49,7 +49,11 @@ public class MyBot : IChessBot
             }
             else
             {
-                score = -NegaMax(-beta, -alpha, 1, board);
+                for (int i = 8; i > 0; i--)
+                {
+                    score = -NegaMax(-beta, -alpha, i, board);
+                    if (timer.MillisecondsElapsedThisTurn > 200) break;
+                }
             }
             board.UndoMove(move);
 
