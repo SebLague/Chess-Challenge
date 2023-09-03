@@ -5,7 +5,7 @@ public class MyBot : IChessBot
     //Implements the https://en.wikipedia.org/wiki/Negamax algorithm
 
     // Piece values: null, pawn, knight, bishop, rook, queen
-    int[] PieceValues = { 0, 100, 320, 330, 500, 900 };
+    int[] PieceValues = { 0, 100, 320, 330, 500, 900, 10000 };
     int CheckmateScore = 9999;
     int Depth = 4;
 
@@ -54,13 +54,29 @@ public class MyBot : IChessBot
         int eval = Eval(board);
         if (eval >= beta) return beta;
         if (eval > alpha) alpha = eval;
-        foreach (Move move in board.GetLegalMoves())
+        Move[] move = board.GetLegalMoves();
+        for (int i = 0; i < move.Length; i++)
         {
-            if (move.IsCapture || move.IsPromotion || move.IsEnPassant)
+            if (move[i].IsCapture || move[i].IsPromotion || move[i].IsEnPassant)
             {
-                board.MakeMove(move);
+                Move tempMove;
+                Piece capturedPiece1 = board.GetPiece(move[i].TargetSquare);
+                int capturedPieceValue1 = PieceValues[(int)capturedPiece1.PieceType];
+                for (int j = i + 1; j < move.Length; j++)
+                {
+                    Piece capturedPiece2 = board.GetPiece(move[j].TargetSquare);
+                    int capturedPieceValue2 = PieceValues[(int)capturedPiece2.PieceType];
+                    if (capturedPieceValue2 > capturedPieceValue1)
+                    {
+                        tempMove = move[i];
+                        move[i] = move[j];
+                        move[j] = tempMove;
+                    }
+                }
+
+                board.MakeMove(move[i]);
                 int score = -NegaQ(-beta, -alpha, board);
-                board.UndoMove(move);
+                board.UndoMove(move[i]);
 
                 if (score > alpha)
                 {
