@@ -5,7 +5,7 @@ public class MyBot : IChessBot
     //Implements the https://en.wikipedia.org/wiki/Negamax algorithm
 
     // Piece values: null, pawn, knight, bishop, rook, queen
-    int[] PieceValues = { 0, 100, 300, 300, 500, 900 };
+    int[] PieceValues = { 0, 100, 320, 330, 500, 900 };
     int CheckmateScore = 9999;
     int Depth = 6;
 
