@@ -28,14 +28,13 @@ public class MyBot : IChessBot
     public Move Think(Board board, Timer timer)
     {
         Move bestMove = default;
-        int bestScore;
-        int alpha = -CheckmateScore;
+        int alpha;
         int beta = CheckmateScore;
         int score;
         Move[] move = board.GetLegalMoves();
         for (Depth = 1; Depth < 99; Depth++)
         {
-            bestScore = -CheckmateScore;
+            alpha = -CheckmateScore;
             bestMove = default;
             for (int i = 0; i < move.Length; i++)
             {
@@ -49,19 +48,18 @@ public class MyBot : IChessBot
                 {
                     score = 0;
                 }
-                else score = -NegaMax(-beta, -alpha, 1, board);
+                else score = -NegaMax(-beta, -alpha, Depth, board);
                 board.UndoMove(move[i]);
 
-                if (score > bestScore)
+                if (score > alpha)
                 {
                     bestMove = move[i];
                     move[i] = move[0];
                     move[0] = bestMove;
-                    bestScore = score;
+                    alpha = score;
                 }
             }
-            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 100)
-                break;
+            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 100) break;
         }
         return bestMove;
     }
