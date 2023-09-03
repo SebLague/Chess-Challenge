@@ -1,19 +1,7 @@
-﻿// TalkChess Bot
-
-// contributors:
-// Thomas Jahn - Leorik
-// Mike Sherwin - RomiChess
-// Dmitry Shechtman - LeanChess
-// (Get your name added here)
-// Deadline October 1st 2023
-
-using ChessChallenge.API;
+﻿using ChessChallenge.API;
 
 public class MyBot : IChessBot
 {
-    //Implements the https://en.wikipedia.org/wiki/Negamax algorithm
-
-    // Piece values: null, pawn, knight, bishop, rook, queen
     int[] PieceValues = { 0, 100, 320, 330, 500, 900, 10000 };
     int CheckmateScore = 9999;
     int Depth;
