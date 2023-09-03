@@ -7,7 +7,7 @@ public class MyBot : IChessBot
     // Piece values: null, pawn, knight, bishop, rook, queen
     int[] PieceValues = { 0, 100, 320, 330, 500, 900 };
     int CheckmateScore = 9999;
-    int Depth = 6;
+    int Depth = 4;
 
     ulong[] pst = {
         0xE6F4B06438321400,0xEAF6B2643A341400,0xEAF2B2643A361400,0xEAF0B3653A361400,
