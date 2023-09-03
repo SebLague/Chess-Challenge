@@ -34,10 +34,23 @@ public class MyBot : IChessBot
         int bestScore = -CheckmateScore;
         int alpha = -CheckmateScore;
         int beta = CheckmateScore;
+        int score = 0;
         foreach (Move move in board.GetLegalMoves())
         {
             board.MakeMove(move);
-            int score = -NegaMax(-beta, -alpha, 1, board);
+            if (board.IsInCheckmate())
+            {
+                board.UndoMove(move);
+                return move;
+            }
+            if (board.IsDraw())
+            {
+                score = 0;
+            }
+            else
+            {
+                score = -NegaMax(-beta, -alpha, 1, board);
+            }
             board.UndoMove(move);
 
             if (score > bestScore)
@@ -75,6 +88,16 @@ public class MyBot : IChessBot
                 }
 
                 board.MakeMove(move[i]);
+                if (board.IsInCheckmate())
+                {
+                    board.UndoMove(move[i]);
+                    return CheckmateScore - board.PlyCount;
+                }
+                if (board.IsDraw())
+                {
+                    board.UndoMove(move[i]);
+                    return 0;
+                }
                 int score = -NegaQ(-beta, -alpha, board);
                 board.UndoMove(move[i]);
 
@@ -91,18 +114,51 @@ public class MyBot : IChessBot
 
     private int NegaMax(int alpha, int beta, int depth, Board board)
     {
-        if (depth == Depth)
+        int score;
+        if (depth >= Depth)
             return NegaQ(alpha, beta, board);
 
-        if (board.IsInCheckmate())
-            return -CheckmateScore;
-
         int bestScore = -CheckmateScore;
-        foreach (Move move in board.GetLegalMoves())
+        Move[] move = board.GetLegalMoves();
+        for (int i = 0; i < move.Length; i++)
         {
-            board.MakeMove(move);
-            int score = -NegaMax(-beta, -alpha, depth + 1, board);
-            board.UndoMove(move);
+            Move tempMove;
+            Piece capturedPiece1 = board.GetPiece(move[i].TargetSquare);
+            int capturedPieceValue1 = PieceValues[(int)capturedPiece1.PieceType];
+            for (int j = i + 1; j < move.Length; j++)
+            {
+                Piece capturedPiece2 = board.GetPiece(move[j].TargetSquare);
+                int capturedPieceValue2 = PieceValues[(int)capturedPiece2.PieceType];
+                if (capturedPieceValue2 > capturedPieceValue1)
+                {
+                    tempMove = move[i];
+                    move[i] = move[j];
+                    move[j] = tempMove;
+                }
+            }
+
+            board.MakeMove(move[i]);
+            if (board.IsInCheckmate())
+            {
+                board.UndoMove(move[i]);
+                return CheckmateScore - board.PlyCount;
+            }
+            if (board.IsDraw())
+            {
+                board.UndoMove(move[i]);
+                return 0;
+            }
+            if (beta - alpha > 1)
+            {
+                score = -NegaMax(-alpha - 1, -alpha, depth + 2, board);
+                if (score > alpha)
+                    score = -NegaMax(-beta, -alpha, depth + 1, board);
+            }
+            else
+            {
+                score = -NegaMax(-beta, -alpha, depth + 1, board);
+            }
+            board.UndoMove(move[i]);
 
             if (score > alpha)
             {
