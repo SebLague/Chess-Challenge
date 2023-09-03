@@ -400,3 +400,6 @@ FodyWeavers.xsd
 
 # Stockfish BIN
 Chess-Challenge/stockfish
+
+# stats
+*.csv
