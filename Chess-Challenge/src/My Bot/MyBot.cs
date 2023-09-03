@@ -9,6 +9,25 @@ public class MyBot : IChessBot
     int CheckmateScore = 9999;
     int Depth = 6;
 
+    ulong[] pst = {
+        0xE6F4B06438321400,0xEAF6B2643A341400,0xEAF2B2643A361400,0xEAF0B3653A361400,
+        0xEAF0B3653A361400,0xEAF2B2643A361400,0xEAF6B2643A341400,0xE6F4B06438321400,
+        0xEAF4B2633A341500,0xEAF4B4643D381600,0xF0F0B5643C3C1600,0xF0F0B4643C3D1000,
+        0xF0F0B4643C3D1000,0xF0F0B4643C3C1600,0xEAF4B4643D381600,0xEAF4B2633A341500,
+        0xEAEEB2633A361500,0xEEECB5643E3D1300,0xF4ECB5643E3E1200,0xF6ECB5643E3F1400,
+        0xF6ECB5643E3F1400,0xF4ECB5643E3E1200,0xEEECB4643E3D1300,0xEAEEB2633A361500,
+        0xEAECB4633A361400,0xEEEAB4643C3C1400,0xF6EAB5643E3F1400,0xF8E8B5643E401800,
+        0xF8E8B5643E401800,0xF6EAB5643E3F1400,0xEEEAB4643C3C1400,0xEAECB3633A361400,
+        0xEAEAB3633A361500,0xEEE8B4643D3D1500,0xF6E8B5643D3F1600,0xF8E6B5643E401900,
+        0xF8E6B5643E401900,0xF6E8B5643D3F1600,0xEEE8B4643D3D1500,0xEAEAB3633A361500,
+        0xEAEAB2633A361600,0xEEE8B4643C3C1600,0xF4E8B5643D3E1800,0xF6E6B5643E3F1A00,
+        0xF6E6B5643E3F1A00,0xF4E8B5643D3E1800,0xEEE8B4643C3C1600,0xEAEAB2633A361600,
+        0xEAEAB2653A341E00,0xECE8B4663C381E00,0xEEE8B4663C3C1E00,0xF0E6B4663C3C1E00,
+        0xF0E6B4663C3C1E00,0xEEE8B4663C3C1E00,0xECE8B4663C381E00,0xEAEAB2653A341E00,
+        0xE6EAB06438321400,0xE8E8B2643A341400,0xEAE8B2643A361400,0xECE6B3643A361400,
+        0xECE6B3643A361400,0xEAE8B2643A361400,0xE8E8B2643A341400,0xE6EAB06438321400,
+    };
+
     public Move Think(Board board, Timer timer)
     {
         Move bestMove = default;
@@ -79,15 +98,16 @@ public class MyBot : IChessBot
         return alpha;
     }
 
-    private int Eval(Board board)
+    int Eval(Board board)
     {
-        int eval = 0;
-        for (int pieceType = 1; pieceType < 5; pieceType++)
-        {
-            var white = board.GetPieceList((PieceType)pieceType, true);
-            var black = board.GetPieceList((PieceType)pieceType, false);
-            eval += (white.Count - black.Count) * PieceValues[pieceType];
-        }
-        return board.IsWhiteToMove ? eval : -eval;
+        int eval = 0, value;
+        foreach (PieceList list in board.GetAllPieceLists())
+            foreach (Piece piece in list)
+            {
+                value = (byte)(pst[piece.Square.Index ^ (piece.IsWhite ? 0 : 0x38)] >>
+                    ((int)piece.PieceType << 3));
+                eval -= (board.IsWhiteToMove ^ piece.IsWhite) ? value : -value;
+            }
+        return eval;
     }
 }
