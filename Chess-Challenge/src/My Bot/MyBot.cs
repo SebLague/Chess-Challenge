@@ -1,6 +1,6 @@
 ﻿using ChessChallenge.API;
 
-public class SimpleNegaMax : IChessBot
+public class MyBot : IChessBot
 {
     //Implements the https://en.wikipedia.org/wiki/Negamax algorithm
 
@@ -13,22 +13,24 @@ public class SimpleNegaMax : IChessBot
     {
         Move bestMove = default;
         int bestScore = -CheckmateScore;
+        int alpha = -10000;
+        int beta = 10000;
         foreach (Move move in board.GetLegalMoves())
         {
             board.MakeMove(move);
-            int score = -NegaMax(1, board);
+            int score = -NegaMax(-beta, -alpha, 1, board);
             board.UndoMove(move);
 
             if (score > bestScore)
             {
                 bestMove = move;
-                bestScore = score;
+                bestScore = alpha = score;
             }
         }
         return bestMove;
     }
 
-    private int NegaMax(int depth, Board board)
+    private int NegaMax(int alpha, int beta, int depth, Board board)
     {
         if (depth == Depth)
             return Eval(board);
@@ -40,13 +42,17 @@ public class SimpleNegaMax : IChessBot
         foreach (Move move in board.GetLegalMoves())
         {
             board.MakeMove(move);
-            int score = -NegaMax(depth + 1, board);
+            int score = -NegaMax(-beta, -alpha, depth + 1, board);
             board.UndoMove(move);
 
-            if (score > bestScore)
-                bestScore = score;
+            if (score > alpha)
+            {
+                alpha = score;
+                if (score >= beta)
+                    return beta;
+            }
         }
-        return bestScore;
+        return alpha;
     }
 
     private int Eval(Board board)
