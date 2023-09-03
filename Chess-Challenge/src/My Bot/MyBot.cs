@@ -45,7 +45,7 @@ public class MyBot : IChessBot
         int beta = CheckmateScore;
         int score;
         Move[] move = board.GetLegalMoves();
-        for (Depth = 1; Depth < 9; Depth++)
+        for (Depth = 1; Depth < 99; Depth++)
         {
             bestScore = -CheckmateScore;
             bestMove = default;
@@ -72,7 +72,7 @@ public class MyBot : IChessBot
                     bestScore = score;
                 }
             }
-            if (timer.MillisecondsElapsedThisTurn > 400) break;
+            if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 40) break;
         }
         return bestMove;
     }
