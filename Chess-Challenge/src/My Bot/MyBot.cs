@@ -27,37 +27,39 @@ public class MyBot : IChessBot
 
     public Move Think(Board board, Timer timer)
     {
-        int score;
         Move bestMove = default;
-        Move[] moves = board.GetLegalMoves();
+        int bestScore;
+        int alpha = -CheckmateScore;
+        int beta = CheckmateScore;
+        int score;
+        Move[] move = board.GetLegalMoves();
         for (Depth = 1; Depth < 99; Depth++)
         {
-            int alpha = -CheckmateScore;
+            bestScore = -CheckmateScore;
             bestMove = default;
-            Move bestNew = default;
-            for (int i = 0; i < moves.Length; i++)
+            for (int i = 0; i < move.Length; i++)
             {
-                Move move = moves[i];
-                board.MakeMove(move);
-                bool checkmate = board.IsInCheckmate();
-                if (board.IsRepeatedPosition())
-                    score = 0;
-                else
-                    score = board.IsDraw()
-                        ? 0
-                        : -NegaMax(-CheckmateScore, -alpha, 1, board);
-                board.UndoMove(move);
-                if (checkmate)
-                    return move;
-                if (score > alpha)
+                board.MakeMove(move[i]);
+                if (board.IsInCheckmate())
                 {
-                    moves[i] = moves[0];
-                    bestMove = moves[0] = move;
-                    bestNew = bestMove;
-                    alpha = score;
+                    board.UndoMove(move[i]);
+                    return move[i];
+                }
+                if (board.IsDraw())
+                {
+                    score = 0;
+                }
+                else score = -NegaMax(-beta, -alpha, 1, board);
+                board.UndoMove(move[i]);
+
+                if (score > bestScore)
+                {
+                    bestMove = move[i];
+                    move[i] = move[0];
+                    move[0] = bestMove;
+                    bestScore = score;
                 }
             }
-            bestMove = bestNew.IsNull ? bestMove : bestNew;
             if (timer.MillisecondsElapsedThisTurn > timer.MillisecondsRemaining / 100)
                 break;
         }
