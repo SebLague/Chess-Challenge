@@ -31,18 +31,19 @@ public class MyBot : IChessBot
         gameTimer = timer;
         int movesDone = board.GameMoveHistory.Length;
         progress = Math.Min(movesDone / 65f, 1);
-        if (movesDone > 60)
-            timeForMove = timer.MillisecondsRemaining / 40;
+        double p = movesDone / 80f;
+        timeForMove= (movesDone) < 40 ? (int)Math.Floor((-0.4275 * Math.Pow(p, 2) + 0.1315 * p + 0.0398) * timer.GameStartTimeMilliseconds) : (timer.MillisecondsRemaining / Math.Max((80 - movesDone) / 2, 10));
         bestMove = board.GetLegalMoves()[0];
 
         Search(board, depth, -500_000_000, 500_000_000, 0);
 
         lastThinkTime = timer.MillisecondsElapsedThisTurn;
-        double diff = lastThinkTime - 1200 * Math.Exp(-Math.Pow((movesDone - 25) / 55, 2));
-        if (diff > 0 || aborted)
+
+        if (lastThinkTime * 3 < timeForMove)
+          depth = depth + 1;
+        if (lastThinkTime > timeForMove || aborted)
             depth = Math.Max(depth - 1, 2);
-        else
-            depth = Math.Min(depth + 1, BitboardHelper.GetNumberOfSetBits(board.AllPiecesBitboard) < 15 ? 6 : 5);
+
         return bestMove;
     }
 
