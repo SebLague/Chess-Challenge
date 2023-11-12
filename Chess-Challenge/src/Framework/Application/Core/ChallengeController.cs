@@ -1,4 +1,4 @@
-﻿using ChessChallenge.Chess;
+using ChessChallenge.Chess;
 using ChessChallenge.Example;
 using Raylib_cs;
 using System;
@@ -389,7 +389,9 @@ namespace ChessChallenge.Application
 
         public void DrawOverlay()
         {
-            BotBrainCapacityUI.Draw(tokenCount, debugTokenCount, MaxTokenCount);
+            //BotBrainCapacityUI.Draw(tokenCount, debugTokenCount, MaxTokenCount);
+            API.Board botBoard = new(board);
+            EvaluationUI.Draw(MyBot.EvaluatePosition(botBoard));
             MenuUI.DrawButtons(this);
             MatchStatsUI.DrawMatchStats(this);
         }
