@@ -8,7 +8,7 @@ I also plan to make a small game that features these most interesting/challengin
 ## Submissions are now closed
 Thank you so much to everyone who participated -- in total, 636 chess bots were submitted. Also, a huge extra thanks to everyone who contributed code, reported bugs in the framework (sorry about those!), and gave their time to help others getting started with the intricacies of chess programming.
 
-I will soon begin the process of looking through all the entries, running tournament games, and working on a video about the results. I honestly have no idea how long this will to take, but I certainly don't want to rush it after all the effort that everyone has put in, so it may be a while!
+I am nearly finished with looking through all the entries, running tournament games, and working on a video about the results. The video will most likely be out end of November or early December at the latest. Apologies for the long wait!
 
 ## Change Log
 It has been necessary to make some bug fixes to the original project, and I've also been tempted (by some great suggestions from the community) into making a few non-breaking improvements/additions to the API. I realize that changes can be frustrating during a challenge though, and so will commit to freezing the API from August 1st.
