@@ -404,8 +404,7 @@ namespace ChessChallenge.Chess
             currentGameState = newState;
             gameStateHistory.Push(currentGameState);
             UpdateSliderBitboards();
-            hasCachedInCheckValue = true;
-            cachedInCheckValue = false;
+            hasCachedInCheckValue = false;
         }
 
         public void UnmakeNullMove()
@@ -416,8 +415,7 @@ namespace ChessChallenge.Chess
             gameStateHistory.Pop();
             currentGameState = gameStateHistory.Peek();
             UpdateSliderBitboards();
-            hasCachedInCheckValue = true;
-            cachedInCheckValue = false;
+            hasCachedInCheckValue = false;
         }
 
 
