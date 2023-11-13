@@ -28,6 +28,11 @@ namespace ChessChallenge.Application
         {
             isTurnToMove = true;
         }
+        
+        public void CancelTurnToMove()
+        {
+            isTurnToMove = false;
+        }
 
         public void SetPosition(string fen)
         {

@@ -8,6 +8,7 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Collections.Generic;
 using static ChessChallenge.Application.Settings;
 using static ChessChallenge.Application.ConsoleHelper;
 
@@ -74,6 +75,22 @@ namespace ChessChallenge.Application
             botTaskWaitHandle = new AutoResetEvent(false);
 
             StartNewGame(PlayerType.Human, PlayerType.MyBot);
+        }
+
+        public void UndoMoves(uint numToUndo)
+        {
+            List<Move> allMoves = board.AllGameMoves;
+            numToUndo = Math.Min((uint)allMoves.Count, numToUndo);
+
+            for (int i = 0; i < numToUndo; i++)
+            {
+                Move moveToUndo = allMoves.Last();
+                board.UndoMove(moveToUndo, false);
+            }
+
+            var lastMove = (allMoves.Count == 0) ? new Move(0) : allMoves.Last() ;
+            boardUI.UpdatePosition(board, lastMove);
+            NotifyTurnToMove();
         }
 
         public void StartNewGame(PlayerType whiteType, PlayerType blackType)
@@ -168,6 +185,12 @@ namespace ChessChallenge.Application
             {
                 PlayerToMove.Human.SetPosition(FenUtility.CurrentFen(board));
                 PlayerToMove.Human.NotifyTurnToMove();
+
+                if (PlayerNotOnMove.IsHuman)
+                {
+                    // for the case of a human vs human match when a manual undo fires
+                    PlayerNotOnMove.Human.CancelTurnToMove();
+                }
             }
             else
             {
