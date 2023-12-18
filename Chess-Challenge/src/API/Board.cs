@@ -239,6 +239,12 @@ namespace ChessChallenge.API
 		/// </summary>
 		public bool IsInsufficientMaterial() => Arbiter.InsufficentMaterial(board);
 
+		/// <summary>
+		/// Does the given player has castled?
+		/// (this will only detect castled made during the game moves)
+		/// </summary>
+		public bool HasCastled(bool white) => white ? board.currentGameState.hasWhiteCastled : board.currentGameState.hasBlackCastled;
+
         /// <summary>
         /// Does the given player still have the right to castle kingside?
         /// Note that having the right to castle doesn't necessarily mean castling is legal right now

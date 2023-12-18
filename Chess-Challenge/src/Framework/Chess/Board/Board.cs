@@ -138,6 +138,9 @@ namespace ChessChallenge.Chess
             int newCastlingRights = currentGameState.castlingRights;
             int newEnPassantFile = 0;
 
+            bool hasWhiteCastled = currentGameState.hasWhiteCastled || IsWhiteToMove && move.MoveFlag == Move.CastleFlag;
+            bool hasBlackCastled = currentGameState.hasBlackCastled || !IsWhiteToMove && move.MoveFlag == Move.CastleFlag;
+
             // Update bitboard of moved piece (pawn promotion is a special case and is corrected later)
             MovePiece(movedPiece, startSquare, targetSquare);
 
@@ -275,7 +278,7 @@ namespace ChessChallenge.Chess
                 newFiftyMoveCounter = 0;
             }
 
-            GameState newState = new(capturedPieceType, newEnPassantFile, newCastlingRights, newFiftyMoveCounter, newZobristKey);
+            GameState newState = new(capturedPieceType, newEnPassantFile, newCastlingRights, hasWhiteCastled, hasBlackCastled, newFiftyMoveCounter, newZobristKey);
             gameStateHistory.Push(newState);
             currentGameState = newState;
             hasCachedInCheckValue = false;
@@ -400,7 +403,7 @@ namespace ChessChallenge.Chess
             newZobristKey ^= Zobrist.sideToMove;
             newZobristKey ^= Zobrist.enPassantFile[currentGameState.enPassantFile];
 
-            GameState newState = new(PieceHelper.None, 0, currentGameState.castlingRights, currentGameState.fiftyMoveCounter + 1, newZobristKey);
+            GameState newState = new (PieceHelper.None, 0, currentGameState.castlingRights, currentGameState.hasWhiteCastled, currentGameState.hasBlackCastled, currentGameState.fiftyMoveCounter + 1, newZobristKey);
             currentGameState = newState;
             gameStateHistory.Push(currentGameState);
             UpdateSliderBitboards();
@@ -519,9 +522,9 @@ namespace ChessChallenge.Chess
             plyCount = (posInfo.moveCount - 1) * 2 + (IsWhiteToMove ? 0 : 1);
 
             // Set game state (note: calculating zobrist key relies on current game state)
-            currentGameState = new GameState(PieceHelper.None, posInfo.epFile, castlingRights, posInfo.fiftyMovePlyCount, 0);
+            currentGameState = new GameState(PieceHelper.None, posInfo.epFile, castlingRights, false, false, posInfo.fiftyMovePlyCount, 0);
             ulong zobristKey = Zobrist.CalculateZobristKey(this);
-            currentGameState = new GameState(PieceHelper.None, posInfo.epFile, castlingRights, posInfo.fiftyMovePlyCount, zobristKey);
+            currentGameState = new GameState(PieceHelper.None, posInfo.epFile, castlingRights, false, false, posInfo.fiftyMovePlyCount, zobristKey);
 
             RepetitionPositionHistory.Push(zobristKey);
 

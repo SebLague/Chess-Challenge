@@ -5,6 +5,8 @@
         public readonly int capturedPieceType;
         public readonly int enPassantFile;
         public readonly int castlingRights;
+        public readonly bool hasWhiteCastled;
+        public readonly bool hasBlackCastled;
         public readonly int fiftyMoveCounter;
         public readonly ulong zobristKey;
 
@@ -13,11 +15,13 @@
         public const int ClearBlackKingsideMask = 0b1011;
         public const int ClearBlackQueensideMask = 0b0111;
 
-        public GameState(int capturedPieceType, int enPassantFile, int castlingRights, int fiftyMoveCounter, ulong zobristKey)
+        public GameState(int capturedPieceType, int enPassantFile, int castlingRights, bool hasWhiteCastled, bool hasBlackCastled, int fiftyMoveCounter, ulong zobristKey)
         {
             this.capturedPieceType = capturedPieceType;
             this.enPassantFile = enPassantFile;
             this.castlingRights = castlingRights;
+            this.hasWhiteCastled = hasWhiteCastled;
+            this.hasBlackCastled = hasBlackCastled;
             this.fiftyMoveCounter = fiftyMoveCounter;
             this.zobristKey = zobristKey;
         }
