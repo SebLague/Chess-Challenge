@@ -55,6 +55,7 @@ namespace ChessChallenge.Application
         readonly int tokenCount;
         readonly int debugTokenCount;
         readonly StringBuilder pgns;
+        long maxMemoryUsed = 0;
 
         public ChallengeController()
         {
@@ -233,6 +234,25 @@ namespace ChessChallenge.Application
                     moveToPlay = chosenMove;
                     isWaitingToPlayMove = true;
                     playMoveTime = lastMoveMadeTime + MinMoveDelay;
+                    if (MonitorMemoryUsage && PlayerToMove.Bot is MyBot)
+                    {
+                        isPlaying = false;
+                        try
+                        {
+                            maxMemoryUsed = Math.Max(ObjectSizeHelper.GetSize(PlayerToMove.Bot), maxMemoryUsed);
+                        }
+                        catch (Exception e)
+                        {
+                            Log("An error occurred while determining used memory size.\n" + e.ToString(), true,
+                                ConsoleColor.Red);
+                            hasBotTaskException = true;
+                            botExInfo = ExceptionDispatchInfo.Capture(e);
+                        }
+                        finally
+                        {
+                            isPlaying = true;
+                        }
+                    }
                 }
                 else
                 {
@@ -389,7 +409,8 @@ namespace ChessChallenge.Application
 
         public void DrawOverlay()
         {
-            BotBrainCapacityUI.Draw(tokenCount, debugTokenCount, MaxTokenCount);
+            BotBrainCapacityUI.DrawTokenUsage(tokenCount, debugTokenCount, MaxTokenCount);
+            BotBrainCapacityUI.DrawMemoryUsage(maxMemoryUsed, MaxMemoryUsage);
             MenuUI.DrawButtons(this);
             MatchStatsUI.DrawMatchStats(this);
         }
