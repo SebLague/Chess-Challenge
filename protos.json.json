@@ -1,0 +1,13 @@
+{
+  "protocols" : {
+    "lldp" : { },
+    "vrrp" : {
+      "version" : "v3",
+      "vrrp-v3" : {
+        "ipv4-checksum-with-pseudoheader" : [ null ]
+      },
+      "mac-address-mode" : "physical",
+      "alarm-logs-soak-time" : 3600
+    }
+  }
+}
