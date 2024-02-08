@@ -5,6 +5,11 @@ using System.Runtime.InteropServices;
 
 namespace ChessChallenge.Application
 {
+    /// <summary>
+    /// Contains the app's entry point and UI update loop.
+    /// This project uses the <see href="https://www.raylib.com/">Raylib</see> game engine.
+    /// Familiarize yourself with it before making any changes to the code.
+    /// </summary>
     static class Program
     {
         const bool hideRaylibLogs = true;
@@ -31,6 +36,7 @@ namespace ChessChallenge.Application
 
             ChallengeController controller = new();
 
+            // The app's main update loop.
             while (!Raylib.WindowShouldClose())
             {
                 Raylib.BeginDrawing();

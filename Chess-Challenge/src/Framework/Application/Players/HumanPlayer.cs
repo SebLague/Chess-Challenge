@@ -4,6 +4,9 @@ using System.Numerics;
 
 namespace ChessChallenge.Application
 {
+    /// <summary>
+    /// Contains state and methods necessary to control a human player in the framework.
+    /// </summary>
     public class HumanPlayer
     {
         public event System.Action<Move>? MoveChosen;
@@ -84,6 +87,11 @@ namespace ChessChallenge.Application
             boardUI.ResetSquareColours(true);
         }
 
+        /// <summary>
+        /// First checks if the chosen move is valid. If it is then the move is played.
+        /// </summary>
+        /// <param name="startSquare"></param>
+        /// <param name="targetSquare"></param>
         void TryMakeMove(int startSquare, int targetSquare)
         {
             bool isLegal = false;

@@ -3,6 +3,10 @@ namespace ChessChallenge.Chess
     using System;
     using static PrecomputedMoveData;
 
+    /// <summary>
+    /// Keeps the state of the current game (piece location, in-check flag, etc) and uses it to generate a collection of valid moves
+    /// for the current position.
+    /// </summary>
     public class MoveGenerator
     {
         public const int MaxMoves = 218;
@@ -46,6 +50,8 @@ namespace ChessChallenge.Chess
         // Otherwise it will have 1s everywhere.
         ulong moveTypeMask;
 
+        // Generates list of legal moves in current position.
+        // Quiet moves (non captures) can optionally be excluded. This is used in quiescence search.
         public System.Span<Move> GenerateMoves(Board board, bool includeQuietMoves = true)
         {
             System.Span<Move> moves = new Move[MaxMoves];
