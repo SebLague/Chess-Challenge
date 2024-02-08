@@ -13,6 +13,12 @@ using static ChessChallenge.Application.ConsoleHelper;
 
 namespace ChessChallenge.Application
 {
+    /// <summary>
+    /// Main orchestrator class for the appplication. Contains the handles for when buttons are 
+    /// pushed and triggers the UI drawing methods accordingly. 
+    /// Maintains the application's state. The app's state includes things such as:
+    /// Aggregated game stats, current running game flag, current game's ID, current game's player types, etc.
+    /// </summary>
     public class ChallengeController
     {
         public enum PlayerType
@@ -159,8 +165,10 @@ namespace ChessChallenge.Application
             return Move.NullMove;
         }
 
-
-
+        /// <summary>
+        /// If next player to move is human it enables the HumanPlayer's update() loop.
+        /// If next player to move is a bot then it gets the next bot move, updates the bot's clock and attempts to play it.
+        /// </summary>
         void NotifyTurnToMove()
         {
             //playerToMove.NotifyTurnToMove(board);
@@ -256,9 +264,12 @@ namespace ChessChallenge.Application
                 bool animate = PlayerToMove.IsBot;
                 lastMoveMadeTime = (float)Raylib.GetTime();
 
+                // Paint/make move on the board
                 board.MakeMove(move, false);
                 boardUI.UpdatePosition(board, move, animate);
 
+                // Update the game state and notify the opponent that its their turn.
+                // End game if applicable.
                 GameResult result = Arbiter.GetGameState(board);
                 if (result == GameResult.InProgress)
                 {

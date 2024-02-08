@@ -2,6 +2,10 @@
 {
     using System.Linq;
 
+    /// <summary>
+    /// Contains methods to determine the status of a game (Draw, Win, etc) based on an instance of
+    /// the <see cref="Board"/> class.
+    /// </summary>
     public static class Arbiter
     {
         public static bool IsDrawResult(GameResult result)
